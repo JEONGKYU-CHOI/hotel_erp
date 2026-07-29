@@ -63,4 +63,19 @@ public class RateCalendar extends BaseEntity {
 		this.amount = amount;
 		this.closed = closed;
 	}
+
+	/**
+	 * 요금 갱신. 이미 있는 날짜에 다른 금액으로 다시 생성할 때 쓴다.
+	 *
+	 * <p>여기서 금액을 바꿔도 <b>이미 잡힌 예약 금액은 변하지 않는다.</b>
+	 * 예약 시점 금액은 {@code reservation_night} 에 스냅샷으로 복사돼 있다.
+	 */
+	public void changeAmount(BigDecimal amount) {
+		this.amount = amount;
+	}
+
+	/** 해당 일자 판매 재개/중단. */
+	public void changeClosed(boolean closed) {
+		this.closed = closed;
+	}
 }

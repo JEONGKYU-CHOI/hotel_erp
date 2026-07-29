@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>요금 캘린더 생성 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <h1 class="h4 mb-1">요금 캘린더 생성</h1>
+    <p class="text-secondary small mb-4">
+        지정한 기간의 일자별 요금을 만듭니다. 이미 있는 날짜는 금액만 갱신합니다.
+        주중/주말 금액을 나눠 넣으면 요일에 따라 다르게 적용됩니다.
+    </p>
+
+    <form th:object="${form}" method="post" th:action="@{/admin/basedata/rate-calendar/generate}">
+
+        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger py-2">
+            <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">오류</div>
+        </div>
+        <!-- 항목 간 검증(@AssertTrue)의 오류는 메서드 이름에서 딴 프로퍼티에 붙는다.
+             여기서 그려주지 않으면 아무 설명 없이 폼만 되돌아온다. -->
+        <div th:if="${#fields.hasErrors('dateRangeOrdered')}" class="alert alert-danger py-2"
+             th:errors="*{dateRangeOrdered}">오류</div>
+        <div th:if="${#fields.hasErrors('dateRangeWithinLimit')}" class="alert alert-danger py-2"
+             th:errors="*{dateRangeWithinLimit}">오류</div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="ratePlanId" class="form-label">요금정책</label>
+                        <select id="ratePlanId" class="form-select" th:field="*{ratePlanId}"
+                                th:classappend="${#fields.hasErrors('ratePlanId')} ? 'is-invalid'">
+                            <option value="">선택하세요</option>
+                            <option th:each="rp : ${ratePlans}" th:value="${rp.id}"
+                                    th:text="${rp.roomType.name} + ' / ' + ${rp.name} + ' (' + ${rp.code} + ')'"
+                                    th:disabled="${!rp.active}">디럭스 더블 / 조식포함 (BFAST)</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{ratePlanId}">오류</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="fromDate" class="form-label">시작일</label>
+                        <input type="date" id="fromDate" class="form-control" th:field="*{fromDate}"
+                               th:classappend="${#fields.hasErrors('fromDate')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{fromDate}">오류</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="toDate" class="form-label">종료일</label>
+                        <input type="date" id="toDate" class="form-control" th:field="*{toDate}"
+                               th:classappend="${#fields.hasErrors('toDate')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{toDate}">오류</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="weekdayAmount" class="form-label">주중 요금 (월~금)</label>
+                        <input type="number" id="weekdayAmount" class="form-control" step="0.01" min="0"
+                               th:field="*{weekdayAmount}"
+                               th:classappend="${#fields.hasErrors('weekdayAmount')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{weekdayAmount}">오류</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="weekendAmount" class="form-label">주말 요금 (토·일)</label>
+                        <input type="number" id="weekendAmount" class="form-control" step="0.01" min="0"
+                               th:field="*{weekendAmount}"
+                               th:classappend="${#fields.hasErrors('weekendAmount')} ? 'is-invalid'"
+                               placeholder="비우면 주중 요금">
+                        <div class="invalid-feedback" th:errors="*{weekendAmount}">오류</div>
+                        <div class="form-text">비워 두면 토·일에도 <b>주중 요금</b>을 씁니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-secondary small">
+            <div class="fw-semibold mb-1">이 금액이 예약에 어떻게 쓰이나요?</div>
+            여기 값은 <b>현재 판매가</b>입니다. 예약이 확정되는 순간의 금액은 예약에 스냅샷으로
+            복사되므로, 나중에 요금표를 바꿔도 <b>과거 예약 금액은 변하지 않습니다.</b>
+            행이 없는 날짜는 요금정책의 <b>기본 요금</b>으로 폴백합니다.
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">생성</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/basedata/rate-calendar}">취소</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>요금 캘린더 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1">요금 캘린더</h1>
+            <p class="text-secondary small mb-0">
+                일자별 판매 요금입니다. 행이 없는 날짜는 요금정책의 기본 요금으로 폴백합니다.
+            </p>
+        </div>
+        <a class="btn btn-primary ms-auto"
+           th:href="@{/admin/basedata/rate-calendar/generate(ratePlanId=${ratePlanId})}">요금 생성</a>
+    </div>
+
+    <form class="card card-body mb-3" method="get" th:action="@{/admin/basedata/rate-calendar}">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label for="ratePlanId" class="form-label small">요금정책</label>
+                <select id="ratePlanId" name="ratePlanId" class="form-select">
+                    <option value="">선택하세요</option>
+                    <option th:each="rp : ${ratePlans}" th:value="${rp.id}"
+                            th:text="${rp.roomType.name} + ' / ' + ${rp.name} + ' (' + ${rp.code} + ')'"
+                            th:selected="${rp.id == ratePlanId}">디럭스 더블 / 조식포함 (BFAST)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="from" class="form-label small">시작일</label>
+                <input type="date" id="from" name="from" class="form-control"
+                       th:value="${#temporals.format(from, 'yyyy-MM-dd')}">
+            </div>
+            <div class="col-md-3">
+                <label for="to" class="form-label small">종료일</label>
+                <input type="date" id="to" name="to" class="form-control"
+                       th:value="${#temporals.format(to, 'yyyy-MM-dd')}">
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-outline-secondary w-100" type="submit">조회</button>
+            </div>
+        </div>
+    </form>
+
+    <div th:if="${ratePlanId == null}" class="alert alert-secondary">
+        요금정책을 선택하고 조회하세요.
+    </div>
+
+    <div th:if="${ratePlanId != null}">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width:14rem;">일자</th>
+                        <th style="width:10rem;" class="text-end">요금</th>
+                        <th>상태</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="r : ${rates}"
+                        th:classappend="${r.stayDate.dayOfWeek.value >= 6} ? 'table-warning' : ''">
+                        <td>
+                            <span th:text="${#temporals.format(r.stayDate, 'yyyy-MM-dd (E)')}">2026-08-01</span>
+                        </td>
+                        <td class="text-end fw-semibold"
+                            th:text="${#numbers.formatDecimal(r.amount, 0, 'COMMA', 0, 'POINT')}">100,000</td>
+                        <td>
+                            <span th:if="${r.closed}" class="badge text-bg-danger">판매 중지</span>
+                            <span th:unless="${r.closed}" class="badge text-bg-success">판매 중</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(rates)}">
+                        <td colspan="3" class="text-center text-secondary py-5">
+                            이 기간에 생성된 요금이 없습니다. 이 경우 예약 시
+                            <b>요금정책 기본 요금</b>이 적용됩니다.
+                            <b>요금 생성</b>으로 일자별 요금을 만들 수 있습니다.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="small text-secondary mt-2 mb-0">주말(토·일) 행은 배경으로 구분됩니다.</p>
+    </div>
+</main>
+</body>
+</html>
