@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title th:text="${editing} ? '객실타입 수정 · 호텔 PMS' : '객실타입 등록 · 호텔 PMS'">객실타입</title>
+</head>
+<body>
+<main>
+    <h1 class="h4 mb-4" th:text="${editing} ? '객실타입 수정' : '객실타입 등록'">객실타입 등록</h1>
+
+    <!--
+      th:object 로 폼 객체를 지정하면 아래에서 *{필드명} 으로 짧게 쓸 수 있고,
+      th:errors 가 해당 필드의 검증 실패 메시지를 자동으로 찾아 준다.
+      등록과 수정이 보내는 곳만 다르고 항목은 같아서 화면 하나로 겸한다.
+    -->
+    <form th:object="${form}" method="post"
+          th:action="${editing}
+                     ? @{/admin/basedata/room-types/{id}(id=${roomTypeId})}
+                     : @{/admin/basedata/room-types}">
+
+        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger py-2">
+            <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">오류</div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="code" class="form-label">코드</label>
+                        <input type="text" id="code" class="form-control" th:field="*{code}"
+                               th:classappend="${#fields.hasErrors('code')} ? 'is-invalid'"
+                               th:readonly="${editing}" placeholder="DLX">
+                        <div class="invalid-feedback" th:errors="*{code}">오류</div>
+                        <div class="form-text" th:if="${editing}">
+                            코드는 다른 데이터가 참조하는 식별자라 수정할 수 없습니다.
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label for="name" class="form-label">표시명</label>
+                        <input type="text" id="name" class="form-control" th:field="*{name}"
+                               th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'"
+                               placeholder="디럭스 더블">
+                        <div class="invalid-feedback" th:errors="*{name}">오류</div>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="description" class="form-label">설명</label>
+                        <textarea id="description" class="form-control" rows="3"
+                                  th:field="*{description}"
+                                  placeholder="부킹엔진에 노출되는 소개 문구"></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="imageUrl" class="form-label">대표 이미지 URL</label>
+                        <input type="text" id="imageUrl" class="form-control" th:field="*{imageUrl}"
+                               th:classappend="${#fields.hasErrors('imageUrl')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{imageUrl}">오류</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="standardOccupancy" class="form-label">기준 인원</label>
+                        <input type="number" id="standardOccupancy" class="form-control"
+                               th:field="*{standardOccupancy}"
+                               th:classappend="${#fields.hasErrors('standardOccupancy')} ? 'is-invalid'"
+                               min="1" max="99">
+                        <div class="invalid-feedback" th:errors="*{standardOccupancy}">오류</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="maxOccupancy" class="form-label">최대 인원</label>
+                        <input type="number" id="maxOccupancy" class="form-control"
+                               th:field="*{maxOccupancy}"
+                               th:classappend="${#fields.hasErrors('maxOccupancy')} ? 'is-invalid'"
+                               min="1" max="99">
+                        <div class="invalid-feedback" th:errors="*{maxOccupancy}">오류</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="bedType" class="form-label">베드 타입</label>
+                        <input type="text" id="bedType" class="form-control" th:field="*{bedType}"
+                               placeholder="DOUBLE / TWIN / KING">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="displayOrder" class="form-label">노출 순서</label>
+                        <input type="number" id="displayOrder" class="form-control"
+                               th:field="*{displayOrder}"
+                               th:classappend="${#fields.hasErrors('displayOrder')} ? 'is-invalid'"
+                               min="0">
+                        <div class="invalid-feedback" th:errors="*{displayOrder}">오류</div>
+                    </div>
+
+                    <!--
+                      항목 간 관계 검증(@AssertTrue)의 오류는 메서드 이름에서 딴
+                      프로퍼티에 붙는다. isOccupancyConsistent() -> 'occupancyConsistent'.
+                      화면에 없는 이름이라 여기서 명시적으로 그려주지 않으면, 저장이
+                      거부됐는데 아무 설명 없이 폼만 되돌아온다. 실제로 그렇게 만들었다가
+                      검증에서 발견했다.
+                    -->
+                    <div class="col-12" th:if="${#fields.hasErrors('occupancyConsistent')}">
+                        <div class="alert alert-danger py-2 mb-0 small"
+                             th:errors="*{occupancyConsistent}">오류</div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="active"
+                                   th:field="*{active}">
+                            <label class="form-check-label" for="active">판매중</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit"
+                    th:text="${editing} ? '저장' : '등록'">등록</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/basedata/room-types}">취소</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

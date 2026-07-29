@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>대시보드 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <h1 class="h4 mb-4">대시보드</h1>
+
+    <div class="alert alert-secondary">
+        구축 중입니다. 현재 사용 가능한 화면은 <b>기준정보 &gt; 객실타입</b> 입니다.
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary">다음 작업</h2>
+                    <ol class="small mb-0 ps-3">
+                        <li>기준정보 — 객실타입 · 호실 · 요금정책</li>
+                        <li>일자별 재고 생성 배치</li>
+                        <li>예약 · 동시성 제어</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

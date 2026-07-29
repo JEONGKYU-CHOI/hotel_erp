@@ -86,11 +86,15 @@ public class SecurityConfig {
 						// 기본값이 '허용'이면 인증을 빠뜨려도 아무도 모른다.
 						.anyRequest().authenticated())
 				.formLogin(form -> form
+						// 스프링 기본 폼 대신 우리 로그인 페이지를 쓴다(templates/login.html).
+						// 이 경로를 처리할 핸들러는 WebMvcConfig 의 뷰 컨트롤러가 제공한다.
+						.loginPage("/login")
 						// 로그인 성공 후 기본 착지점. 원래 가려던 곳이 있으면 그쪽이 우선한다.
 						.defaultSuccessUrl("/admin", false)
+						.failureUrl("/login?error")
 						.permitAll())
 				.logout(logout -> logout
-						.logoutSuccessUrl("/")
+						.logoutSuccessUrl("/login?logout")
 						.permitAll())
 				.build();
 	}

@@ -106,4 +106,36 @@ public class RoomType extends BaseEntity {
 		this.displayOrder = displayOrder;
 		this.active = active;
 	}
+
+	/**
+	 * 수정 가능한 항목을 한 번에 갱신한다.
+	 *
+	 * <p>필드마다 setter 를 열지 않는 이유 — setter 가 열려 있으면 어디서든 한 필드씩
+	 * 바꿀 수 있고, 그러면 "이름만 바뀌고 최대 인원은 안 바뀐 중간 상태"가 만들어진다.
+	 * 변경을 의미 있는 단위로 묶어 두면 그런 상태가 존재할 수 없다.
+	 *
+	 * <p>{@code code} 는 여기 없다. 코드는 다른 데이터가 참조하는 식별자라
+	 * 발급 후 바꾸지 않는다.
+	 */
+	public void update(String name, String description, String imageUrl,
+			int standardOccupancy, int maxOccupancy, String bedType, int displayOrder) {
+		this.name = name;
+		this.description = description;
+		this.imageUrl = imageUrl;
+		this.standardOccupancy = standardOccupancy;
+		this.maxOccupancy = maxOccupancy;
+		this.bedType = bedType;
+		this.displayOrder = displayOrder;
+	}
+
+	/**
+	 * 판매 재개 / 판매 중단.
+	 *
+	 * <p>삭제 대신 이 방식을 쓴다. 이 객실타입은 호실·요금정책·재고·예약이 FK 로
+	 * 참조하고 있어 물리 삭제가 애초에 불가능하고, 가능하더라도 과거 예약이 어떤
+	 * 객실타입이었는지 알 수 없게 된다.
+	 */
+	public void changeActive(boolean active) {
+		this.active = active;
+	}
 }
