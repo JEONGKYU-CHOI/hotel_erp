@@ -1,0 +1,80 @@
+### Spring Initializr ###
+HELP.md
+
+### Gradle ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Java ###
+*.class
+*.log
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.war
+hs_err_pid*
+replay_pid*
+
+### IntelliJ IDEA ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+
+### Eclipse / STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### Node / React (frontend) ###
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+### Environment / Secrets ###
+# 비밀번호, API 키는 절대 커밋하지 않는다.
+# application.yml 에는 ${DB_PASSWORD} 형태의 참조만 두고 값은 환경변수로 주입한다.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.properties
+application-local.yml
+application-secret.yml
+
+### Claude Code ###
+.claude/
+.claude-*/
+
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### Logs ###
+logs/
+*.log.*
+
+### MySQL dump (실수로 데이터 커밋 방지) ###
+*.sql.bak
+dump.sql

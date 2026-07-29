@@ -1,0 +1,106 @@
+spring:
+  application:
+    name: hotel-erp
+
+  # ---------------------------------------------------------------------------
+  # DataSource
+  # 비밀번호는 절대 파일에 쓰지 않는다. 환경변수 DB_PASSWORD 로 주입한다.
+  #   allowPublicKeyRetrieval : MySQL 8.4 기본 인증(caching_sha2_password)을
+  #                             비SSL 로컬 연결에서 쓰기 위해 필요
+  #   connectionTimeZone=SERVER
+  #     서버에 설정된 시간대(+09:00)를 그대로 따른다.
+  #     'Asia/Seoul' 같은 *이름*을 쓰면 안 된다. Windows MySQL 은 타임존 이름
+  #     테이블(mysql.time_zone_name)을 기본 적재하지 않아 이름을 해석하지 못하고
+  #     ER_UNKNOWN_TIME_ZONE_ERROR(1298) 로 커넥션 획득이 실패한다.
+  #     서버 my.ini 의 default-time-zone 이 '+09:00' 오프셋이므로 SERVER 로 충분하다.
+  # ---------------------------------------------------------------------------
+  datasource:
+    url: jdbc:mysql://localhost:3306/hotel_erp?characterEncoding=UTF-8&connectionTimeZone=SERVER&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: hotel-erp-pool
+      maximum-pool-size: 20
+      # 재고 락 대기가 길어지면 커넥션이 고갈된다. 대기 시간을 짧게 잡아
+      # 문제를 조용한 지연이 아니라 명시적 예외로 드러낸다.
+      connection-timeout: 3000
+
+  # ---------------------------------------------------------------------------
+  # JPA / Hibernate
+  #   ddl-auto: validate  -> 스키마는 Flyway 가 만든다(D-005).
+  #                          엔티티와 실제 테이블이 어긋나면 시동을 실패시켜
+  #                          매핑 실수를 조용히 넘기지 않는다.
+  #   open-in-view: false -> 뷰 렌더링까지 영속성 컨텍스트를 열어두면
+  #                          커넥션을 오래 붙잡아 락 경합이 커진다.
+  # ---------------------------------------------------------------------------
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+          # 배치 insert/update 묶음 처리. 야간마감에서 유효하다.
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        query:
+          fail_on_pagination_over_collection_fetch: true
+          in_clause_parameter_padding: true
+
+  # ---------------------------------------------------------------------------
+  # Flyway (D-005)
+  # 마이그레이션 SQL 이 스키마의 유일한 진실이다. GUI 로 테이블을 고치지 말 것.
+  # ---------------------------------------------------------------------------
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+  thymeleaf:
+    cache: false          # 개발 중 템플릿 즉시 반영
+    prefix: classpath:/templates/
+    suffix: .html
+
+  # 개발 편의: 정적 리소스/템플릿 변경 시 자동 재시작
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# -----------------------------------------------------------------------------
+# Logging
+# JPA 를 처음 쓰는 상황에서 "내 코드가 어떤 SQL 을 언제 날렸는가"는
+# 반드시 눈에 보여야 한다. 특히 @Lock 이 실제로 FOR UPDATE 를 내보내는지.
+#   org.hibernate.SQL          : 실행된 SQL
+#   org.hibernate.orm.jdbc.bind: 바인딩된 파라미터 실제 값
+# -----------------------------------------------------------------------------
+logging:
+  level:
+    root: INFO
+    com.hotel.erp: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.transaction.interceptor: TRACE
+    org.flywaydb: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
