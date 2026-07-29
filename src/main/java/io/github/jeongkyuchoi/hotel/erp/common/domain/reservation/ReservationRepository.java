@@ -1,7 +1,11 @@
 package io.github.jeongkyuchoi.hotel.erp.common.domain.reservation;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * 예약 조회.
@@ -26,4 +30,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 			Long tenantId, String reservationNo, String guestPhone);
 
 	boolean existsByReservationNo(String reservationNo);
+
+	/**
+	 * 만료된 HOLD 의 id 목록. 스케줄러가 훑는 경로다({@code idx_reservation_hold} 사용).
+	 *
+	 * <p>엔티티가 아니라 <b>id 만</b> 가져온다. 실제 만료 처리는 건마다 별도 트랜잭션에서
+	 * id 로 다시 로드해 재고 락을 잡고 진행한다 — 한 번에 수백 건을 한 트랜잭션에 잠그면
+	 * 락 보유가 길어지고 그 사이 예약이 대기한다. 배치 크기는 {@link Limit} 으로 제한한다.
+	 */
+	@Query("""
+			select r.id from Reservation r
+			where r.tenantId = :tenantId
+			  and r.status = :status
+			  and r.holdExpiresAt < :now
+			order by r.holdExpiresAt
+			""")
+	List<Long> findDueHoldIds(Long tenantId, ReservationStatus status,
+			LocalDateTime now, Limit limit);
 }

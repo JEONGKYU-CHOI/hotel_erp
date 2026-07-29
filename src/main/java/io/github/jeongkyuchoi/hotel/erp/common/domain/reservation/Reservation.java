@@ -212,4 +212,22 @@ public class Reservation extends BaseEntity {
 				&& holdExpiresAt != null
 				&& holdExpiresAt.isBefore(now);
 	}
+
+	/**
+	 * HOLD → EXPIRED 전이. 스케줄러가 만료분을 정리할 때 부른다(D-003).
+	 *
+	 * <p>재고의 {@code held_qty} 반환은 호출자(만료 서비스)가 잠근 재고 행에 대고
+	 * 따로 한다 — 이 메서드는 예약 상태만 바꾼다. {@code hold_expires_at} 은 지우지 않고
+	 * 남긴다. "언제 만료됐나"가 이탈 예약 분석의 근거가 된다.
+	 *
+	 * @throws IllegalStateException HOLD 가 아닌 상태에서 부르면. 이미 확정·취소된 예약을
+	 *         만료로 덮어쓰는 사고를 드러낸다.
+	 */
+	public void expire() {
+		if (status != ReservationStatus.HOLD) {
+			throw new IllegalStateException(
+					"HOLD 가 아닌 예약을 만료시킬 수 없습니다. no=" + reservationNo + " status=" + status);
+		}
+		this.status = ReservationStatus.EXPIRED;
+	}
 }
