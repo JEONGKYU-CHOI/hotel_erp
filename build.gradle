@@ -50,3 +50,74 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+
+// =============================================================================
+// 프론트엔드(React) 빌드 연동
+// =============================================================================
+// 목적: `./gradlew build` 한 번으로 React 까지 빌드해 **배포 산출물이 jar 하나**가
+//       되게 한다. D-001 의 "배포 산출물은 JAR 하나" 주장을 실제로 성립시킨다.
+//
+// 설계 요점
+//   1) bootRun 에는 걸지 않는다.
+//      개발 중에는 Vite dev server(5173)가 프록시로 8080 을 호출한다(vite.config.js).
+//      bootRun 마다 npm build 를 돌리면 서버 재기동이 수 초씩 느려지고,
+//      정작 그 산출물은 개발 중에 쓰이지도 않는다.
+//   2) build/resources/main/static 에 복사하지 않는다.
+//      그 디렉토리는 processResources 의 출력이라 두 태스크가 같은 곳에 쓰면
+//      Gradle 이 태스크 의존 관계를 추론하지 못해 경고 또는 실행 순서 문제가 난다.
+//      대신 bootJar 에 직접 얹어 jar 안 BOOT-INF/classes/static 으로 넣는다.
+//      스프링은 classpath 의 /static 을 정적 리소스 루트로 자동 인식한다.
+//   3) inputs/outputs 를 선언해 Gradle up-to-date 검사를 받는다.
+//      소스가 안 바뀌면 npm 을 아예 실행하지 않는다.
+// =============================================================================
+
+def frontendDir = layout.projectDirectory.dir('frontend').asFile
+
+// Windows 에서 'npm' 은 npm.cmd 라는 배치 파일이다. Exec 는 셸을 거치지 않고
+// 프로세스를 직접 띄우므로 확장자가 없으면 CreateProcess 가 실패한다.
+def npmExecutable = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
+
+tasks.register('npmInstall', Exec) {
+	group = 'frontend'
+	description = 'frontend/node_modules 를 package-lock.json 에 맞춰 설치한다'
+
+	workingDir = frontendDir
+	commandLine npmExecutable, 'install'
+
+	inputs.file(new File(frontendDir, 'package.json'))
+	inputs.file(new File(frontendDir, 'package-lock.json'))
+	// node_modules 를 outputs 로 선언하면 Gradle 이 수만 개 파일의 해시를 매번
+	// 계산해 빌드가 눈에 띄게 느려진다. "잠금파일이 그대로이고 node_modules 가
+	// 존재하면 최신"이라는 조건만으로 충분하다.
+	outputs.upToDateWhen { new File(frontendDir, 'node_modules').isDirectory() }
+}
+
+tasks.register('npmBuild', Exec) {
+	group = 'frontend'
+	description = 'React 를 frontend/dist 로 빌드한다'
+	dependsOn 'npmInstall'
+
+	workingDir = frontendDir
+	commandLine npmExecutable, 'run', 'build'
+
+	inputs.dir(new File(frontendDir, 'src'))
+	inputs.dir(new File(frontendDir, 'public')).optional()
+	inputs.file(new File(frontendDir, 'index.html'))
+	inputs.file(new File(frontendDir, 'vite.config.js'))
+	inputs.file(new File(frontendDir, 'package.json'))
+	outputs.dir(new File(frontendDir, 'dist'))
+}
+
+tasks.named('bootJar') {
+	dependsOn 'npmBuild'
+	from(new File(frontendDir, 'dist')) {
+		into 'BOOT-INF/classes/static'
+	}
+}
+
+// 일반 jar 태스크는 쓰지 않는다(Boot 는 bootJar 가 실행 가능한 산출물).
+// 활성 상태로 두면 어느 jar 를 배포해야 하는지 헷갈린다.
+tasks.named('jar') {
+	enabled = false
+}
