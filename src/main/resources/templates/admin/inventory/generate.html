@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>재고 생성 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <h1 class="h4 mb-1">재고 생성</h1>
+    <p class="text-secondary small mb-4">
+        지정한 기간의 일자별 재고 행을 만듭니다. 이미 있는 날짜는 판매 총량만 갱신합니다.
+    </p>
+
+    <form th:object="${form}" method="post" th:action="@{/admin/inventory/generate}">
+
+        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger py-2">
+            <div th:each="err : ${#fields.globalErrors()}" th:text="${err}">오류</div>
+        </div>
+        <!-- 항목 간 검증(@AssertTrue)의 오류는 메서드 이름에서 딴 프로퍼티에 붙는다.
+             여기서 그려주지 않으면 아무 설명 없이 폼만 되돌아온다. -->
+        <div th:if="${#fields.hasErrors('dateRangeOrdered')}" class="alert alert-danger py-2"
+             th:errors="*{dateRangeOrdered}">오류</div>
+        <div th:if="${#fields.hasErrors('dateRangeWithinLimit')}" class="alert alert-danger py-2"
+             th:errors="*{dateRangeWithinLimit}">오류</div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="roomTypeId" class="form-label">객실타입</label>
+                        <select id="roomTypeId" class="form-select" th:field="*{roomTypeId}"
+                                th:classappend="${#fields.hasErrors('roomTypeId')} ? 'is-invalid'">
+                            <option value="">선택하세요</option>
+                            <option th:each="rt : ${roomTypes}" th:value="${rt.id}"
+                                    th:text="${rt.name} + ' (' + ${rt.code} + ')'"
+                                    th:disabled="${!rt.active}">디럭스 더블</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{roomTypeId}">오류</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="fromDate" class="form-label">시작일</label>
+                        <input type="date" id="fromDate" class="form-control" th:field="*{fromDate}"
+                               th:classappend="${#fields.hasErrors('fromDate')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{fromDate}">오류</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="toDate" class="form-label">종료일</label>
+                        <input type="date" id="toDate" class="form-control" th:field="*{toDate}"
+                               th:classappend="${#fields.hasErrors('toDate')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{toDate}">오류</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="totalQty" class="form-label">판매 총량</label>
+                        <input type="number" id="totalQty" class="form-control" th:field="*{totalQty}"
+                               th:classappend="${#fields.hasErrors('totalQty')} ? 'is-invalid'"
+                               min="0" placeholder="비우면 호실 수">
+                        <div class="invalid-feedback" th:errors="*{totalQty}">오류</div>
+                        <div class="form-text">
+                            비워 두면 해당 객실타입의 <b>사용 중인 호실 수</b>를 씁니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-secondary small">
+            <div class="fw-semibold mb-1">이미 예약이 잡힌 날짜는 어떻게 되나요?</div>
+            판매 총량을 <b>이미 확정·점유된 수량보다 적게</b> 줄이려는 날짜는 건너뜁니다.
+            줄였다면 오버부킹이 되기 때문입니다. 건너뛴 날짜와 사유는 처리 후 목록에 표시됩니다.
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">생성</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/inventory}">취소</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

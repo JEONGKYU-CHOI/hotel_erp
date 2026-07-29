@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>재고 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1">일자별 재고</h1>
+            <p class="text-secondary small mb-0">
+                가용 = 판매총량 − 확정 − 점유. 잠글 대상 행이 있어야 동시성 제어가 되므로 미리 만들어 둡니다.
+            </p>
+        </div>
+        <a class="btn btn-primary ms-auto"
+           th:href="@{/admin/inventory/generate(roomTypeId=${roomTypeId})}">재고 생성</a>
+    </div>
+
+    <!-- 건너뛴 날짜는 성공 메시지와 분리해 보여준다. 묻히면 나중에 예약 사고로 발견한다. -->
+    <div th:if="${skipped}" class="alert alert-warning">
+        <div class="fw-semibold mb-2">건너뛴 날짜 <span th:text="${#lists.size(skipped)}">0</span>건</div>
+        <ul class="small mb-0 ps-3">
+            <li th:each="s : ${skipped}">
+                <b th:text="${#temporals.format(s.stayDate, 'yyyy-MM-dd')}">2026-07-29</b>
+                <span th:text="${s.reason}">사유</span>
+            </li>
+        </ul>
+    </div>
+
+    <form class="card card-body mb-3" method="get" th:action="@{/admin/inventory}">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label for="roomTypeId" class="form-label small">객실타입</label>
+                <select id="roomTypeId" name="roomTypeId" class="form-select">
+                    <option value="">선택하세요</option>
+                    <option th:each="rt : ${roomTypes}" th:value="${rt.id}"
+                            th:text="${rt.name} + ' (' + ${rt.code} + ')'"
+                            th:selected="${rt.id == roomTypeId}">디럭스 더블</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="from" class="form-label small">시작일</label>
+                <input type="date" id="from" name="from" class="form-control"
+                       th:value="${#temporals.format(from, 'yyyy-MM-dd')}">
+            </div>
+            <div class="col-md-3">
+                <label for="to" class="form-label small">종료일</label>
+                <input type="date" id="to" name="to" class="form-control"
+                       th:value="${#temporals.format(to, 'yyyy-MM-dd')}">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" type="submit">조회</button>
+            </div>
+        </div>
+    </form>
+
+    <div th:if="${roomTypeId == null}" class="alert alert-secondary">
+        객실타입을 선택하고 조회하세요.
+    </div>
+
+    <div th:if="${roomTypeId != null}">
+        <p class="small text-secondary">
+            이 객실타입의 사용 중인 호실 수: <b th:text="${activeRoomCount}">0</b>개
+            — 재고 생성 시 판매 총량의 기본값입니다.
+        </p>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width:12rem;">일자</th>
+                        <th style="width:8rem;" class="text-end">판매총량</th>
+                        <th style="width:8rem;" class="text-end">확정</th>
+                        <th style="width:8rem;" class="text-end">점유</th>
+                        <th style="width:8rem;" class="text-end">가용</th>
+                        <th>판매율</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="inv : ${inventories}">
+                        <td>
+                            <span th:text="${#temporals.format(inv.stayDate, 'yyyy-MM-dd (E)')}">2026-07-29</span>
+                        </td>
+                        <td class="text-end" th:text="${inv.totalQty}">10</td>
+                        <td class="text-end" th:text="${inv.soldQty}">0</td>
+                        <td class="text-end" th:text="${inv.heldQty}">0</td>
+                        <td class="text-end fw-semibold"
+                            th:classappend="${inv.availableQty() == 0} ? 'text-danger' : ''"
+                            th:text="${inv.availableQty()}">10</td>
+                        <td>
+                            <div class="progress" style="height:.5rem;" th:if="${inv.totalQty > 0}">
+                                <div class="progress-bar"
+                                     th:classappend="${inv.availableQty() == 0} ? 'bg-danger' : ''"
+                                     th:style="'width:' + ${inv.committedQty() * 100 / inv.totalQty} + '%'"></div>
+                            </div>
+                            <span class="small text-secondary" th:if="${inv.totalQty == 0}">판매 중지</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(inventories)}">
+                        <td colspan="6" class="text-center text-secondary py-5">
+                            이 기간에 생성된 재고가 없습니다.
+                            <b>재고 생성</b>으로 먼저 만들어야 예약을 받을 수 있습니다.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <p class="small text-secondary mt-3 mb-0">
+        <b>확정</b>은 결제까지 끝난 예약, <b>점유</b>는 결제 대기 중인 임시 예약입니다.
+        임시 예약은 만료되면 자동으로 되돌아옵니다.
+    </p>
+</main>
+</body>
+</html>

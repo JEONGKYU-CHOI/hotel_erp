@@ -60,4 +60,14 @@ public interface RoomInventoryRepository extends JpaRepository<RoomInventory, Lo
 			@Param("roomTypeId") Long roomTypeId,
 			@Param("from") LocalDate from,
 			@Param("to") LocalDate to);
+
+	/**
+	 * 백오피스 재고 현황 조회 (락 없음, 읽기 전용).
+	 *
+	 * <p><b>이 메서드를 예약 확정 트랜잭션에서 부르면 안 된다.</b> 한 번이라도 부르면
+	 * 그 행이 영속성 컨텍스트에 등록되고, 뒤이은 락 조회가 DB 의 최신값 대신 캐시의
+	 * 옛 값을 돌려준다(D-018). 화면 표시 전용이다.
+	 */
+	List<RoomInventory> findByTenantIdAndRoomTypeIdAndStayDateBetweenOrderByStayDate(
+			Long tenantId, Long roomTypeId, LocalDate from, LocalDate to);
 }
