@@ -494,7 +494,7 @@ CHECK 제약은 위반 UPDATE 3종을 실제로 던져 error 3819 거부를 확�
 **감수하는 대가** 예약 확정 경로에서 재고를 미리 훑어보는 최적화를 쓸 수 없다.
 락 범위가 트랜잭션 전체로 넓어져 경합이 커진다 — 그래서 확정 트랜잭션을 짧게 유지해야 한다.
 
-**근거** 스파이크 코드와 실행 로그: `com.hotel.erp.common.support.spike.PessimisticLockSpike`.
+**근거** 스파이크 코드와 실행 로그: `io.github.jeongkyuchoi.hotel.erp.common.support.spike.PessimisticLockSpike`.
 실행 방법과 실측 결과는 그 클래스 주석과 커밋 `7a08a53` 메시지에 있다.
 
 ---
