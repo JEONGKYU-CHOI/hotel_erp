@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>호실 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1">호실</h1>
+            <p class="text-secondary small mb-0">배정 단위입니다. 예약 시점이 아니라 체크인 때 배정됩니다.</p>
+        </div>
+        <a class="btn btn-primary ms-auto" th:href="@{/admin/basedata/rooms/new}">등록</a>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:6rem;">층</th>
+                    <th style="width:8rem;">호실</th>
+                    <th>객실타입</th>
+                    <th style="width:8rem;">점유</th>
+                    <th style="width:8rem;">청결</th>
+                    <th style="width:7rem;">사용</th>
+                    <th style="width:12rem;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${rooms}">
+                    <td class="text-secondary" th:text="${r.floor} != null ? ${r.floor} + 'F' : '-'">1F</td>
+                    <td class="fw-semibold" th:text="${r.roomNo}">101</td>
+                    <td>
+                        <span th:text="${r.roomType.name}">디럭스 더블</span>
+                        <code class="small text-secondary ms-1" th:text="${r.roomType.code}">DLX</code>
+                    </td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${r.occupancyStatus.name() == 'VACANT'} ? 'text-bg-light' : 'text-bg-primary'"
+                              th:text="${r.occupancyStatus.label}">공실</span>
+                    </td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${r.cleanStatus.name() == 'OUT_OF_ORDER'} ? 'text-bg-danger'
+                                              : (${r.cleanStatus.name() == 'DIRTY'} ? 'text-bg-warning' : 'text-bg-light')"
+                              th:text="${r.cleanStatus.label}">청소완료</span>
+                    </td>
+                    <td>
+                        <span class="badge" th:classappend="${r.active} ? 'text-bg-success' : 'text-bg-secondary'"
+                              th:text="${r.active} ? '사용' : '중지'">사용</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary"
+                           th:href="@{/admin/basedata/rooms/{id}/edit(id=${r.id})}">수정</a>
+                        <form class="d-inline"
+                              th:action="@{/admin/basedata/rooms/{id}/toggle-active(id=${r.id})}"
+                              method="post">
+                            <button class="btn btn-sm"
+                                    th:classappend="${r.active} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                    th:text="${r.active} ? '사용중지' : '사용재개'"
+                                    type="submit">사용중지</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(rooms)}">
+                    <td colspan="7" class="text-center text-secondary py-5">
+                        등록된 호실이 없습니다. 객실타입을 먼저 만든 뒤 <b>등록</b>하세요.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="small text-secondary mt-3 mb-0">
+        <b>점유</b>는 예약과 체크인/체크아웃이 바꾸는 값이라 화면에서 직접 고칠 수 없습니다.
+        고장 처리는 <b>청결 상태</b>를 <b>사용불가</b>로 두세요.
+    </p>
+</main>
+</body>
+</html>

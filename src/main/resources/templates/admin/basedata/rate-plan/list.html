@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>요금정책 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1">요금정책</h1>
+            <p class="text-secondary small mb-0">객실타입별 판매 조건입니다. 일자별 차등 요금은 요금 캘린더에서 다룹니다.</p>
+        </div>
+        <a class="btn btn-primary ms-auto" th:href="@{/admin/basedata/rate-plans/new}">등록</a>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>객실타입</th>
+                    <th style="width:8rem;">코드</th>
+                    <th>정책명</th>
+                    <th style="width:9rem;" class="text-end">기본요금</th>
+                    <th style="width:7rem;">조식</th>
+                    <th style="width:12rem;">취소 조건</th>
+                    <th style="width:7rem;">상태</th>
+                    <th style="width:12rem;"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="rp : ${ratePlans}">
+                    <td class="small">
+                        <span th:text="${rp.roomType.name}">디럭스 더블</span>
+                    </td>
+                    <td><code th:text="${rp.code}">BAR</code></td>
+                    <td th:text="${rp.name}">조식포함</td>
+                    <!-- #numbers 로 천 단위 구분자를 넣는다. 금액을 붙여 쓰면 자릿수를 잘못 읽는다. -->
+                    <td class="text-end" th:text="'₩' + ${#numbers.formatInteger(rp.baseAmount, 0, 'COMMA')}">₩150,000</td>
+                    <td>
+                        <span class="badge" th:classappend="${rp.breakfastIncluded} ? 'text-bg-info' : 'text-bg-light'"
+                              th:text="${rp.breakfastIncluded} ? '포함' : '불포함'">포함</span>
+                    </td>
+                    <td class="small">
+                        <span th:if="${rp.refundable}">
+                            <span th:text="${rp.cancelDeadlineDays}">1</span>일 전까지 무료<br>
+                            <span class="text-secondary">이후 위약금
+                                <span th:text="${#numbers.formatDecimal(rp.penaltyRate, 1, 0)}">0</span>%</span>
+                        </span>
+                        <span th:unless="${rp.refundable}" class="text-danger">환불 불가</span>
+                    </td>
+                    <td>
+                        <span class="badge" th:classappend="${rp.active} ? 'text-bg-success' : 'text-bg-secondary'"
+                              th:text="${rp.active} ? '판매중' : '중단'">판매중</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary"
+                           th:href="@{/admin/basedata/rate-plans/{id}/edit(id=${rp.id})}">수정</a>
+                        <form class="d-inline"
+                              th:action="@{/admin/basedata/rate-plans/{id}/toggle-active(id=${rp.id})}"
+                              method="post">
+                            <button class="btn btn-sm"
+                                    th:classappend="${rp.active} ? 'btn-outline-danger' : 'btn-outline-success'"
+                                    th:text="${rp.active} ? '판매중단' : '판매재개'"
+                                    type="submit">판매중단</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(ratePlans)}">
+                    <td colspan="8" class="text-center text-secondary py-5">
+                        등록된 요금정책이 없습니다. 객실타입을 먼저 만든 뒤 <b>등록</b>하세요.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="small text-secondary mt-3 mb-0">
+        여기서 요금을 바꿔도 <b>이미 잡힌 예약 금액은 변하지 않습니다.</b>
+        예약 시점 금액은 예약 일자별로 스냅샷이 저장되기 때문입니다. 의도된 설계입니다.
+    </p>
+</main>
+</body>
+</html>

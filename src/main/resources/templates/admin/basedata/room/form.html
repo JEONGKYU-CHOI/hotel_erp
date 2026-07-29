@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title th:text="${editing} ? '호실 수정 · 호텔 PMS' : '호실 등록 · 호텔 PMS'">호실</title>
+</head>
+<body>
+<main>
+    <h1 class="h4 mb-4" th:text="${editing} ? '호실 수정' : '호실 등록'">호실 등록</h1>
+
+    <form th:object="${form}" method="post"
+          th:action="${editing}
+                     ? @{/admin/basedata/rooms/{id}(id=${roomId})}
+                     : @{/admin/basedata/rooms}">
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="roomTypeId" class="form-label">객실타입</label>
+                        <select id="roomTypeId" class="form-select" th:field="*{roomTypeId}"
+                                th:classappend="${#fields.hasErrors('roomTypeId')} ? 'is-invalid'">
+                            <option value="">선택하세요</option>
+                            <option th:each="rt : ${roomTypes}"
+                                    th:value="${rt.id}"
+                                    th:text="${rt.name} + ' (' + ${rt.code} + ')'"
+                                    th:disabled="${!rt.active}">디럭스 더블 (DLX)</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{roomTypeId}">오류</div>
+                        <div class="form-text">판매중단된 타입은 선택할 수 없습니다.</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="roomNo" class="form-label">호실 번호</label>
+                        <input type="text" id="roomNo" class="form-control" th:field="*{roomNo}"
+                               th:classappend="${#fields.hasErrors('roomNo')} ? 'is-invalid'"
+                               placeholder="101">
+                        <div class="invalid-feedback" th:errors="*{roomNo}">오류</div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="floor" class="form-label">층</label>
+                        <input type="number" id="floor" class="form-control" th:field="*{floor}"
+                               th:classappend="${#fields.hasErrors('floor')} ? 'is-invalid'"
+                               placeholder="1">
+                        <div class="invalid-feedback" th:errors="*{floor}">오류</div>
+                        <div class="form-text">비워둘 수 있습니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="cleanStatus" class="form-label">청결 상태</label>
+                        <select id="cleanStatus" class="form-select" th:field="*{cleanStatus}"
+                                th:classappend="${#fields.hasErrors('cleanStatus')} ? 'is-invalid'">
+                            <option th:each="cs : ${cleanStatuses}"
+                                    th:value="${cs}" th:text="${cs.label}">청소완료</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{cleanStatus}">오류</div>
+                        <div class="form-text">고장 처리는 <b>사용불가</b>를 선택합니다.</div>
+                    </div>
+
+                    <!--
+                      점유 상태는 보여주기만 한다. 예약과 체크인/체크아웃이 바꾸는 값이라
+                      기준정보 화면에서 임의로 되돌리면 투숙 중인 방에 다른 손님을
+                      배정하는 사고가 난다.
+                    -->
+                    <div class="col-md-4" th:if="${editing}">
+                        <label class="form-label">점유 상태</label>
+                        <input type="text" class="form-control" disabled
+                               th:value="${occupancyStatus.label}">
+                        <div class="form-text">예약·체크인이 관리합니다. 여기서 바꿀 수 없습니다.</div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="active"
+                                   th:field="*{active}">
+                            <label class="form-check-label" for="active">사용</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit"
+                    th:text="${editing} ? '저장' : '등록'">등록</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/basedata/rooms}">취소</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

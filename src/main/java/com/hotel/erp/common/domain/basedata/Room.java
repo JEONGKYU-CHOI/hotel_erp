@@ -80,6 +80,29 @@ public class Room extends BaseEntity {
 		this.active = active;
 	}
 
+	/**
+	 * 기준정보 수정.
+	 *
+	 * <p>{@code occupancyStatus} 가 여기 없는 것은 실수가 아니다. 점유 상태는
+	 * <b>예약과 체크인/체크아웃이 바꾸는 값</b>이지 사람이 화면에서 고르는 값이 아니다.
+	 * 기준정보 화면에서 임의로 VACANT 로 되돌릴 수 있으면, 투숙 중인 방에
+	 * 다른 손님을 배정하는 사고가 난다.
+	 *
+	 * <p>반대로 청결 상태는 여기서 바꿀 수 있어야 한다. 고장으로 인한
+	 * {@link CleanStatus#OUT_OF_ORDER} 처리가 기준정보 담당의 일이기 때문이다.
+	 */
+	public void update(RoomType roomType, String roomNo, Short floor, CleanStatus cleanStatus) {
+		this.roomType = roomType;
+		this.roomNo = roomNo;
+		this.floor = floor;
+		this.cleanStatus = cleanStatus;
+	}
+
+	/** 사용 중지는 삭제가 아니라 비활성화다. 과거 예약이 이 호실을 참조한다. */
+	public void changeActive(boolean active) {
+		this.active = active;
+	}
+
 	/** 배정 가능한 호실인가. 체크인 시 호실을 고르는 기준이다. */
 	public boolean isAssignable() {
 		return active

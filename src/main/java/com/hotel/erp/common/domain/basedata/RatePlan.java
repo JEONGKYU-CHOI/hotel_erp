@@ -81,4 +81,31 @@ public class RatePlan extends BaseEntity {
 		this.penaltyRate = penaltyRate;
 		this.active = active;
 	}
+
+	/**
+	 * 수정. {@code code} 는 발급 후 바꾸지 않는다(다른 데이터가 참조하는 식별자).
+	 *
+	 * <p>{@code roomType} 은 바꿀 수 있게 둔다. 요금정책을 잘못된 타입에 붙였을 때
+	 * 지우고 다시 만들면 코드를 재사용할 수 없기 때문이다.
+	 *
+	 * <p><b>주의</b> — 여기서 금액을 바꿔도 <b>이미 잡힌 예약 금액은 변하지 않는다.</b>
+	 * 예약 시점 금액은 {@code reservation_night} 에 스냅샷으로 복사돼 있다.
+	 * 그것이 이 설계의 의도다.
+	 */
+	public void update(RoomType roomType, String name, BigDecimal baseAmount,
+			boolean breakfastIncluded, boolean refundable,
+			short cancelDeadlineDays, BigDecimal penaltyRate) {
+		this.roomType = roomType;
+		this.name = name;
+		this.baseAmount = baseAmount;
+		this.breakfastIncluded = breakfastIncluded;
+		this.refundable = refundable;
+		this.cancelDeadlineDays = cancelDeadlineDays;
+		this.penaltyRate = penaltyRate;
+	}
+
+	/** 판매 재개/중단. 삭제하지 않는다 — 과거 예약이 이 정책을 참조한다. */
+	public void changeActive(boolean active) {
+		this.active = active;
+	}
 }
