@@ -183,6 +183,19 @@ public class Reservation extends BaseEntity {
 		night.assignTo(this);
 	}
 
+	/**
+	 * {@code totalAmount} 를 야간 스냅샷 합계로 다시 계산한다.
+	 *
+	 * <p>합계를 밖에서 받아 세팅하지 않고 야간 목록에서 직접 더한다 —
+	 * {@code total_amount} 와 {@code reservation_night} 합이 어긋날 여지를 없앤다.
+	 * {@link #addNight}로 야간을 모두 채운 뒤 호출한다.
+	 */
+	public void recalculateTotalAmount() {
+		this.totalAmount = nights.stream()
+				.map(ReservationNight::getRateAmount)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+	}
+
 	/** 숙박일수. 파생값이므로 컬럼으로 두지 않는다. */
 	public int nights() {
 		return (int) java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate);

@@ -1,6 +1,7 @@
 package io.github.jeongkyuchoi.hotel.erp.common.domain.inventory;
 
 import io.github.jeongkyuchoi.hotel.erp.common.domain.support.BaseEntity;
+import io.github.jeongkyuchoi.hotel.erp.common.exception.NotEnoughInventoryException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -101,5 +102,62 @@ public class RoomInventory extends BaseEntity {
 					"이미 판매·점유된 수량(" + committedQty() + ")보다 적게 설정할 수 없습니다.");
 		}
 		this.totalQty = newTotalQty;
+	}
+
+	/**
+	 * 임시점유. {@code heldQty} 를 올린다. 오버부킹의 <b>1차 방어선</b>이다.
+	 *
+	 * <p><b>이 메서드가 안전하려면 호출자가 이 엔티티를 {@code FOR UPDATE} 로 잠근 채
+	 * 넘겨야 한다(D-018).</b> 락 없이 읽은 엔티티라면 {@link #availableQty()} 가
+	 * REPEATABLE READ 스냅샷의 옛 값이라, 검사를 통과하고도 커밋 시점에 오버부킹이 된다.
+	 * 이 메서드는 그것을 알 수 없으므로 호출 규약으로 못 박는다 — 예약 확정 서비스가
+	 * 락 조회로 얻은 행에만 부른다.
+	 *
+	 * @throws NotEnoughInventoryException 가용 재고가 부족할 때. 트랜잭션을 롤백시킨다.
+	 */
+	public void hold(int qty) {
+		if (qty <= 0) {
+			throw new IllegalArgumentException("점유 수량은 1 이상이어야 합니다. qty=" + qty);
+		}
+		if (availableQty() < qty) {
+			throw new NotEnoughInventoryException(
+					stayDate + " 재고 부족: 가용 " + availableQty() + " < 요청 " + qty);
+		}
+		this.heldQty += qty;
+	}
+
+	/**
+	 * 임시점유 해제. HOLD 만료·취소 시 {@code heldQty} 를 되돌린다(D-003).
+	 *
+	 * <p>확정({@code sold})으로 넘어간 뒤에는 부르지 않는다 — 그건 {@code soldQty} 를
+	 * 되돌리는 별도 경로(취소·환불)의 일이다.
+	 */
+	public void releaseHold(int qty) {
+		if (qty <= 0) {
+			throw new IllegalArgumentException("해제 수량은 1 이상이어야 합니다. qty=" + qty);
+		}
+		if (heldQty < qty) {
+			throw new IllegalStateException(
+					stayDate + " 점유 해제 불가: 점유 " + heldQty + " < 해제 " + qty);
+		}
+		this.heldQty -= qty;
+	}
+
+	/**
+	 * 점유 → 확정 전이. 결제 성공 시 {@code heldQty} 를 {@code soldQty} 로 옮긴다.
+	 *
+	 * <p>총량은 그대로이므로 CHECK 제약을 새로 위협하지 않는다. 점유분이 이미
+	 * 총량 안에 있었기 때문이다.
+	 */
+	public void confirmHold(int qty) {
+		if (qty <= 0) {
+			throw new IllegalArgumentException("확정 수량은 1 이상이어야 합니다. qty=" + qty);
+		}
+		if (heldQty < qty) {
+			throw new IllegalStateException(
+					stayDate + " 확정 불가: 점유 " + heldQty + " < 확정 " + qty);
+		}
+		this.heldQty -= qty;
+		this.soldQty += qty;
 	}
 }

@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
  * 통과해도 운영(8.4)과 다른 엔진에서 검증한 것이 되어 의미가 없다.
  */
 @TestConfiguration(proxyBeanMethods = false)
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 
 	/** 로컬 개발 서버와 동일한 버전으로 고정한다. */
 	private static final DockerImageName MYSQL_IMAGE = DockerImageName.parse("mysql:8.4");
