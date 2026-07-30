@@ -61,7 +61,11 @@ export default function PaymentSuccessPage() {
         <div><dt>결제 금액</dt><dd>{Number(result.amount).toLocaleString()}원</dd></div>
         <div><dt>상태</dt><dd>{result.status}</dd></div>
       </dl>
-      <p><Link to="/">← 처음으로</Link></p>
+      <p>
+        <Link to={`/lookup?no=${encodeURIComponent(result.orderId)}`}>예약 상세 보기</Link>
+        {'  ·  '}
+        <Link to="/">처음으로</Link>
+      </p>
     </div>
   )
 }

@@ -20,6 +20,36 @@
   text-decoration: none;
   color: inherit;
 }
+.topnav {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+}
+.topnav a {
+  text-decoration: none;
+  color: #4b5563;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.topnav a:hover { color: #2563eb; }
+
+/* 예약 상태 배지 */
+.status-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  background: #f3f4f6;
+  color: #374151;
+}
+.status-badge.s-CONFIRMED { background: #ecfdf5; color: #047857; }
+.status-badge.s-CHECKED_IN { background: #eff6ff; color: #1d4ed8; }
+.status-badge.s-HOLD { background: #fffbeb; color: #b45309; }
+.status-badge.s-CANCELLED,
+.status-badge.s-EXPIRED,
+.status-badge.s-NO_SHOW { background: #fef2f2; color: #b91c1c; }
 
 .card {
   background: #fff;

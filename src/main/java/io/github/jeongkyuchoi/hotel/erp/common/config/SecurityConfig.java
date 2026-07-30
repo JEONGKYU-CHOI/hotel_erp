@@ -101,7 +101,7 @@ public class SecurityConfig {
 						// React SPA 클라이언트 라우트(D-035). WebMvcConfig 가 index.html 로
 						// forward 하는 경로들 — permitAll 이 아니면 anyRequest 에 걸려 로그인으로
 						// 튕긴다. 결제 착지(/payment/success·fail)도 인증 주체 없는 공개 경로다.
-						.requestMatchers("/book", "/payment/**").permitAll()
+						.requestMatchers("/book", "/payment/**", "/lookup").permitAll()
 						// 기동 확인용. 상세 정보는 인증된 사용자에게만 보인다(application.yml).
 						.requestMatchers("/actuator/health").permitAll()
 						// /error 를 열어두지 않으면 모든 404 가 로그인 페이지로 튕긴다.

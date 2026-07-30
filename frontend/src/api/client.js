@@ -45,4 +45,7 @@ export const api = {
   paymentConfig: () => request('/payments/config'),
   // 결제 승인 → 예약 확정. 결제창 성공 후 paymentKey/orderId/amount 를 넘긴다.
   confirmPayment: (payload) => request('/payments/confirm', { method: 'POST', body: payload }),
+  // 예약 조회 (예약번호 + 전화). 비회원 소유 확인 경로(D-028).
+  lookup: (reservationNo, phone) =>
+    request(`/reservations/${encodeURIComponent(reservationNo)}`, { params: { phone } }),
 }
