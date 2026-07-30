@@ -1,6 +1,6 @@
-# HANDOFF — 호텔 PMS + 부킹엔진 (Day 3 종료)
+# HANDOFF — 호텔 PMS + 부킹엔진 (Day 3 + 결제)
 
-- 작성일: 2026-07-30
+- 작성일: 2026-07-31 (Day 3 이어서 결제 모듈 추가)
 - 브랜치: **`dev`** (개발선). `main` 은 안정 기준선·원격 기본 브랜치 — D-033.
 - **함께 로드할 파일 (중복 수록 안 함 — 반드시 읽을 것)**
   - `docs/decisions.md` — 설계 결정 D-001~D-033 전체
@@ -16,6 +16,11 @@
 전 구간과, 그 위의 **백오피스 화면 · 부킹엔진 REST · 회원 JWT 인증**까지 섰다. 핵심 3과제
 (오버부킹 0 · HOLD 만료 복원 · 마감 멱등)는 Day 2에 완성됐고, Day 3은 그 위에 취소·조회·
 체크인아웃·화면·REST·인증을 얹었다. 전 기능이 Testcontainers(실제 MySQL) 통합테스트로 검증됨.
+
+결제 모듈 완료(2026-07-31, D-034): 토스 승인이 확정 트리거. 2중 금액 위변조 검증(요청·응답
+vs 서버 저장액) · 3겹 멱등(선조회+UNIQUE+확정서비스) · 웹훅 사후 정합 · 확정 REST 노출.
+`POST /api/payments/confirm`·`/webhook`. 전체 스위트 71건 통과(실제 MySQL, 토스만 mock).
+토스 키는 환경변수/`application-local.yml`(local 프로파일, gitignore)로만 — 커밋 안 됨.
 
 Day 3 커밋 8건 (dev):
 ```
@@ -67,26 +72,24 @@ a50dff2  feat: add night-close batch with proven posting idempotency     (D-026)
 
 ## 3. 즉시 다음 단계
 
-추천 순서(외부 준비물 없는 것 먼저): 체크인아웃(완료) → 회원인증(완료) → **결제** → **React**.
+추천 순서: 체크인아웃(완료) → 회원인증(완료) → 결제(완료, D-034) → **React** → 회원예약연결 → NO_SHOW.
 
-1. **결제 모듈 (확정 트리거).** HOLD→CONFIRMED 를 결제 성공으로 잇는다. 토스페이먼츠 연동
-   (금액 위변조 검증 · 멱등 · 승인 API · 웹훅 중복 처리). 확정 REST 노출도 여기서(D-030 §2).
-   **단, 토스페이먼츠 테스트 키/SDK 등 사용자 준비물이 필요하다** — 키 확보 여부를 먼저 확인.
-   `ReservationConfirmService` 는 이미 있어 배선 중심.
-2. **키가 아직 없으면 → React 부킹엔진 화면 먼저.** 방금 만든 `/api`(availability·hold·lookup·
-   auth·me)를 소비. 날짜선택→가용→HOLD→결제대기→조회 흐름. JS/Vite(D-013), 별도 스택.
-3. **회원 예약 연결.** 로그인 회원의 HOLD 에 `memberId` 연결 + `GET /api/me/reservations`.
+1. **React 부킹엔진 화면 (다음 순위).** `/api`(availability·hold·lookup·auth·me·**payments/confirm**)를
+   소비. 날짜선택→가용→HOLD→**결제창(토스 클라이언트 키·`/api/payments/confirm` 연동)**→조회 흐름.
+   결제 백엔드가 섰으니 여기서 처음으로 **진짜 end-to-end 결제**가 돈다(지금까진 mock 검증만).
+   JS/Vite(D-013), 별도 스택. 토스 결제위젯 SDK + 클라이언트 키 필요(둘 다 확보됨).
+2. **회원 예약 연결.** 로그인 회원의 HOLD 에 `memberId` 연결 + `GET /api/me/reservations`.
    현재 hold 는 비회원만(memberId=null). 인증 컨텍스트의 회원 id 를 커맨드에 싣는다.
-4. **NO_SHOW 판정.** 당일 미투숙 CONFIRMED → NO_SHOW 를 야간마감(D-026)에 붙인다.
+3. **NO_SHOW 판정.** 당일 미투숙 CONFIRMED → NO_SHOW 를 야간마감(D-026)에 붙인다.
    라이프사이클 전이는 이미 갖춰짐(D-031).
 
 ---
 
 ## 4. 결정과 근거
 
-이번 세션의 설계 결정은 `docs/decisions.md` **D-026~D-033** 에 있다(야간마감 멱등 / 취소 /
-조회 / 백오피스 화면 / 부킹 REST / 체크인아웃 / JWT 인증 / 브랜치 전략). 여기서 재서술하지
-않는다 — 같은 결정이 두 곳에 살면 반드시 어긋난다.
+이번 세션의 설계 결정은 `docs/decisions.md` **D-026~D-034** 에 있다(야간마감 멱등 / 취소 /
+조회 / 백오피스 화면 / 부킹 REST / 체크인아웃 / JWT 인증 / 브랜치 전략 / **결제 D-034**).
+여기서 재서술하지 않는다 — 같은 결정이 두 곳에 살면 반드시 어긋난다.
 
 핸드오프에만 남기는 판단(이번 작업의 순서·처리):
 - **추천 순서대로 갔다** — 외부 의존 없는 체크인아웃·인증을 먼저 끝내고, 키가 필요한 결제와
