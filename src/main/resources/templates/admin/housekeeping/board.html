@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>하우스키핑 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1">하우스키핑</h1>
+            <p class="text-secondary small mb-0">
+                체크아웃한 호실을 청소한다. 청소필요 → 청소중 → 청소완료 순으로 처리하면 다시 배정 대상이 됩니다.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:6rem;">층</th>
+                    <th style="width:8rem;">호실</th>
+                    <th>객실타입</th>
+                    <th style="width:8rem;">청소 상태</th>
+                    <th style="width:12rem;" class="text-end">처리</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${rooms}">
+                    <td th:text="${r.floor} ?: '-'">3</td>
+                    <td class="fw-semibold" th:text="${r.roomNo}">301</td>
+                    <td th:text="${r.roomType.name}">디럭스 더블</td>
+                    <td>
+                        <span th:if="${r.cleanStatus.name() == 'DIRTY'}"
+                              class="badge text-bg-warning" th:text="${r.cleanStatus.label}">청소필요</span>
+                        <span th:if="${r.cleanStatus.name() == 'IN_PROGRESS'}"
+                              class="badge text-bg-info" th:text="${r.cleanStatus.label}">청소중</span>
+                    </td>
+                    <td class="text-end">
+                        <form th:if="${r.cleanStatus.name() == 'DIRTY'}"
+                              th:action="@{/admin/housekeeping/{id}/start(id=${r.id})}" method="post"
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">청소 시작</button>
+                        </form>
+                        <form th:if="${r.cleanStatus.name() == 'IN_PROGRESS'}"
+                              th:action="@{/admin/housekeeping/{id}/finish(id=${r.id})}" method="post"
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-success">청소 완료</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${rooms.isEmpty()}">
+                    <td colspan="5" class="text-secondary text-center py-4">
+                        청소할 호실이 없습니다. 모든 호실이 정리되어 있습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

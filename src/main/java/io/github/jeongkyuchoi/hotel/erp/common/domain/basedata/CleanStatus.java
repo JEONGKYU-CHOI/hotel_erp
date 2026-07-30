@@ -20,6 +20,8 @@ public enum CleanStatus {
 	CLEAN("청소완료"),
 	/** 청소 필요 */
 	DIRTY("청소필요"),
+	/** 청소 진행 중(D-040) */
+	IN_PROGRESS("청소중"),
 	/** 청소 후 점검 완료 */
 	INSPECTED("점검완료"),
 	/** 고장 등으로 판매 불가 */

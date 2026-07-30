@@ -138,4 +138,32 @@ public class Room extends BaseEntity {
 		this.occupancyStatus = OccupancyStatus.VACANT;
 		this.cleanStatus = CleanStatus.DIRTY;
 	}
+
+	/**
+	 * 청소 시작 — DIRTY → IN_PROGRESS(D-040). 진행 중 표시로 두 직원이 같은 방을 잡는 혼선을
+	 * 막는다. 호출자(하우스키핑 서비스)가 이 호실 행을 {@code FOR UPDATE} 로 잠근 채 부른다.
+	 *
+	 * @throws IllegalStateException 청소필요 상태가 아니면(이미 청소 중·완료 등).
+	 */
+	public void startCleaning() {
+		if (cleanStatus != CleanStatus.DIRTY) {
+			throw new IllegalStateException(
+					"청소필요 상태만 청소를 시작할 수 있습니다. room=" + roomNo + " clean=" + cleanStatus);
+		}
+		this.cleanStatus = CleanStatus.IN_PROGRESS;
+	}
+
+	/**
+	 * 청소 완료 — IN_PROGRESS → CLEAN(D-040). 완료되면 다시 {@link #isAssignable} 를 만족해
+	 * 체크인 배정 대상이 된다.
+	 *
+	 * @throws IllegalStateException 청소중 상태가 아니면.
+	 */
+	public void finishCleaning() {
+		if (cleanStatus != CleanStatus.IN_PROGRESS) {
+			throw new IllegalStateException(
+					"청소중 상태만 완료할 수 있습니다. room=" + roomNo + " clean=" + cleanStatus);
+		}
+		this.cleanStatus = CleanStatus.CLEAN;
+	}
 }
