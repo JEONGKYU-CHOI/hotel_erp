@@ -1,111 +1,85 @@
-# HANDOFF — 호텔 PMS + 부킹엔진 (Day 3 + 결제 + React 부킹화면)
+# HANDOFF — 호텔 PMS + 부킹엔진 (정산·환불·하우스키핑까지)
 
-- 작성일: 2026-07-31 (Day 3 이어서 결제 모듈 + React 부킹엔진 화면)
+- 작성일: 2026-07-31 (폴리오·환불·하우스키핑 + 회원화면·위약금)
 - 브랜치: **`dev`** (개발선). `main` 은 안정 기준선·원격 기본 브랜치 — D-033.
 - **함께 로드할 파일 (중복 수록 안 함 — 반드시 읽을 것)**
-  - `docs/decisions.md` — 설계 결정 D-001~D-033 전체
+  - `docs/decisions.md` — 설계 결정 D-001~D-040
+    (이번: **D-037** 취소·노쇼 위약금 · **D-038** 폴리오 · **D-039** 환불 · **D-040** 하우스키핑)
   - `docs/troubleshooting.md` — 이 환경의 반복 함정
-  - `src/main/resources/db/migration/V1__init_schema.sql`, `V2__night_close.sql` — 스키마 + 근거 주석
+  - `src/main/resources/db/migration/V1~V7.sql` — 스키마 + 근거 주석
   - `git log` — 검증 수치와 판단 근거가 커밋 본문에 있음
 
 ---
 
 ## 1. 현재 상태 요약
 
-예약 도메인이 **HOLD → CONFIRMED → CHECKED_IN → CHECKED_OUT**(+ CANCELLED/EXPIRED) 라이프사이클
-전 구간과, 그 위의 **백오피스 화면 · 부킹엔진 REST · 회원 JWT 인증**까지 섰다. 핵심 3과제
-(오버부킹 0 · HOLD 만료 복원 · 마감 멱등)는 Day 2에 완성됐고, Day 3은 그 위에 취소·조회·
-체크인아웃·화면·REST·인증을 얹었다. 전 기능이 Testcontainers(실제 MySQL) 통합테스트로 검증됨.
+예약 라이프사이클이 **돈으로 닫혔다**: 예약 → 결제 → 투숙 → 체크아웃 → 청소 → 재배정,
+그리고 취소/노쇼 → 위약금 → 청구서(폴리오) → 환불 실행. 이번 세션에 그 위에 회원 화면
+(로그인·내 예약·청구서)·정책 위약금·정산·환불·하우스키핑을 얹었다. 핵심 3과제(오버부킹 0 ·
+HOLD 만료 복원 · 마감 멱등)와 고객 부킹엔진·회원 흐름은 이전 세션에 완성. **전 기능
+Testcontainers(실제 MySQL) 통합테스트 101건 통과.** 마이그레이션 V4~V7 추가.
 
-결제 모듈 완료(2026-07-31, D-034): 토스 승인이 확정 트리거. 2중 금액 위변조 검증(요청·응답
-vs 서버 저장액) · 3겹 멱등(선조회+UNIQUE+확정서비스) · 웹훅 사후 정합 · 확정 REST 노출.
-`POST /api/payments/confirm`·`/webhook`. 전체 스위트 71건 통과(실제 MySQL, 토스만 mock).
-토스 키는 환경변수/`application-local.yml`(local 프로파일, gitignore)로만 — 커밋 안 됨.
-
-React 부킹엔진 화면 완료(2026-07-31): `frontend/`(Vite+React19, JS). 흐름 = 검색(타입·날짜)
-→ 가용조회 → HOLD → 토스 결제창 → 승인·확정. 백엔드 보완: `GET /api/room-types`,
-`GET /api/room-types/{id}/rate-plans`, `GET /api/payments/config`(공개 클라이언트 키만).
-**실제 토스 테스트 결제로 end-to-end 검증됨** — 실 paymentKey 발급·금액검증·HOLD→CONFIRMED·
-결제기록·재고 held→sold 전부 확인, 에러 0(로그 근거). 미결제 HOLD 는 만료 회수도 실측.
-남은 다듬기: 프로덕션 SPA 라우팅 폴백(`/payment/success` 등에 Spring 이 index.html 서빙),
-예약 조회 화면(서브4). 결제 결과 착지는 `/payment/success`·`/payment/fail`(프록시 `/payments`
-와 겹치지 않게 단수 경로).
-
-Day 3 커밋 8건 (dev):
+이번 세션 커밋(dev, 최신순):
 ```
-9c97a0d  feat: add member JWT authentication (signup, login, /api/me)   (D-032)
-b5714d4  feat: add check-in/check-out with room assignment              (D-031)
-4d85d8a  feat: add booking engine REST (availability, hold, lookup)      (D-030)
-ec15b39  feat: add cancel action to backoffice reservation detail
-8c930a9  feat: add backoffice reservation list and detail screens        (D-029)
-66ed234  feat: add guest reservation lookup by reservation-no + phone    (D-028)
-a9faafd  feat: add reservation cancel with state-based inventory release (D-027)
-a50dff2  feat: add night-close batch with proven posting idempotency     (D-026)
+3e6af88 docs: record D-040 housekeeping cleaning flow decision
+7c167ed feat: add housekeeping cleaning flow DIRTY to CLEAN (D-040)
+9469106 docs: record D-039 refund execution decision
+e6ceaf0 feat: add refund execution via Toss payment cancel (D-039)
+6c287b3 docs: record D-038 folio (assembled billing statement) decision
+061c893 feat: add folio (billing statement) assembled on read (D-038)
+e041448 docs: record D-037 cancellation/no-show penalty policy decision
+ab42fa2 feat: add policy-based no-show fee, unified with cancellation (D-037)
+3c1224e feat: add cancellation fee policy on reservation cancel (D-037)
+cc90153 feat: add member login/signup and my-reservations screens
 ```
 
 ---
 
 ## 2. 핵심 맥락 (참조 파일에 없는 것만)
 
-### 2.1 작업 방식 — Day 1~2와 동일
-답변 한국어 · 착수 전 예상 시간/단계 고지 · 단계마다 끊어 보고 · "계속할까요?" 묻지 않고
-진행(되돌리기 어렵거나 외부 영향만 먼저 확인) · JPA/Spring 용어 설명 곁들임.
-
-### 2.2 환경 변화 (Day 2 대비)
-- **리포 삭제·재생성됨.** 원격 `github.com/JEONGKYU-CHOI/hotel_erp` 를 지우고 동명으로 다시
-  만들었다(D-033). **`main`(기본) + `dev`(개발)** 두 브랜치, 둘 다 클린 히스토리
-  (Claude author 0 · Co-authored-by 트레일러 0). 로컬도 정리 완료. 앞으로 커밋은 `dev` 에.
-- **JWT 도입(D-032).** `app.jwt.secret` 은 개발 기본값이 박혀 있으나 **운영은 환경변수
-  `JWT_SECRET` 주입 필수**. `app.jwt.access-token-validity: PT1H`. 의존성 jjwt 0.12.6 추가.
-- **V2 마이그레이션 추가**(`night_close`, D-026). 스키마 변경 시 엔티티와 함께 고칠 것(D-005).
-- **테스트 존재**: 예약(동시성·만료·확정·마감·취소·조회·체크인아웃) + 부킹 REST + 회원 인증 +
-  백오피스 화면. 전부 Testcontainers MySQL 8.4, Docker 필요.
-
-### 2.3 도메인·패키지 지도 (코드에 있지만 길잡이)
-- feature 패키지: `reservation`(서비스·dto), `booking`(부킹 REST·dto·web), `auth`(회원 인증),
-  `backoffice`(백오피스 화면·서비스·dto), `common`(도메인·설정·보안·예외).
-- 예약 서비스: `ReservationService.hold` / `ReservationConfirmService` / `ReservationExpiryService`
-  + `HoldExpiryScheduler` / `ReservationCancelService`(D-027) / `ReservationQueryService`(D-028) /
-  `StayService`(체크인아웃, D-031) / `NightCloseService`+`NightCloseScheduler`(D-026) /
-  `AvailabilityService`(무락 표시경로, D-030).
-- **락 규율(반드시 지킬 것)**: 재고 첫 조회는 `FOR UPDATE`(D-018) · 상태 전이는 예약 행 락
-  우선 · 락 순서는 항상 **예약 → 재고/호실**(D-025, D-031).
-- 인증: `common.security`(JwtTokenProvider·JwtAuthenticationFilter·RestAuthenticationEntryPoint).
-  `/api` 는 JWT 선택 인증(비회원 예약 경로 유지) · 백오피스는 세션(D-008/D-014).
-
-### 2.4 검증용 DB 데이터
-로컬 MySQL SPIKE 데이터는 Day 1 핸드오프(git 이력) 그대로 유효. 테스트는 Testcontainers
-격리라 이 데이터와 무관.
+- **폴리오는 조립형**(새 테이블 없음, D-038) — 예약·야간·결제를 읽어 청구서를 그때그때 조립.
+  상태별 청구액 규칙이 핵심(진행/완료=숙박료, 취소=cancellation_fee, 노쇼=no_show_fee, 만료=0).
+  환불하면 `payment.effectiveAmount`(= amount − canceled_amount)가 줄어 **폴리오 잔액이 자동
+  0 으로 수렴**한다(D-039). 취소·노쇼 위약금은 순수 함수 `CancellationPolicy` 로 통일(D-037).
+- **백오피스 라이브 검증엔 `dev` 프로파일이 필요하다.** 직원 계정(admin/staff · `dev1234!`)은
+  `DevAccountSeeder`(@Profile("dev"))가 시드한다. 로컬 실구동+백오피스 로그인은
+  `./gradlew bootRun --args='--spring.profiles.active=local,dev'` 로 띄운다 — local 만으로는
+  DB 는 붙지만 직원 로그인이 안 된다. (프론트 부킹엔진은 dev 불필요.)
+- **Mockito `eq(BigDecimal)` 는 scale 까지 비교한다** — `140000` ≠ `140000.00`. 결제/금액 검증
+  테스트에서 기대값 scale 을 실제(대개 .00)와 맞춰야 통과한다(RefundTest 에서 물렸음).
+- **에이전트 Bash 함정**: Windows python 은 MSYS `/tmp` 경로를 못 읽는다(curl `-o /tmp/..` 는
+  MSYS tmp 에 쓰지만 python 은 리터럴 `/tmp` 로 읽어 어긋남). 파일 대신 파이프로 넘길 것.
+  브라우저 pane 의 `read_page` 가 0x0(비컴포지팅)이면 `get_page_text`·`javascript_tool` 로 우회.
 
 ---
 
 ## 3. 즉시 다음 단계
 
-완료: 결제(D-034) → React 부킹화면(실결제 검증) → SPA 폴백(D-035) → 예약조회 화면 →
-회원예약연결(D-032 실현) → NO_SHOW(D-036). 고객 부킹엔진·야간마감 라이프사이클이 다 섰다.
+1. **환불 동시성 수정 (최우선).** `ReservationCancelService`·`ReservationConfirmService` 등은
+   전이 전 `findByIdForUpdate` 로 행을 잠그는데(D-025 규율), **`RefundService`(D-039)만 락 없이**
+   폴리오·결제를 읽고 취소한다. 동시 환불 요청 2건이 둘 다 `balance<0` 을 보고 둘 다 토스 취소를
+   부르면 이중 환불 여지 — 멱등은 순차 재요청만 막는다. → 결제 행을 `FOR UPDATE` 로 잠그고
+   환불하도록 고치고, 동시 이중환불 회귀 테스트 추가(ReservationCancelTest 의 `@RepeatedTest`
+   동시성 패턴 참고).
+2. **토스 웹훅 서명 검증** — D-034 에서 감수한 보안 갭. 위조 웹훅 오확정 방지.
+3. **환불/취소 행위자 기록 + 부분환불 이력** — 지금은 로그만, 원장에 누가·언제·개별 이벤트가 없다.
+4. **HOLD 만료 표시 규칙 통합** — `MyReservationSummary`·`ReservationDetail`·`FolioService` 가
+   "만료 지난 HOLD = EXPIRED 표시"를 각자 갖고 있다(3중복). 도메인 메서드로 모을 것.
+5. **troubleshooting.md 보강**(이번 세션 미반영분): python `/tmp` · 브라우저 0x0 · `local,dev`
+   로그인 — §2 의 함정들을 troubleshooting 에 승격.
 
-남은 후보(선택):
-1. **회원 화면(프론트).** 백엔드는 됐다 — `GET /api/me/reservations` + HOLD 회원연결(D-032).
-   React 에 로그인/회원가입 화면과 "내 예약" 목록을 붙이면 회원 흐름이 화면까지 완성된다.
-   현재 React 부킹은 비회원 경로만 쓴다(토큰 미전송).
-2. **노쇼/취소 과금 정교화.** NO_SHOW 는 지금 "첫날 게시"만(D-036). rate_plan.penalty_rate·
-   무료취소 기한을 반영한 위약금 계산은 후속. 취소(D-027)도 환불 정책 연동 여지.
-3. **하우스키핑.** 체크아웃이 호실을 DIRTY 로 두는 것까지만 있다(D-031). 청소 상태 전이
-   화면/흐름은 1차 범위 밖이었다.
-4. **폴리오/정산.** 야간마감이 reservation_night.posted 로 게시까지만 한다(V2 주석). 고객
-   청구서 원장은 후속 범위.
+전체 부족한 부분 리뷰(우선순위)는 이 세션 대화 말미에 정리돼 있다 — 위 1~5 가 그 상위 항목이다.
 
 ---
 
 ## 4. 결정과 근거
 
-이번 세션의 설계 결정은 `docs/decisions.md` **D-026~D-036** 에 있다(야간마감 멱등 / 취소 /
-조회 / 백오피스 화면 / 부킹 REST / 체크인아웃 / JWT 인증 / 브랜치 전략 / 결제 D-034 /
-SPA 폴백 D-035 / **NO_SHOW D-036**). 회원 예약 연결은 D-032 의 미실현분을 채운 것이다.
-여기서 재서술하지 않는다 — 같은 결정이 두 곳에 살면 반드시 어긋난다.
+이번 세션의 설계 결정은 `docs/decisions.md` **D-037~D-040** 에 있다(취소·노쇼 위약금 통일 /
+폴리오 조립형 / 환불 실행 백오피스 수동 / 하우스키핑 3단계). 여기서 재서술하지 않는다.
 
 핸드오프에만 남기는 판단(이번 작업의 순서·처리):
-- **추천 순서대로 갔다** — 외부 의존 없는 체크인아웃·인증을 먼저 끝내고, 키가 필요한 결제와
-  계약 안정 후가 유리한 React 를 뒤로 미뤘다. 근거는 각 세션 응답과 D-030~D-032.
-- **깃헙 Claude 잔상은 코드 문제가 아니었다** — `git filter-branch` 백업 ref(로컬) + 깃헙
-  기여자 캐시(원격). 리포 재생성으로 해소(D-033, troubleshooting §1).
+- **사용자 로드맵 순서대로 갔다** — 문서 빚(D-037 기록) → 폴리오 → 환불 → 하우스키핑.
+  돈이 정확히 정산되는 축(폴리오·환불)을 먼저, 운영 편의(하우스키핑)를 뒤로. 각 단계는 스펙을
+  먼저 좁히고(clarify-spec) 착수·테스트·라이브 검증·커밋했다.
+- **라이브 검증에서 실제 버그를 잡았다** — 만료 시각 지난 미청소 HOLD 를 폴리오가 raw HOLD 로
+  읽어 "미수"로 오표시. 목록·조회와 같은 규율(EXPIRED 표시)을 폴리오에도 적용해 정합(D-038 §3).
