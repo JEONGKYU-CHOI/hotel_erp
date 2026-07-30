@@ -1,8 +1,11 @@
 package io.github.jeongkyuchoi.hotel.erp.backoffice;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -56,6 +59,7 @@ class ReservationAdminScreenTest {
 
 	private Long reservationId;
 	private String reservationNo;
+	private Long roomTypeId;
 
 	@BeforeEach
 	void seed() {
@@ -63,6 +67,7 @@ class ReservationAdminScreenTest {
 				.tenantId(1L).code("SCR").name("스크린 테스트 타입")
 				.standardOccupancy(2).maxOccupancy(2).displayOrder(1).active(true)
 				.build());
+		roomTypeId = roomType.getId();
 		Long ratePlanId = ratePlanRepository.save(RatePlan.builder()
 				.tenantId(1L).roomType(roomType).code("SCRBAR").name("조식포함")
 				.baseAmount(new BigDecimal("100000")).breakfastIncluded(true).refundable(true)
@@ -104,7 +109,7 @@ class ReservationAdminScreenTest {
 	}
 
 	@Test
-	@DisplayName("상세 화면 — 200, 야간 스냅샷·요금정책 렌더링(트랜잭션 내 조립)")
+	@DisplayName("상세 화면 — 200, 야간 스냅샷·요금정책·취소 버튼 렌더링(트랜잭션 내 조립)")
 	void detailScreen_renders() throws Exception {
 		mockMvc.perform(get("/admin/reservations/{id}", reservationId))
 				.andExpect(status().isOk())
@@ -112,6 +117,26 @@ class ReservationAdminScreenTest {
 				.andExpect(content().string(org.hamcrest.Matchers.containsString(reservationNo)))
 				.andExpect(content().string(org.hamcrest.Matchers.containsString("조식포함")))
 				.andExpect(content().string(org.hamcrest.Matchers.containsString("일자별 요금")))
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("100,000원")));
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("100,000원")))
+				// 확정 예약이라 취소 버튼이 보인다.
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("예약 취소")));
+	}
+
+	@Test
+	@DisplayName("취소 POST → 리다이렉트, CANCELLED 전이·재고(sold) 반환")
+	void cancel_transitionsAndRestoresInventory() throws Exception {
+		mockMvc.perform(post("/admin/reservations/{id}/cancel", reservationId)
+						.param("reason", "고객 요청")
+						.with(csrf()))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/admin/reservations/" + reservationId));
+
+		var r = reservationRepository.findById(reservationId).orElseThrow();
+		org.assertj.core.api.Assertions.assertThat(r.getStatus().name()).isEqualTo("CANCELLED");
+		org.assertj.core.api.Assertions.assertThat(r.getCancelReason()).isEqualTo("고객 요청");
+		// 확정(sold=1)이 취소로 반환돼 0.
+		var inv = roomInventoryRepository
+				.findByRoomTypeIdAndStayDateBetweenOrderByStayDate(roomTypeId, D0, D0).get(0);
+		org.assertj.core.api.Assertions.assertThat(inv.getSoldQty()).isZero();
 	}
 }

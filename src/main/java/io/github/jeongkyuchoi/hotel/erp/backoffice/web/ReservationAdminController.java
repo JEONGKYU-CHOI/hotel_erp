@@ -2,6 +2,7 @@ package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 
 import io.github.jeongkyuchoi.hotel.erp.backoffice.service.ReservationAdminService;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationCancelService;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -10,8 +11,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * 백오피스 예약 목록·상세 화면(D-029).
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ReservationAdminController {
 
 	private final ReservationAdminService reservationAdminService;
+	private final ReservationCancelService reservationCancelService;
 
 	/** 상태 필터 드롭다운 선택지. enum 상수라 DB 조회가 없어 모든 화면에 실려도 비용이 없다. */
 	@ModelAttribute("statuses")
@@ -62,7 +66,28 @@ public class ReservationAdminController {
 	@GetMapping("/{id}")
 	public String detail(@PathVariable Long id, Model model) {
 		model.addAttribute("r", reservationAdminService.get(id));
+		model.addAttribute("reservationId", id);
 		return "admin/reservation/detail";
+	}
+
+	/**
+	 * 예약 취소. 취소 서비스가 직전 상태에 따라 재고를 되돌린다(D-027).
+	 *
+	 * <p>취소 불가 상태(CHECKED_IN 등)는 서비스가 {@link IllegalStateException} 으로 거부한다 —
+	 * 화면에서 버튼을 숨기지만(표시 상태 기반), 요청을 직접 만들어 보낼 수도 있으므로 서버에서도
+	 * 막고 오류 플래시로 되돌린다.
+	 */
+	@PostMapping("/{id}/cancel")
+	public String cancel(@PathVariable Long id,
+			@RequestParam(required = false) String reason,
+			RedirectAttributes redirect) {
+		try {
+			reservationCancelService.cancel(id, reason);
+			redirect.addFlashAttribute("flashSuccess", "예약을 취소했습니다.");
+		} catch (IllegalStateException e) {
+			redirect.addFlashAttribute("flashError", "취소할 수 없는 상태입니다.");
+		}
+		return "redirect:/admin/reservations/" + id;
 	}
 
 	/** 빈 문자열·미지의 값은 필터 없음(null)으로 취급한다. */

@@ -15,7 +15,34 @@
             </div>
             <p class="text-secondary small mb-0">예약 상세</p>
         </div>
-        <a class="btn btn-outline-secondary ms-auto" th:href="@{/admin/reservations}">목록으로</a>
+        <div class="ms-auto d-flex gap-2">
+            <!-- 취소 가능 상태(임시점유·확정)에서만 버튼을 연다. 표시 상태 기준이라
+                 만료로 보이는 예약에는 뜨지 않는다. 서버(D-027)도 상태를 재검증한다. -->
+            <button th:if="${r.status.name() == 'HOLD' or r.status.name() == 'CONFIRMED'}"
+                    class="btn btn-outline-danger" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#cancelPanel">예약 취소</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin/reservations}">목록으로</a>
+        </div>
+    </div>
+
+    <div class="collapse mb-3"
+         th:if="${r.status.name() == 'HOLD' or r.status.name() == 'CONFIRMED'}" id="cancelPanel">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h2 class="h6 text-danger mb-2">예약 취소</h2>
+                <p class="small text-secondary mb-3">
+                    취소하면 잡고 있던 재고가 즉시 반환됩니다. 되돌릴 수 없습니다.
+                </p>
+                <form method="post" th:action="@{/admin/reservations/{id}/cancel(id=${reservationId})}">
+                    <div class="mb-2">
+                        <label for="reason" class="form-label small">취소 사유 (선택)</label>
+                        <input type="text" id="reason" name="reason" class="form-control"
+                               maxlength="200" placeholder="예: 고객 요청">
+                    </div>
+                    <button class="btn btn-danger" type="submit">취소 확정</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <div class="row g-3">
