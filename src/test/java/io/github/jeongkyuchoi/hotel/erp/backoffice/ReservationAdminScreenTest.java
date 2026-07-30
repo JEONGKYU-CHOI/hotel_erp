@@ -1,0 +1,117 @@
+package io.github.jeongkyuchoi.hotel.erp.backoffice;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+import io.github.jeongkyuchoi.hotel.erp.TestcontainersConfiguration;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RatePlan;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RatePlanRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomType;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomTypeRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventory;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventoryRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
+import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationHoldCommand;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationConfirmService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationService;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+/**
+ * 백오피스 예약 목록·상세 화면 렌더링 테스트(D-029).
+ *
+ * <p><b>왜 렌더링까지 검증하나</b> — OSIV 를 껐으므로({@code open-in-view: false}) 템플릿이
+ * 지연로딩 연관을 건드리면 {@code LazyInitializationException} 이 난다. 목록의 fetch join,
+ * 상세의 트랜잭션 내 조립이 실제로 그 예외를 막는지, 상태 배지 프래그먼트가 해석되는지는
+ * 컨트롤러 호출만으로는 드러나지 않는다. MockMvc 로 HTML 을 실제로 만들어 확인한다.
+ */
+@Import(TestcontainersConfiguration.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@WithMockUser(username = "frontdesk", roles = "STAFF")
+class ReservationAdminScreenTest {
+
+	private static final LocalDate D0 = LocalDate.of(2033, 4, 5);
+
+	@Autowired private MockMvc mockMvc;
+	@Autowired private ReservationService reservationService;
+	@Autowired private ReservationConfirmService confirmService;
+	@Autowired private ReservationRepository reservationRepository;
+	@Autowired private RoomInventoryRepository roomInventoryRepository;
+	@Autowired private RoomTypeRepository roomTypeRepository;
+	@Autowired private RatePlanRepository ratePlanRepository;
+
+	private Long reservationId;
+	private String reservationNo;
+
+	@BeforeEach
+	void seed() {
+		RoomType roomType = roomTypeRepository.save(RoomType.builder()
+				.tenantId(1L).code("SCR").name("스크린 테스트 타입")
+				.standardOccupancy(2).maxOccupancy(2).displayOrder(1).active(true)
+				.build());
+		Long ratePlanId = ratePlanRepository.save(RatePlan.builder()
+				.tenantId(1L).roomType(roomType).code("SCRBAR").name("조식포함")
+				.baseAmount(new BigDecimal("100000")).breakfastIncluded(true).refundable(true)
+				.cancelDeadlineDays((short) 1).penaltyRate(new BigDecimal("0")).active(true)
+				.build()).getId();
+		for (LocalDate d : new LocalDate[] {D0, D0.plusDays(1)}) {
+			roomInventoryRepository.save(RoomInventory.builder()
+					.tenantId(1L).roomTypeId(roomType.getId()).stayDate(d)
+					.totalQty(5).soldQty(0).heldQty(0)
+					.build());
+		}
+		var held = reservationService.hold(new ReservationHoldCommand(
+				null, "홍길동", "010-1234-5678", "gil@example.com",
+				roomType.getId(), ratePlanId, D0, D0.plusDays(2), 2, 1, "idem-scr"));
+		confirmService.confirm(held.getId());
+		reservationId = held.getId();
+		reservationNo = held.getReservationNo();
+	}
+
+	@AfterEach
+	void cleanup() {
+		reservationRepository.deleteAll();
+		roomInventoryRepository.deleteAll();
+		ratePlanRepository.deleteAll();
+		roomTypeRepository.deleteAll();
+	}
+
+	@Test
+	@DisplayName("목록 화면 — 200, 예약번호·고객·타입 렌더링(지연로딩 예외 없음)")
+	void listScreen_renders() throws Exception {
+		mockMvc.perform(get("/admin/reservations"))
+				.andExpect(status().isOk())
+				.andExpect(view().name("admin/reservation/list"))
+				.andExpect(model().attributeExists("reservations"))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString(reservationNo)))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("홍길동")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("스크린 테스트 타입")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("확정"))); // 상태 배지
+	}
+
+	@Test
+	@DisplayName("상세 화면 — 200, 야간 스냅샷·요금정책 렌더링(트랜잭션 내 조립)")
+	void detailScreen_renders() throws Exception {
+		mockMvc.perform(get("/admin/reservations/{id}", reservationId))
+				.andExpect(status().isOk())
+				.andExpect(view().name("admin/reservation/detail"))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString(reservationNo)))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("조식포함")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("일자별 요금")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("100,000원")));
+	}
+}

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!--
+  예약 상태 배지. 목록과 상세가 공유한다. 색·한글 라벨을 한 곳에서 관리한다.
+  표시 상태는 서비스가 이미 조회 시점 만료(D-003)를 반영해 넘긴 값이다.
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<body>
+<th:block th:fragment="statusBadge(status)" th:switch="${status?.name()}">
+    <span th:case="'HOLD'"        class="badge text-bg-warning">임시점유</span>
+    <span th:case="'CONFIRMED'"   class="badge text-bg-success">확정</span>
+    <span th:case="'CHECKED_IN'"  class="badge text-bg-primary">투숙중</span>
+    <span th:case="'CHECKED_OUT'" class="badge text-bg-secondary">퇴실</span>
+    <span th:case="'CANCELLED'"   class="badge text-bg-danger">취소</span>
+    <span th:case="'NO_SHOW'"     class="badge text-bg-dark">노쇼</span>
+    <span th:case="'EXPIRED'"     class="badge text-bg-light border">만료</span>
+    <span th:case="*"             class="badge text-bg-light" th:text="${status}">-</span>
+</th:block>
+</body>
+</html>

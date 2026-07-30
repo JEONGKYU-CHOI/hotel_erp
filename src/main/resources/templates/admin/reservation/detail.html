@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>예약 상세 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h1 class="h4 mb-0" th:text="${r.reservationNo}">R2607301234</h1>
+                <th:block th:replace="~{admin/reservation/fragments :: statusBadge(${r.status})}"></th:block>
+            </div>
+            <p class="text-secondary small mb-0">예약 상세</p>
+        </div>
+        <a class="btn btn-outline-secondary ms-auto" th:href="@{/admin/reservations}">목록으로</a>
+    </div>
+
+    <div class="row g-3">
+        <!-- 고객 -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary mb-3">고객</h2>
+                    <dl class="row mb-0 small">
+                        <dt class="col-4 text-secondary">이름</dt>
+                        <dd class="col-8" th:text="${r.guestName}">홍길동</dd>
+                        <dt class="col-4 text-secondary">전화</dt>
+                        <dd class="col-8" th:text="${r.guestPhone}">010-0000-0000</dd>
+                        <dt class="col-4 text-secondary">이메일</dt>
+                        <dd class="col-8" th:text="${r.guestEmail} ?: '-'">gil@example.com</dd>
+                        <dt class="col-4 text-secondary">인원</dt>
+                        <dd class="col-8">
+                            성인 <span th:text="${r.adults}">2</span>
+                            · 아동 <span th:text="${r.children}">0</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- 숙박 -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="h6 text-secondary mb-3">숙박</h2>
+                    <dl class="row mb-0 small">
+                        <dt class="col-4 text-secondary">객실타입</dt>
+                        <dd class="col-8">
+                            <span th:text="${r.roomTypeName}">디럭스 더블</span>
+                            <span class="text-secondary" th:text="'(' + ${r.roomTypeCode} + ')'">(DLX)</span>
+                        </dd>
+                        <dt class="col-4 text-secondary">요금정책</dt>
+                        <dd class="col-8" th:text="${r.ratePlanName}">조식포함</dd>
+                        <dt class="col-4 text-secondary">체크인</dt>
+                        <dd class="col-8" th:text="${#temporals.format(r.checkInDate, 'yyyy-MM-dd (E)')}">2026-08-01</dd>
+                        <dt class="col-4 text-secondary">체크아웃</dt>
+                        <dd class="col-8" th:text="${#temporals.format(r.checkOutDate, 'yyyy-MM-dd (E)')}">2026-08-03</dd>
+                        <dt class="col-4 text-secondary">숙박일수</dt>
+                        <dd class="col-8"><span th:text="${r.nights}">2</span>박</dd>
+                        <dt class="col-4 text-secondary" th:if="${r.holdExpiresAt != null}">점유 만료</dt>
+                        <dd class="col-8" th:if="${r.holdExpiresAt != null}"
+                            th:text="${#temporals.format(r.holdExpiresAt, 'yyyy-MM-dd HH:mm')}">2026-08-01 12:00</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 취소 정보 -->
+    <div class="alert alert-danger mt-3" th:if="${r.cancelledAt != null}">
+        <div class="fw-semibold">취소됨
+            <span class="fw-normal small"
+                  th:text="'· ' + ${#temporals.format(r.cancelledAt, 'yyyy-MM-dd HH:mm')}">· 2026-08-01 12:00</span>
+        </div>
+        <div class="small mb-0" th:if="${r.cancelReason != null}" th:text="${r.cancelReason}">사유</div>
+    </div>
+
+    <!-- 야간 요금 스냅샷 -->
+    <div class="card mt-3">
+        <div class="card-header bg-white">
+            <span class="fw-semibold">일자별 요금</span>
+            <span class="text-secondary small ms-1">계산 시점 스냅샷 · 게시는 야간마감 반영</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:16rem;">숙박 일자</th>
+                    <th class="text-end">요금</th>
+                    <th style="width:8rem;">게시</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="n : ${r.nightViews}">
+                    <td th:text="${#temporals.format(n.stayDate, 'yyyy-MM-dd (E)')}">2026-08-01</td>
+                    <td class="text-end"
+                        th:text="${#numbers.formatInteger(n.rateAmount, 0, 'COMMA')} + '원'">100,000원</td>
+                    <td>
+                        <span th:if="${n.posted}" class="badge text-bg-success">게시됨</span>
+                        <span th:unless="${n.posted}" class="badge text-bg-light border">미게시</span>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot class="table-light">
+                <tr>
+                    <th>합계</th>
+                    <th class="text-end"
+                        th:text="${#numbers.formatInteger(r.totalAmount, 0, 'COMMA')} + '원'">200,000원</th>
+                    <th></th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

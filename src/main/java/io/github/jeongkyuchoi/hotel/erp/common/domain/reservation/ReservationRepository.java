@@ -1,6 +1,7 @@
 package io.github.jeongkyuchoi.hotel.erp.common.domain.reservation;
 
 import jakarta.persistence.LockModeType;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -64,4 +65,28 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 			""")
 	List<Long> findDueHoldIds(Long tenantId, ReservationStatus status,
 			LocalDateTime now, Limit limit);
+
+	/**
+	 * 백오피스 예약 목록. 상태·체크인 기간으로 선택 필터한다.
+	 *
+	 * <p>{@code join fetch r.roomType} 로 타입을 함께 가져온다 — OSIV 를 껐으므로
+	 * ({@code open-in-view: false}) 목록 템플릿이 렌더링 시점에 지연로딩 연관을 건드리면
+	 * {@code LazyInitializationException} 이 난다. 목록에서 쓰는 연관은 roomType 뿐이라
+	 * 이것만 fetch 한다. {@code nights} 컬렉션은 fetch 하지 않는다 — 숙박일수만큼 행이
+	 * 뻥튀기돼 목록이 어긋나기 때문이다(Reservation 주석 참조). 상세에서만 로드한다.
+	 *
+	 * <p>필터는 {@code (:param is null or ...)} 로 선택 적용한다. null 이면 그 조건은 무시된다.
+	 * 최근 예약이 위로 오도록 체크인 내림차순 정렬한다.
+	 */
+	@Query("""
+			select r from Reservation r
+			join fetch r.roomType
+			where r.tenantId = :tenantId
+			  and (:status is null or r.status = :status)
+			  and (:from is null or r.checkInDate >= :from)
+			  and (:to is null or r.checkInDate <= :to)
+			order by r.checkInDate desc, r.id desc
+			""")
+	List<Reservation> findForAdminList(Long tenantId, ReservationStatus status,
+			LocalDate from, LocalDate to);
 }

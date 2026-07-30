@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>예약 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1">예약</h1>
+            <p class="text-secondary small mb-0">
+                예약번호를 눌러 상세를 봅니다. 표시 상태는 조회 시점 기준입니다
+                (만료된 임시점유는 자동 정리 전이라도 <b>만료</b>로 보입니다).
+            </p>
+        </div>
+    </div>
+
+    <form class="card card-body mb-3" method="get" th:action="@{/admin/reservations}">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label for="status" class="form-label small">상태</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="">전체</option>
+                    <option th:each="s : ${statuses}" th:value="${s.name()}"
+                            th:text="${s}"
+                            th:selected="${selectedStatus != null and selectedStatus == s}">HOLD</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="from" class="form-label small">체크인 시작</label>
+                <input type="date" id="from" name="from" class="form-control"
+                       th:value="${from != null ? #temporals.format(from, 'yyyy-MM-dd') : ''}">
+            </div>
+            <div class="col-md-3">
+                <label for="to" class="form-label small">체크인 종료</label>
+                <input type="date" id="to" name="to" class="form-control"
+                       th:value="${to != null ? #temporals.format(to, 'yyyy-MM-dd') : ''}">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">조회</button>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/reservations}">초기화</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:9rem;">예약번호</th>
+                    <th>고객</th>
+                    <th>객실타입</th>
+                    <th style="width:14rem;">숙박</th>
+                    <th style="width:6rem;" class="text-end">박</th>
+                    <th style="width:7rem;">상태</th>
+                    <th style="width:9rem;" class="text-end">총액</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${reservations}">
+                    <td>
+                        <a th:href="@{/admin/reservations/{id}(id=${row.id})}"
+                           class="fw-semibold text-decoration-none"
+                           th:text="${row.reservationNo}">R2607301234</a>
+                    </td>
+                    <td>
+                        <div th:text="${row.guestName}">홍길동</div>
+                        <div class="small text-secondary" th:text="${row.guestPhone}">010-0000-0000</div>
+                    </td>
+                    <td th:text="${row.roomTypeName}">디럭스 더블</td>
+                    <td>
+                        <span th:text="${#temporals.format(row.checkInDate, 'yyyy-MM-dd')}">2026-08-01</span>
+                        <span class="text-secondary">~</span>
+                        <span th:text="${#temporals.format(row.checkOutDate, 'yyyy-MM-dd')}">2026-08-03</span>
+                    </td>
+                    <td class="text-end" th:text="${row.nights}">2</td>
+                    <td>
+                        <th:block th:replace="~{admin/reservation/fragments :: statusBadge(${row.status})}"></th:block>
+                    </td>
+                    <td class="text-end fw-semibold"
+                        th:text="${#numbers.formatInteger(row.totalAmount, 0, 'COMMA')} + '원'">200,000원</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(reservations)}">
+                    <td colspan="7" class="text-center text-secondary py-5">
+                        조건에 맞는 예약이 없습니다.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>
