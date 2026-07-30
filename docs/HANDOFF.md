@@ -1,95 +1,95 @@
-# HANDOFF — 호텔 PMS + 부킹엔진 (Day 2 종료)
+# HANDOFF — 호텔 PMS + 부킹엔진 (Day 3 종료)
 
 - 작성일: 2026-07-30
-- 브랜치: `feat/init-schema` (원격 푸시됨)
+- 브랜치: **`dev`** (개발선). `main` 은 안정 기준선·원격 기본 브랜치 — D-033.
 - **함께 로드할 파일 (중복 수록 안 함 — 반드시 읽을 것)**
-  - `docs/decisions.md` — 설계 결정 D-001~D-025 전체
+  - `docs/decisions.md` — 설계 결정 D-001~D-033 전체
   - `docs/troubleshooting.md` — 이 환경의 반복 함정
-  - `src/main/resources/db/migration/V1__init_schema.sql` — 스키마 + 근거 주석
+  - `src/main/resources/db/migration/V1__init_schema.sql`, `V2__night_close.sql` — 스키마 + 근거 주석
   - `git log` — 검증 수치와 판단 근거가 커밋 본문에 있음
 
 ---
 
 ## 1. 현재 상태 요약
 
-Day 2 완료. 기준정보의 마지막 조각(요금 캘린더)과 **예약 동시성 코어**가 들어갔다.
-예약 라이프사이클은 **HOLD 생성 → (만료 시 재고 복원 / 결제 확정)**까지 동작하고
-전부 실측 검증됐다. 핵심 3과제 중 **2개 증명 완료**(①오버부킹 0건, ②HOLD 만료 복원).
-남은 핵심은 ③야간마감 멱등이다.
+예약 도메인이 **HOLD → CONFIRMED → CHECKED_IN → CHECKED_OUT**(+ CANCELLED/EXPIRED) 라이프사이클
+전 구간과, 그 위의 **백오피스 화면 · 부킹엔진 REST · 회원 JWT 인증**까지 섰다. 핵심 3과제
+(오버부킹 0 · HOLD 만료 복원 · 마감 멱등)는 Day 2에 완성됐고, Day 3은 그 위에 취소·조회·
+체크인아웃·화면·REST·인증을 얹었다. 전 기능이 Testcontainers(실제 MySQL) 통합테스트로 검증됨.
 
-Day 2 커밋 5건:
+Day 3 커밋 8건 (dev):
 ```
-54d9ca2  feat: 예약 확정 + 확정/만료 경합 직렬화
-f37fc86  feat: HOLD 만료 스케줄러 + 재고 복원
-06222a8  feat: 예약 HOLD 서비스 + 오버부킹 0건 증명
-bf80ba5  refactor: 베이스 패키지 io.github.jeongkyuchoi.hotel.erp 이관
-012be30  feat: 요금 캘린더 생성 (주중/주말 차등)
+9c97a0d  feat: add member JWT authentication (signup, login, /api/me)   (D-032)
+b5714d4  feat: add check-in/check-out with room assignment              (D-031)
+4d85d8a  feat: add booking engine REST (availability, hold, lookup)      (D-030)
+ec15b39  feat: add cancel action to backoffice reservation detail
+8c930a9  feat: add backoffice reservation list and detail screens        (D-029)
+66ed234  feat: add guest reservation lookup by reservation-no + phone    (D-028)
+a9faafd  feat: add reservation cancel with state-based inventory release (D-027)
+a50dff2  feat: add night-close batch with proven posting idempotency     (D-026)
 ```
 
 ---
 
 ## 2. 핵심 맥락 (참조 파일에 없는 것만)
 
-### 2.1 작업 방식 — Day 1과 동일
-답변 한국어 · 착수 전 예상 시간/단계 고지 · 단계별로 끊어 보고 ·
-단계마다 "계속할까요?" 묻지 않고 진행(되돌리기 어렵거나 외부 영향 주는 것만 먼저 확인) ·
-JPA/Spring 용어는 설명 곁들임. 사용자 배경은 Day 1 핸드오프(git 이력) 참조.
+### 2.1 작업 방식 — Day 1~2와 동일
+답변 한국어 · 착수 전 예상 시간/단계 고지 · 단계마다 끊어 보고 · "계속할까요?" 묻지 않고
+진행(되돌리기 어렵거나 외부 영향만 먼저 확인) · JPA/Spring 용어 설명 곁들임.
 
-### 2.2 환경 변화 (Day 1 대비 — 이전 핸드오프의 "아직 안 한 것" 다수가 뒤집힘)
+### 2.2 환경 변화 (Day 2 대비)
+- **리포 삭제·재생성됨.** 원격 `github.com/JEONGKYU-CHOI/hotel_erp` 를 지우고 동명으로 다시
+  만들었다(D-033). **`main`(기본) + `dev`(개발)** 두 브랜치, 둘 다 클린 히스토리
+  (Claude author 0 · Co-authored-by 트레일러 0). 로컬도 정리 완료. 앞으로 커밋은 `dev` 에.
+- **JWT 도입(D-032).** `app.jwt.secret` 은 개발 기본값이 박혀 있으나 **운영은 환경변수
+  `JWT_SECRET` 주입 필수**. `app.jwt.access-token-validity: PT1H`. 의존성 jjwt 0.12.6 추가.
+- **V2 마이그레이션 추가**(`night_close`, D-026). 스키마 변경 시 엔티티와 함께 고칠 것(D-005).
+- **테스트 존재**: 예약(동시성·만료·확정·마감·취소·조회·체크인아웃) + 부킹 REST + 회원 인증 +
+  백오피스 화면. 전부 Testcontainers MySQL 8.4, Docker 필요.
 
-- **원격 저장소 생성됨**: `github.com/JEONGKYU-CHOI/hotel_erp` (public).
-  `feat/init-schema` 푸시됨. `main`은 로컬 클린 스켈레톤(785bcf2)만 있고 원격 미푸시.
-- **커밋 히스토리 정리됨**: 전 커밋에서 Claude 공동저자 트레일러 제거(force-push).
-  앞으로도 안 붙음 — `.claude/settings.local.json`의 `includeCoAuthoredBy:false`.
-  GitHub Contributors의 claude는 캐시 지연으로 곧 사라짐(원격 커밋엔 0건).
-- **git push 허용 규칙 추가**: `~/.claude/settings.json` allow 에 `Bash(git push:*)`.
-- **베이스 패키지**: `io.github.jeongkyuchoi.hotel.erp` (com.hotel.erp 에서 이관).
-  Gradle `group` 도 `io.github.jeongkyuchoi`. `src/main/java` 소스 루트는 그대로.
-- **IntelliJ**: Ultimate 2026.2.0.1 (build IU-262.8665.337). (Community 2025.2 에서 변경)
-- **테스트 존재**: 예약 통합테스트 12건(Testcontainers MySQL 8.4). 실행에 Docker 필요.
-
-### 2.3 예약 도메인 지도 (코드에 있지만 길잡이)
-
-- feature 패키지: `io...hotel.erp.reservation.{dto, service}`
-- 서비스: `ReservationService.hold` / `ReservationConfirmService.confirm` /
-  `ReservationExpiryService.expireOne` + `HoldExpiryScheduler.sweep`
-- **락 규율 (반드시 지킬 것)**: 재고 첫 조회는 `FOR UPDATE`(D-018) ·
-  상태 전이는 예약 행 락 우선 · 락 순서는 항상 **예약 → 재고**(D-025)
-- `RoomInventory` 도메인 메서드 준비됨: `hold` / `releaseHold` / `confirmHold`.
-  취소용 "sold/held 반환"은 상태에 따라 갈리며 아직 서비스 미구현.
+### 2.3 도메인·패키지 지도 (코드에 있지만 길잡이)
+- feature 패키지: `reservation`(서비스·dto), `booking`(부킹 REST·dto·web), `auth`(회원 인증),
+  `backoffice`(백오피스 화면·서비스·dto), `common`(도메인·설정·보안·예외).
+- 예약 서비스: `ReservationService.hold` / `ReservationConfirmService` / `ReservationExpiryService`
+  + `HoldExpiryScheduler` / `ReservationCancelService`(D-027) / `ReservationQueryService`(D-028) /
+  `StayService`(체크인아웃, D-031) / `NightCloseService`+`NightCloseScheduler`(D-026) /
+  `AvailabilityService`(무락 표시경로, D-030).
+- **락 규율(반드시 지킬 것)**: 재고 첫 조회는 `FOR UPDATE`(D-018) · 상태 전이는 예약 행 락
+  우선 · 락 순서는 항상 **예약 → 재고/호실**(D-025, D-031).
+- 인증: `common.security`(JwtTokenProvider·JwtAuthenticationFilter·RestAuthenticationEntryPoint).
+  `/api` 는 JWT 선택 인증(비회원 예약 경로 유지) · 백오피스는 세션(D-008/D-014).
 
 ### 2.4 검증용 DB 데이터
-Day 1 핸드오프 §2.4(git 이력) 그대로 유효(로컬 MySQL의 SPIKE 데이터). 테스트는
-Testcontainers 격리라 이 데이터와 무관하다.
+로컬 MySQL SPIKE 데이터는 Day 1 핸드오프(git 이력) 그대로 유효. 테스트는 Testcontainers
+격리라 이 데이터와 무관.
 
 ---
 
 ## 3. 즉시 다음 단계
 
-1. **야간마감 (D-006 ③, D-004) — 핵심 3과제 마지막.**
-   `reservation_night.posted` 를 게시 여부 기준으로, 마감 이력 테이블 + 유니크 제약으로
-   **2회 실행 시 중복 게시 0**을 증명한다. CONFIRMED/CHECKED_IN 예약의 그날 숙박분을
-   폴리오에 게시. Testcontainers 통합테스트로 멱등 증명(핵심 3과제 완성).
-2. **예약 취소 (CANCELLED).** `Reservation.cancel` 재작성(이전 것 폐기함) + 취소 서비스:
-   취소 직전 상태에 따라 `held`(HOLD) 또는 `sold`(CONFIRMED)를 반환. 락 우선(예약→재고).
-3. **예약 조회.** 예약번호+전화(비회원 경로). 리포지토리 조회 메서드는 이미 있음.
-4. **화면/REST.** 백오피스 예약 목록·상세 / 부킹엔진 REST(`/api`, 현재 `permitAll` —
-   JWT 전 외부 노출 금지).
+추천 순서(외부 준비물 없는 것 먼저): 체크인아웃(완료) → 회원인증(완료) → **결제** → **React**.
+
+1. **결제 모듈 (확정 트리거).** HOLD→CONFIRMED 를 결제 성공으로 잇는다. 토스페이먼츠 연동
+   (금액 위변조 검증 · 멱등 · 승인 API · 웹훅 중복 처리). 확정 REST 노출도 여기서(D-030 §2).
+   **단, 토스페이먼츠 테스트 키/SDK 등 사용자 준비물이 필요하다** — 키 확보 여부를 먼저 확인.
+   `ReservationConfirmService` 는 이미 있어 배선 중심.
+2. **키가 아직 없으면 → React 부킹엔진 화면 먼저.** 방금 만든 `/api`(availability·hold·lookup·
+   auth·me)를 소비. 날짜선택→가용→HOLD→결제대기→조회 흐름. JS/Vite(D-013), 별도 스택.
+3. **회원 예약 연결.** 로그인 회원의 HOLD 에 `memberId` 연결 + `GET /api/me/reservations`.
+   현재 hold 는 비회원만(memberId=null). 인증 컨텍스트의 회원 id 를 커맨드에 싣는다.
+4. **NO_SHOW 판정.** 당일 미투숙 CONFIRMED → NO_SHOW 를 야간마감(D-026)에 붙인다.
+   라이프사이클 전이는 이미 갖춰짐(D-031).
 
 ---
 
 ## 4. 결정과 근거
 
-이번 세션의 설계 결정은 `docs/decisions.md` **D-022~D-025**에 있다(요금 캘린더 무락 /
-HOLD 생성 / 만료 스케줄러 / 상태 전이 예약행 락). 여기서 재서술하지 않는다.
+이번 세션의 설계 결정은 `docs/decisions.md` **D-026~D-033** 에 있다(야간마감 멱등 / 취소 /
+조회 / 백오피스 화면 / 부킹 REST / 체크인아웃 / JWT 인증 / 브랜치 전략). 여기서 재서술하지
+않는다 — 같은 결정이 두 곳에 살면 반드시 어긋난다.
 
-핸드오프에만 남기는 판단(프로젝트 결정이 아니라 이번 작업의 순서·처리):
-
-- **패키지 이관을 예약 착수 전에 했다.** 파일이 더 늘기 전 40여 개 일괄 변경이 쌌다.
-  (Windows 파일 잠금으로 `git mv` 가 막혀 PowerShell `Move-Item` 으로 우회 — Gradle
-  데몬이 소스를 물고 있었다. troubleshooting §1 참조.)
-- **확정을 만료 다음에 만들었다.** 만료(반환)와 확정(이동)이 `held_qty` 를 두고 경합하는
-  쌍이라, 만료가 있어야 확정/만료 경합 테스트(D-025)가 성립했다.
-- **출처 불명 `cancel()` 폐기.** IntelliJ 재설치 후 워킹트리에 미커밋 `Reservation.cancel()`
-  이 나타남(커밋에도 없고 나도·사용자도 안 씀). 검증 안 된 코드라 HEAD 기준 폐기 후
-  재작성 선택. 재발 시 troubleshooting §1 참조.
+핸드오프에만 남기는 판단(이번 작업의 순서·처리):
+- **추천 순서대로 갔다** — 외부 의존 없는 체크인아웃·인증을 먼저 끝내고, 키가 필요한 결제와
+  계약 안정 후가 유리한 React 를 뒤로 미뤘다. 근거는 각 세션 응답과 D-030~D-032.
+- **깃헙 Claude 잔상은 코드 문제가 아니었다** — `git filter-branch` 백업 ref(로컬) + 깃헙
+  기여자 캐시(원격). 리포 재생성으로 해소(D-033, troubleshooting §1).

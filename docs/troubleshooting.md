@@ -18,6 +18,7 @@
 | `git add`/`commit` 시 LF→CRLF 경고 다발 | `.gitattributes`가 의도대로 동작 중 | 무시 |
 | `git mv` 로 소스 디렉터리 이동 시 `Permission denied` | **Gradle 데몬(fork된 java)이 소스 트리를 물고 있음.** `--stop` 만으로 안 풀릴 때가 있음 | PowerShell `Move-Item` 으로 이동 후 `git add -A`(git 이 rename 인식). 남은 빈 폴더는 `Remove-Item -Recurse` |
 | 커밋에 없던 코드가 워킹트리에 나타남 (미커밋) | **미상 — IntelliJ 재설치 후 발생.** Local History 복원 / AI 어시스턴트 자동삽입 의심 | 출처 불명 코드는 신뢰·커밋하지 말 것. `git diff HEAD` 로 확인 후 `git checkout HEAD -- <file>` 로 폐기하고 필요하면 직접 재작성 |
+| 원격 브랜치는 클린인데 `git log --all`/`gc` 가 옛 커밋(예: 지운 Claude 트레일러)을 계속 살림 | **이전 `git filter-branch` 가 남긴 `refs/original/refs/heads/<branch>` 백업 ref** 가 재작성 전 히스토리를 붙들고 있음. 이게 있으면 gc 가 프루닝하지 못한다 | `git update-ref -d refs/original/refs/heads/<branch>` 로 백업 ref 삭제 → `git reflog expire --expire=now --all && git gc --prune=now`. stale 원격추적 ref 도 함께 제거. **원격/깃헙 쪽 잔상(기여자 캐시)은 로컬 정리로 안 사라진다** — 초기 리포면 삭제·재생성이 확실(스타·이슈 없을 때) |
 
 ---
 
