@@ -1,7 +1,9 @@
 package io.github.jeongkyuchoi.hotel.erp.booking.web;
 
+import io.github.jeongkyuchoi.hotel.erp.common.exception.ConflictException;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotEnoughInventoryException;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotFoundException;
+import io.github.jeongkyuchoi.hotel.erp.common.exception.UnauthorizedException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -15,20 +17,37 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * 부킹엔진 REST 예외 → HTTP 매핑(D-030).
  *
- * <p><b>{@code basePackageClasses} 로 이 패키지에만 건다.</b> 전역에 걸면 백오피스(HTML
+ * <p><b>{@code basePackages} 로 API 웹 패키지에만 건다.</b> 전역에 걸면 백오피스(HTML
  * 렌더링)의 예외까지 JSON 으로 바꿔 버린다. 백오피스는 폼 바인딩·플래시로 오류를 다루므로
- * (그쪽 컨트롤러 참조), 이 어드바이스는 {@code /api} 컨트롤러에만 적용되게 범위를 좁힌다.
+ * (그쪽 컨트롤러 참조), 이 어드바이스는 booking·auth REST 컨트롤러에만 적용되게 범위를 좁힌다.
  *
- * <p>매핑: 없음 404 · 재고 부족 409(경합의 정상 결과) · 잘못된 요청 400.
+ * <p>매핑: 없음 404 · 인증 실패 401 · 충돌(중복) 409 · 재고 부족 409(경합의 정상 결과) ·
+ * 잘못된 요청 400.
  */
 @Slf4j
-@RestControllerAdvice(basePackageClasses = BookingApiController.class)
+@RestControllerAdvice(basePackages = {
+		"io.github.jeongkyuchoi.hotel.erp.booking.web",
+		"io.github.jeongkyuchoi.hotel.erp.auth.web"})
 public class ApiExceptionHandler {
 
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<ApiError> handleNotFound(NotFoundException e) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND)
 				.body(ApiError.of("NOT_FOUND", e.getMessage()));
+	}
+
+	/** 인증 실패(잘못된 자격증명). 로그인에서 이메일/비밀번호를 구분하지 않는다. */
+	@ExceptionHandler(UnauthorizedException.class)
+	public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException e) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body(ApiError.of("UNAUTHORIZED", e.getMessage()));
+	}
+
+	/** 상태 충돌(중복 이메일 등). */
+	@ExceptionHandler(ConflictException.class)
+	public ResponseEntity<ApiError> handleConflict(ConflictException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(ApiError.of("CONFLICT", e.getMessage()));
 	}
 
 	/**

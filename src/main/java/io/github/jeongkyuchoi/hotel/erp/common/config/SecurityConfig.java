@@ -1,15 +1,22 @@
 package io.github.jeongkyuchoi.hotel.erp.common.config;
 
+import io.github.jeongkyuchoi.hotel.erp.common.security.JwtAuthenticationFilter;
+import io.github.jeongkyuchoi.hotel.erp.common.security.JwtProperties;
+import io.github.jeongkyuchoi.hotel.erp.common.security.JwtTokenProvider;
+import io.github.jeongkyuchoi.hotel.erp.common.security.RestAuthenticationEntryPoint;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * 보안 설정.
@@ -34,17 +41,21 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
 	/**
-	 * ① 부킹엔진 REST API 체인.
+	 * ① 부킹엔진 REST API 체인 (JWT, D-008).
 	 *
-	 * <p>지금은 인증 없이 전부 열려 있다. JWT 필터는 회원가입/로그인(D-009)을 구현할 때
-	 * 이 체인에 끼운다. 그 전까지 이 상태이므로 <b>이대로 외부에 노출하면 안 된다.</b>
+	 * <p><b>인증은 선택이다.</b> 비회원 예약 경로(가용·HOLD·조회)는 인증 없이 열어 두고
+	 * (D-008), 회원 전용 경로({@code /api/me} 등)만 JWT 를 요구한다. JWT 필터는 토큰이 있으면
+	 * 인증 컨텍스트를 채우고, 없거나 무효여도 요청을 막지 않는다 — 보호 경로는 인가 단계와
+	 * {@link RestAuthenticationEntryPoint}(401)가 막는다.
 	 */
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
-	public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain apiFilterChain(HttpSecurity http, JwtTokenProvider tokenProvider)
+			throws Exception {
 		return http
 				// 이 체인이 담당할 경로를 못 박는다. 여기에 걸리지 않은 요청은
 				// 아래 기본 체인으로 넘어간다.
@@ -56,7 +67,19 @@ public class SecurityConfig {
 				// 폼 로그인과 기본 인증을 모두 꺼서 401 이 그대로 나가게 한다.
 				.formLogin(form -> form.disable())
 				.httpBasic(basic -> basic.disable())
-				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+				.authorizeHttpRequests(auth -> auth
+						// 회원가입·로그인은 인증 전 경로다.
+						.requestMatchers("/api/auth/**").permitAll()
+						// 비회원 예약 경로 — 인증 없이 계속 동작한다(D-008).
+						.requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
+						.requestMatchers("/api/reservations/**").permitAll()
+						// 그 밖(/api/me 등)은 회원 인증 필요. 새 경로가 기본 '허용'으로
+						// 새지 않도록 마지막을 authenticated 로 못 박는다.
+						.anyRequest().authenticated())
+				// 무효/부재 토큰이면 인증 없이 넘기고, 보호 경로에서 401 로 막는다.
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(new RestAuthenticationEntryPoint()))
+				.addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
+						UsernamePasswordAuthenticationFilter.class)
 				.build();
 	}
 
