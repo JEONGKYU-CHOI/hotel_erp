@@ -73,6 +73,9 @@ public class SecurityConfig {
 						// 비회원 예약 경로 — 인증 없이 계속 동작한다(D-008).
 						.requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 						.requestMatchers("/api/reservations/**").permitAll()
+						// 결제 승인 콜백·토스 웹훅 — 인증 주체가 없는 경로다(D-034). 승인은
+						// paymentKey·금액 대조·확정 서비스 멱등으로, 웹훅은 멱등·금액 대조로 보호한다.
+						.requestMatchers("/api/payments/**").permitAll()
 						// 그 밖(/api/me 등)은 회원 인증 필요. 새 경로가 기본 '허용'으로
 						// 새지 않도록 마지막을 authenticated 로 못 박는다.
 						.anyRequest().authenticated())

@@ -3,6 +3,7 @@ package io.github.jeongkyuchoi.hotel.erp.booking.web;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.ConflictException;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotEnoughInventoryException;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotFoundException;
+import io.github.jeongkyuchoi.hotel.erp.common.exception.PaymentException;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.UnauthorizedException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -27,7 +28,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice(basePackages = {
 		"io.github.jeongkyuchoi.hotel.erp.booking.web",
-		"io.github.jeongkyuchoi.hotel.erp.auth.web"})
+		"io.github.jeongkyuchoi.hotel.erp.auth.web",
+		"io.github.jeongkyuchoi.hotel.erp.payment.web"})
 public class ApiExceptionHandler {
 
 	@ExceptionHandler(NotFoundException.class)
@@ -64,6 +66,26 @@ public class ApiExceptionHandler {
 	public ResponseEntity<ApiError> handleBadRequest(IllegalArgumentException e) {
 		return ResponseEntity.badRequest()
 				.body(ApiError.of("BAD_REQUEST", e.getMessage()));
+	}
+
+	/**
+	 * 결제 실패(D-034). 금액 위변조·카드 거절·응답 불일치 등. 토스/우리가 붙인 오류 코드를
+	 * 그대로 실어 400 으로 돌려준다 — 프론트가 코드로 사용자 안내를 분기한다.
+	 */
+	@ExceptionHandler(PaymentException.class)
+	public ResponseEntity<ApiError> handlePayment(PaymentException e) {
+		return ResponseEntity.badRequest()
+				.body(ApiError.of(e.getCode(), e.getMessage()));
+	}
+
+	/**
+	 * 잘못된 상태 전이. 만료·취소·이미 확정된 예약에 결제가 도착한 경우 등(D-034). 상태가
+	 * 더는 그 전이를 허용하지 않는 <b>충돌</b>이므로 409 로 돌려준다.
+	 */
+	@ExceptionHandler(IllegalStateException.class)
+	public ResponseEntity<ApiError> handleInvalidState(IllegalStateException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT)
+				.body(ApiError.of("INVALID_STATE", e.getMessage()));
 	}
 
 	/** {@code @Valid} 바디 검증 실패. 필드별 메시지를 함께 돌려준다. */

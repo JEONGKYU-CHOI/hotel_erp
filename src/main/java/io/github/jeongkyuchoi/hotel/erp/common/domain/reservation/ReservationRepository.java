@@ -32,6 +32,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	Optional<Reservation> findByTenantIdAndReservationNoAndGuestPhone(
 			Long tenantId, String reservationNo, String guestPhone);
 
+	/**
+	 * 예약번호로 조회. 결제 승인 콜백이 토스 orderId(=예약번호)로 예약을 찾을 때 쓴다(D-034).
+	 * 상태 전이(확정)의 실제 락은 {@link #findByIdForUpdate} 가 잡으므로 여기서는 락 없이 찾는다.
+	 */
+	Optional<Reservation> findByTenantIdAndReservationNo(Long tenantId, String reservationNo);
+
 	boolean existsByReservationNo(String reservationNo);
 
 	/**

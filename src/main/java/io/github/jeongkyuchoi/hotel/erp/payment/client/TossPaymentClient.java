@@ -1,0 +1,87 @@
+package io.github.jeongkyuchoi.hotel.erp.payment.client;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.github.jeongkyuchoi.hotel.erp.common.exception.PaymentException;
+import io.github.jeongkyuchoi.hotel.erp.payment.TossProperties;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+/**
+ * 토스페이먼츠 승인 API 호출 (D-034).
+ *
+ * <p><b>Basic 인증.</b> 토스는 시크릿 키를 아이디로, 비밀번호는 빈 문자열로 하는 Basic 인증을
+ * 요구한다 — {@code base64(secretKey + ":")}. 시크릿 키는 서버에만 있고 클라이언트로 나가지
+ * 않는다(그래서 금액 위변조를 막을 수 있다).
+ *
+ * <p><b>오류는 예외로 변환한다.</b> 토스가 4xx/5xx 로 {@code {code, message}} 를 주면
+ * {@link PaymentException} 으로 감싸 던진다 — 카드 거절·이미 처리된 결제·금액 불일치 등이
+ * 모두 여기로 온다. 서비스는 성공 응답만 받는다.
+ */
+@Slf4j
+@Component
+public class TossPaymentClient {
+
+	private static final String CONFIRM_PATH = "/v1/payments/confirm";
+
+	private final RestClient restClient;
+
+	public TossPaymentClient(TossProperties properties) {
+		String basic = Base64.getEncoder()
+				.encodeToString((properties.secretKey() + ":").getBytes(StandardCharsets.UTF_8));
+		// 주입받은 RestClient.Builder 빈에 기대지 않고 정적 팩터리로 만든다 — 자동구성이
+		// 없는 컨텍스트(일부 테스트 슬라이스)에서도 동일하게 동작하도록. 이 클라이언트가
+		// 쓰는 건 baseUrl·기본 헤더·JSON 직렬화뿐이라 정적 빌더로 충분하다.
+		this.restClient = RestClient.builder()
+				.baseUrl(properties.baseUrl())
+				.defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + basic)
+				.build();
+	}
+
+	/**
+	 * 결제를 승인한다. 프론트가 결제창에서 받은 {@code paymentKey}/{@code orderId}/{@code amount}
+	 * 를 그대로 토스에 넘겨 최종 승인을 요청한다. 성공하면 승인 응답을, 실패하면
+	 * {@link PaymentException} 을 던진다.
+	 */
+	public TossConfirmResponse confirm(String paymentKey, String orderId, BigDecimal amount) {
+		return restClient.post()
+				.uri(CONFIRM_PATH)
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(Map.of("paymentKey", paymentKey, "orderId", orderId, "amount", amount))
+				.retrieve()
+				.onStatus(status -> status.isError(), (request, response) -> {
+					TossError error = readError(response.getBody());
+					log.warn("토스 승인 실패 — status={} code={} message={}",
+							response.getStatusCode(), error.code(), error.message());
+					throw new PaymentException(error.code(), error.message());
+				})
+				.body(TossConfirmResponse.class);
+	}
+
+	/** 오류 바디를 읽되, 형식이 어긋나도 죽지 않고 일반 코드로 감싼다. */
+	private TossError readError(java.io.InputStream body) {
+		try {
+			TossError parsed = OBJECT_MAPPER.readValue(body, TossError.class);
+			if (parsed != null && parsed.code() != null) {
+				return parsed;
+			}
+		} catch (Exception ignored) {
+			// 형식 불명 오류 바디 — 아래 기본값으로 떨어진다.
+		}
+		return new TossError("PAYMENT_APPROVAL_FAILED", "결제 승인에 실패했습니다.");
+	}
+
+	private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER =
+			new com.fasterxml.jackson.databind.ObjectMapper();
+
+	/** 토스 오류 응답 {@code {code, message}}. */
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	private record TossError(String code, String message) {
+	}
+}
