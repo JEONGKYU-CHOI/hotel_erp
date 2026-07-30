@@ -92,6 +92,43 @@
 .nights th { font-size: 0.8rem; color: #6b7280; }
 .nights td.zero { color: #dc2626; font-weight: 600; }
 
+/* CTA 버튼 (예약하기/결제하기) */
+.cta {
+  margin-top: 20px;
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background: #059669;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cta:disabled { background: #9ca3af; cursor: default; }
+
+/* HOLD 입력 폼 */
+.book-form { display: flex; flex-direction: column; gap: 16px; }
+.book-form label {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: 0.85rem; font-weight: 600; color: #374151;
+}
+.book-form select, .book-form input {
+  padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 0.95rem; font-weight: 400;
+}
+.pax { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.muted { color: #6b7280; margin: -8px 0 20px; }
+
+/* HOLD 결과 요약 */
+.hold-summary { margin: 20px 0; display: flex; flex-direction: column; gap: 0; }
+.hold-summary > div {
+  display: flex; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid #f3f4f6;
+}
+.hold-summary dt { color: #6b7280; font-size: 0.9rem; margin: 0; }
+.hold-summary dd { margin: 0; font-weight: 600; }
+
 @media (max-width: 520px) {
   .search-form { grid-template-columns: 1fr; }
 }

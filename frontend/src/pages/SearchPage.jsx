@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 
 // 오늘 기준 기본 날짜(내일 체크인, 1박)를 YYYY-MM-DD 로.
@@ -17,6 +18,7 @@ export default function SearchPage() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   // 첫 진입에 판매 중인 객실타입을 불러온다.
   useEffect(() => {
@@ -100,7 +102,24 @@ export default function SearchPage() {
               ))}
             </tbody>
           </table>
-          {/* 다음 단계: bookableQty > 0 이면 여기에 "예약하기(HOLD)" 버튼을 붙인다. */}
+          {result.bookableQty > 0 && (
+            <button
+              type="button"
+              className="cta"
+              onClick={() =>
+                navigate('/book', {
+                  state: {
+                    roomTypeId,
+                    roomTypeName: roomTypes.find((t) => String(t.id) === String(roomTypeId))?.name,
+                    checkIn,
+                    checkOut,
+                  },
+                })
+              }
+            >
+              이 조건으로 예약하기 →
+            </button>
+          )}
         </div>
       )}
     </div>

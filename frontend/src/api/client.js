@@ -36,6 +36,9 @@ async function request(path, { method = 'GET', body, params } = {}) {
 
 export const api = {
   roomTypes: () => request('/room-types'),
+  ratePlans: (roomTypeId) => request(`/room-types/${roomTypeId}/rate-plans`),
   availability: (roomTypeId, checkIn, checkOut) =>
     request('/availability', { params: { roomTypeId, checkIn, checkOut } }),
+  // HOLD 생성. 201 로 예약번호·총액·만료시각을 돌려준다.
+  hold: (payload) => request('/reservations', { method: 'POST', body: payload }),
 }

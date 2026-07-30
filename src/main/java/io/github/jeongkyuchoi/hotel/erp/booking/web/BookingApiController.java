@@ -3,6 +3,7 @@ package io.github.jeongkyuchoi.hotel.erp.booking.web;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.AvailabilityResponse;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldRequest;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldResponse;
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.RatePlanSummary;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.RoomTypeSummary;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationDetail;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.AvailabilityService;
@@ -52,6 +53,12 @@ public class BookingApiController {
 	@GetMapping("/room-types")
 	public List<RoomTypeSummary> roomTypes() {
 		return roomTypeCatalogService.listBookable();
+	}
+
+	/** 한 객실타입의 판매 중 요금정책. HOLD 직전 요금/조건을 고르는 화면이 소비한다. */
+	@GetMapping("/room-types/{roomTypeId}/rate-plans")
+	public List<RatePlanSummary> ratePlans(@PathVariable Long roomTypeId) {
+		return roomTypeCatalogService.listRatePlans(roomTypeId);
 	}
 
 	/** 날짜 범위의 가용 재고. 락 없는 표시 경로다(D-018). */

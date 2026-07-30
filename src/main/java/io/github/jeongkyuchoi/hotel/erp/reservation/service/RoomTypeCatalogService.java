@@ -1,6 +1,8 @@
 package io.github.jeongkyuchoi.hotel.erp.reservation.service;
 
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.RatePlanSummary;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.RoomTypeSummary;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RatePlanRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomTypeRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class RoomTypeCatalogService {
 	private static final Long TENANT_ID = 1L;
 
 	private final RoomTypeRepository roomTypeRepository;
+	private final RatePlanRepository ratePlanRepository;
 
 	@Transactional(readOnly = true)
 	public List<RoomTypeSummary> listBookable() {
@@ -27,6 +30,15 @@ public class RoomTypeCatalogService {
 				.findByTenantIdAndActiveTrueOrderByDisplayOrderAscIdAsc(TENANT_ID)
 				.stream()
 				.map(RoomTypeSummary::from)
+				.toList();
+	}
+
+	/** 한 객실타입의 판매 중 요금정책. HOLD 요청에 실을 ratePlanId 를 고르는 화면이 소비한다. */
+	@Transactional(readOnly = true)
+	public List<RatePlanSummary> listRatePlans(Long roomTypeId) {
+		return ratePlanRepository.findBookableByRoomType(TENANT_ID, roomTypeId)
+				.stream()
+				.map(RatePlanSummary::from)
 				.toList();
 	}
 }

@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import SearchPage from './pages/SearchPage.jsx'
+import BookingPage from './pages/BookingPage.jsx'
 import './booking.css'
 
 // 부킹엔진 셸 — 상단 바 + 라우트. 화면(가용→HOLD→결제→조회)은 단계별로 여기에 붙인다.
@@ -12,6 +13,7 @@ function App() {
       <main className="content">
         <Routes>
           <Route path="/" element={<SearchPage />} />
+          <Route path="/book" element={<BookingPage />} />
         </Routes>
       </main>
     </div>
