@@ -57,6 +57,10 @@ public class Payment extends BaseTimeEntity {
 	@Column(name = "amount", nullable = false, precision = 12, scale = 2)
 	private BigDecimal amount;
 
+	/** 환불(취소) 누적액(D-039). 유효 결제액 = {@code amount - canceledAmount}. */
+	@Column(name = "canceled_amount", nullable = false, precision = 12, scale = 2)
+	private BigDecimal canceledAmount = BigDecimal.ZERO;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	private PaymentStatus status;
@@ -69,6 +73,10 @@ public class Payment extends BaseTimeEntity {
 	@Column(name = "approved_at")
 	private LocalDateTime approvedAt;
 
+	/** 마지막 환불 실행 시각(D-039). 환불 이력이 없으면 null. */
+	@Column(name = "canceled_at")
+	private LocalDateTime canceledAt;
+
 	@Builder
 	private Payment(Long tenantId, Long reservationId, String orderId, String paymentKey,
 			BigDecimal amount, PaymentStatus status, String method, LocalDateTime approvedAt) {
@@ -77,8 +85,38 @@ public class Payment extends BaseTimeEntity {
 		this.orderId = orderId;
 		this.paymentKey = paymentKey;
 		this.amount = amount;
+		this.canceledAmount = BigDecimal.ZERO;
 		this.status = status;
 		this.method = method;
 		this.approvedAt = approvedAt;
+	}
+
+	/** 아직 환불되지 않은 유효 결제액 = {@code amount - canceledAmount}. 폴리오 대변의 근거. */
+	public BigDecimal effectiveAmount() {
+		return amount.subtract(canceledAmount);
+	}
+
+	/**
+	 * 환불(부분취소)을 이 결제에 누적 반영한다(D-039). 토스 취소 성공 <b>후</b> 호출한다 —
+	 * 이 메서드는 원장 상태만 바꾼다.
+	 *
+	 * <p>취소 누적액이 승인액에 도달하면 {@link PaymentStatus#CANCELED} 로 올린다(완전 취소).
+	 * 그 전까지는 APPROVED(부분 취소)로 남는다.
+	 *
+	 * @throws IllegalArgumentException 취소액이 0 이하이거나 남은 유효 결제액을 넘으면.
+	 */
+	public void applyCancel(BigDecimal cancelAmount, LocalDateTime at) {
+		if (cancelAmount == null || cancelAmount.signum() <= 0) {
+			throw new IllegalArgumentException("취소액은 0보다 커야 합니다. amount=" + cancelAmount);
+		}
+		if (cancelAmount.compareTo(effectiveAmount()) > 0) {
+			throw new IllegalArgumentException(
+					"취소액이 남은 결제액을 넘습니다. 취소=" + cancelAmount + " 남은=" + effectiveAmount());
+		}
+		this.canceledAmount = this.canceledAmount.add(cancelAmount);
+		this.canceledAt = at;
+		if (this.canceledAmount.compareTo(this.amount) == 0) {
+			this.status = PaymentStatus.CANCELED;
+		}
 	}
 }

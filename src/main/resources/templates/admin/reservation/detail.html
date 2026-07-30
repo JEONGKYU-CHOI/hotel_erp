@@ -238,6 +238,18 @@
                 </tfoot>
             </table>
         </div>
+        <!-- 환불 실행 — 잔액이 환불 대상일 때만 (D-039) -->
+        <div class="card-footer bg-white" th:if="${folio.settlement().name() == 'REFUND_DUE'}">
+            <form th:action="@{/admin/reservations/{id}/refund(id=${reservationId})}" method="post"
+                  class="d-flex align-items-center gap-2"
+                  onsubmit="return confirm('환불을 실행합니다. 토스로 실제 결제취소가 진행됩니다. 계속할까요?');">
+                <input type="text" name="reason" class="form-control form-control-sm" style="max-width:20rem;"
+                       placeholder="환불 사유 (선택)">
+                <button type="submit" class="btn btn-sm btn-warning ms-auto">
+                    환불 실행 (<span th:text="${#numbers.formatInteger(-folio.balance(), 0, 'COMMA')}">0</span>원)
+                </button>
+            </form>
+        </div>
     </div>
 </main>
 </body>

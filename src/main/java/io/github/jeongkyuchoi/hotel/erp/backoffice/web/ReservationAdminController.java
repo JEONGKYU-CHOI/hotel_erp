@@ -3,7 +3,9 @@ package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.service.ReservationAdminService;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.CancellationCharge;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
+import io.github.jeongkyuchoi.hotel.erp.common.exception.PaymentException;
 import io.github.jeongkyuchoi.hotel.erp.folio.service.FolioService;
+import io.github.jeongkyuchoi.hotel.erp.payment.service.RefundService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationCancelService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.StayService;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ public class ReservationAdminController {
 	private final ReservationCancelService reservationCancelService;
 	private final StayService stayService;
 	private final FolioService folioService;
+	private final RefundService refundService;
 
 	/** 상태 필터 드롭다운 선택지. enum 상수라 DB 조회가 없어 모든 화면에 실려도 비용이 없다. */
 	@ModelAttribute("statuses")
@@ -99,6 +102,27 @@ public class ReservationAdminController {
 					charge.penalty().longValue(), charge.refund().longValue()));
 		} catch (IllegalStateException e) {
 			redirect.addFlashAttribute("flashError", "취소할 수 없는 상태입니다.");
+		}
+		return "redirect:/admin/reservations/" + id;
+	}
+
+	/**
+	 * 환불 실행 — 폴리오 잔액이 환불 대상이면 그 금액만큼 토스 결제취소를 실행한다(D-039).
+	 * 돌려줄 것이 없으면 서비스가 무동작한다. 토스 실패는 {@link PaymentException} 으로 올라와
+	 * 롤백되고 오류 플래시로 되돌린다 — 실제 돈과 장부가 어긋나지 않는다.
+	 */
+	@PostMapping("/{id}/refund")
+	public String refund(@PathVariable Long id,
+			@RequestParam(required = false) String reason,
+			RedirectAttributes redirect) {
+		try {
+			var folio = refundService.refund(id, reason != null ? reason : "고객 환불");
+			redirect.addFlashAttribute("flashSuccess",
+					String.format("환불을 실행했습니다. 잔액 %,d원", folio.balance().longValue()));
+		} catch (PaymentException e) {
+			redirect.addFlashAttribute("flashError", "환불에 실패했습니다: " + e.getMessage());
+		} catch (IllegalStateException e) {
+			redirect.addFlashAttribute("flashError", "환불할 수 없습니다: " + e.getMessage());
 		}
 		return "redirect:/admin/reservations/" + id;
 	}

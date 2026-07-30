@@ -29,6 +29,7 @@ import org.springframework.web.client.RestClient;
 public class TossPaymentClient {
 
 	private static final String CONFIRM_PATH = "/v1/payments/confirm";
+	private static final String CANCEL_PATH = "/v1/payments/{paymentKey}/cancel";
 
 	private final RestClient restClient;
 
@@ -62,6 +63,30 @@ public class TossPaymentClient {
 					throw new PaymentException(error.code(), error.message());
 				})
 				.body(TossConfirmResponse.class);
+	}
+
+	/**
+	 * 결제를 (부분) 취소한다(D-039). 토스 {@code POST /v1/payments/{paymentKey}/cancel} 로
+	 * {@code cancelAmount} 만큼 환불한다. {@code cancelAmount} 를 생략하면 전액 취소이지만,
+	 * 우리는 위약금만큼 남기는 부분취소가 기본이라 항상 금액을 실어 보낸다.
+	 *
+	 * <p>성공 응답 본문은 쓰지 않는다(원장 반영은 서버가 계산한 취소액으로 한다). 실패는
+	 * {@link PaymentException} 으로 던져 서비스가 롤백하게 한다 — 토스 취소가 실패하면 원장도
+	 * 바꾸지 않는다.
+	 */
+	public void cancel(String paymentKey, BigDecimal cancelAmount, String reason) {
+		restClient.post()
+				.uri(CANCEL_PATH, paymentKey)
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(Map.of("cancelReason", reason, "cancelAmount", cancelAmount))
+				.retrieve()
+				.onStatus(status -> status.isError(), (request, response) -> {
+					TossError error = readError(response.getBody());
+					log.warn("토스 취소 실패 — status={} code={} message={}",
+							response.getStatusCode(), error.code(), error.message());
+					throw new PaymentException(error.code(), error.message());
+				})
+				.toBodilessEntity();
 	}
 
 	/** 오류 바디를 읽되, 형식이 어긋나도 죽지 않고 일반 코드로 감싼다. */

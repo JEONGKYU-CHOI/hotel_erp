@@ -2,7 +2,6 @@ package io.github.jeongkyuchoi.hotel.erp.folio.service;
 
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.Payment;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentRepository;
-import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentStatus;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
@@ -102,12 +101,17 @@ public class FolioService {
 		return List.of(new Charge(null, label, fee));
 	}
 
-	/** 승인된 결제만 대변(credit)에 올린다. 취소된 결제(CANCELED)는 원장에서 빠진다. */
+	/**
+	 * 결제 대변(credit) 라인. 환불(부분취소)을 반영해 <b>유효 결제액</b>(amount − canceled)을
+	 * 올린다(D-039). 전액 환불된 결제(유효액 0)는 원장에서 빠진다 — 환불하면 대변이 줄어
+	 * 잔액이 0 으로 수렴한다.
+	 */
 	private List<Credit> creditsFor(Reservation reservation) {
 		List<Credit> credits = new ArrayList<>();
 		for (Payment p : paymentRepository.findByReservationIdOrderByApprovedAt(reservation.getId())) {
-			if (p.getStatus() == PaymentStatus.APPROVED) {
-				credits.add(new Credit(p.getApprovedAt(), p.getMethod(), p.getAmount()));
+			BigDecimal effective = p.effectiveAmount();
+			if (effective.signum() > 0) {
+				credits.add(new Credit(p.getApprovedAt(), p.getMethod(), effective));
 			}
 		}
 		return credits;
