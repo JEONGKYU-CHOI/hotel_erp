@@ -1078,3 +1078,39 @@ gc 로, 원격은 리포 재생성으로 해소했다(troubleshooting §1). 재�
 **폐기한 대안** 확정 공개 REST(D-030 §2 에서 이미 폐기) — "돈 안 내고 확정" 구멍. HOLD 전용
 결제대기 테이블 — 예약 자체가 status=HOLD 라 불필요(V1 주석). 주입식 `RestClient.Builder` —
 테스트 컨텍스트 파손(위 5).
+
+---
+
+## D-035. SPA 라우팅 폴백 — 명시 경로만 index.html forward (catch-all 금지)
+
+**결정일** 2026-07-31
+
+**결정** React SPA 의 클라이언트 라우트를 프로덕션에서 살리기 위해, 스프링이 그 경로에
+`index.html` 을 forward 하게 한다. 단 **알려진 경로만 명시 등록**하고 광범위 catch-all 은 두지
+않는다.
+
+1. **문제.** 배포 시 React 빌드는 jar 의 `classpath:/static` 에서 서빙된다(build.gradle 의
+   bootJar 가 `frontend/dist` 를 복사, D-001). 그런데 `/book`·`/payment/success` 같은 클라이언트
+   라우트는 대응하는 정적 파일이 없어, 직접 진입·새로고침·결제 리다이렉트가 오면 스프링이
+   404(또는 시큐리티에 걸려 302 로그인)를 낸다. dev 에서는 Vite dev server 가 모르는 경로에
+   index.html 을 줘서 안 보이던 문제다.
+2. **명시 등록만.** `WebMvcConfig` 에 `/book`·`/payment/success`·`/payment/fail` 만
+   `forward:/index.html` 로 등록한다. `/` 는 스프링이 static/index.html 을 welcome page 로
+   자동 서빙하므로 제외. SPA 라우트가 늘면 여기에 추가한다.
+3. **catch-all 금지.** 이 앱은 Thymeleaf 백오피스(`/admin`·`/login`)와 SPA 가 한 서버에
+   공존한다(D-001). "무엇이든 index.html 로"류 규칙은 `/admin`·`/api`·`/error`·미등록 경로까지
+   삼켜, 백오피스 404 가 React 앱으로 둔갑하는 등 디버깅 지옥을 만든다. 명시 등록이 경계를
+   또렷하게 한다.
+4. **시큐리티 permitAll.** forward 대상 경로(`/book`·`/payment/**`)를 웹 체인에서 permitAll
+   한다 — 아니면 `anyRequest().authenticated()` 에 걸려 로그인으로 튕긴다. 결제 착지는 인증
+   주체 없는 공개 경로다. forward 는 query string 을 보존해 결제 파라미터가 유지된다.
+
+**검증** bootJar 를 vite 없이 8080 단독 실행해 실측: `/`·`/book`·`/payment/success?...`·
+`/payment/fail` → 200 index.html(쿼리 보존), `/api/room-types` → 200 JSON, `/admin` → 302
+로그인, 미등록 `/nonexistent-xyz` → 302(폴백이 삼키지 않음). 전체 스위트 71건 통과.
+
+**감수하는 대가** 새 SPA 라우트마다 `WebMvcConfig`·시큐리티에 한 줄씩 추가해야 한다 —
+catch-all 의 편의를 포기한 대가지만, 하이브리드 앱에서 경계 명확성이 그 값을 한다.
+
+**폐기한 대안** 광범위 catch-all forward(정규식 제외 목록) — 백오피스·API 오염 위험(위 3).
+프론트를 별도 서버·도메인으로 분리 — CORS 도입·배포 복잡도 증가, D-001 의 "jar 하나" 폐기.
