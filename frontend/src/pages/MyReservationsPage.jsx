@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useAuth } from '../auth/AuthContext.jsx'
+import FolioPanel from './FolioPanel.jsx'
 
 // 상태별 표시 라벨. 색은 기존 .status-badge.s-<STATUS> 컨벤션을 그대로 재사용한다(booking.css).
 const LABEL = {
@@ -21,6 +22,7 @@ export default function MyReservationsPage() {
 
   const [list, setList] = useState(null)
   const [error, setError] = useState(null)
+  const [openNo, setOpenNo] = useState(null) // 청구서를 펼친 예약번호
 
   useEffect(() => {
     if (authLoading) return
@@ -57,6 +59,11 @@ export default function MyReservationsPage() {
                 {r.checkInDate} ~ {r.checkOutDate} ({r.nights}박) ·
                 {' '}{Number(r.totalAmount).toLocaleString()}원
               </div>
+              <button type="button" className="linkbtn folio-toggle"
+                      onClick={() => setOpenNo(openNo === r.reservationNo ? null : r.reservationNo)}>
+                {openNo === r.reservationNo ? '청구서 닫기' : '청구서 보기'}
+              </button>
+              {openNo === r.reservationNo && <FolioPanel reservationNo={r.reservationNo} />}
             </li>
         ))}
       </ul>

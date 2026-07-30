@@ -71,4 +71,7 @@ export const api = {
   // 현재 로그인 회원 · 회원 예약 목록. 둘 다 JWT 필요(없으면 401).
   me: () => request('/me'),
   myReservations: () => request('/me/reservations'),
+  // 회원 예약의 청구서(폴리오). 소유 회원만 조회된다(D-038).
+  folio: (reservationNo) =>
+    request(`/me/reservations/${encodeURIComponent(reservationNo)}/folio`),
 }

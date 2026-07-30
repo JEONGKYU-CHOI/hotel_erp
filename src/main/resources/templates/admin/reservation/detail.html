@@ -179,6 +179,66 @@
             </table>
         </div>
     </div>
+
+    <!-- 청구서(폴리오) — 청구·결제·잔액 조립 (D-038) -->
+    <div class="card mt-3">
+        <div class="card-header bg-white d-flex align-items-center">
+            <span class="fw-semibold">청구서</span>
+            <span class="text-secondary small ms-1">청구 − 결제 = 잔액</span>
+            <span class="ms-auto badge"
+                  th:classappend="${folio.settlement().name() == 'PAID'} ? 'text-bg-success'
+                      : (${folio.settlement().name() == 'REFUND_DUE'} ? 'text-bg-warning' : 'text-bg-danger')"
+                  th:text="${folio.settlement().name() == 'PAID'} ? '완납'
+                      : (${folio.settlement().name() == 'REFUND_DUE'} ? '환불 대상' : '미수')">완납</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <tbody>
+                <tr th:each="c : ${folio.charges()}">
+                    <td style="width:16rem;">
+                        <span th:text="${c.label()}">숙박료</span>
+                        <span class="text-secondary small ms-1"
+                              th:if="${c.date() != null}"
+                              th:text="${#temporals.format(c.date(), 'yyyy-MM-dd (E)')}">2026-08-01</span>
+                    </td>
+                    <td class="text-end"
+                        th:text="${#numbers.formatInteger(c.amount(), 0, 'COMMA')} + '원'">100,000원</td>
+                </tr>
+                <tr th:if="${folio.charges().isEmpty()}">
+                    <td class="text-secondary" colspan="2">청구 항목 없음</td>
+                </tr>
+                <tr class="table-light">
+                    <th>청구 합계</th>
+                    <th class="text-end"
+                        th:text="${#numbers.formatInteger(folio.chargeTotal(), 0, 'COMMA')} + '원'">200,000원</th>
+                </tr>
+                <tr th:each="p : ${folio.credits()}">
+                    <td>
+                        <span>결제</span>
+                        <span class="text-secondary small ms-1" th:text="${p.method()}">카드</span>
+                    </td>
+                    <td class="text-end text-success"
+                        th:text="'− ' + ${#numbers.formatInteger(p.amount(), 0, 'COMMA')} + '원'">− 200,000원</td>
+                </tr>
+                <tr th:if="${folio.credits().isEmpty()}">
+                    <td class="text-secondary" colspan="2">결제 없음</td>
+                </tr>
+                <tr class="table-light">
+                    <th>결제 합계</th>
+                    <th class="text-end"
+                        th:text="'− ' + ${#numbers.formatInteger(folio.creditTotal(), 0, 'COMMA')} + '원'">− 200,000원</th>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th>잔액</th>
+                    <th class="text-end fs-5"
+                        th:text="${#numbers.formatInteger(folio.balance(), 0, 'COMMA')} + '원'">0원</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 </main>
 </body>
 </html>

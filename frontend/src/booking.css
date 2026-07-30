@@ -185,6 +185,20 @@
 .res-no { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em; }
 .res-body { margin-bottom: 4px; }
 .res-meta { font-size: 0.9rem; margin: 0; }
+.folio-toggle { margin-top: 10px; font-size: 0.85rem; }
+
+/* 청구서(폴리오) */
+.folio { margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+.folio-loading { margin: 8px 0 0; }
+.folio-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.folio-title { font-weight: 600; font-size: 0.95rem; }
+.folio-lines { margin: 0; display: flex; flex-direction: column; gap: 0; }
+.folio-lines > div { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.9rem; }
+.folio-lines dt { margin: 0; color: #374151; }
+.folio-lines dd { margin: 0; font-variant-numeric: tabular-nums; }
+.folio-lines dd.credit { color: #047857; }
+.folio-sub { border-top: 1px dashed #e5e7eb; font-weight: 600; }
+.folio-balance { border-top: 2px solid #111827; font-weight: 700; font-size: 1.05rem !important; }
 
 @media (max-width: 520px) {
   .search-form { grid-template-columns: 1fr; }

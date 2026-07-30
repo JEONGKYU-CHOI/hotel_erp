@@ -3,6 +3,7 @@ package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.service.ReservationAdminService;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.CancellationCharge;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
+import io.github.jeongkyuchoi.hotel.erp.folio.service.FolioService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationCancelService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.StayService;
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ public class ReservationAdminController {
 	private final ReservationAdminService reservationAdminService;
 	private final ReservationCancelService reservationCancelService;
 	private final StayService stayService;
+	private final FolioService folioService;
 
 	/** 상태 필터 드롭다운 선택지. enum 상수라 DB 조회가 없어 모든 화면에 실려도 비용이 없다. */
 	@ModelAttribute("statuses")
@@ -71,6 +73,7 @@ public class ReservationAdminController {
 		var detail = reservationAdminService.get(id);
 		model.addAttribute("r", detail);
 		model.addAttribute("reservationId", id);
+		model.addAttribute("folio", folioService.forAdmin(id)); // 청구서 패널(D-038)
 		// 확정 상태면 체크인 호실 선택지를 함께 싣는다.
 		if (detail.status() == ReservationStatus.CONFIRMED) {
 			model.addAttribute("assignableRooms", reservationAdminService.assignableRoomsFor(id));

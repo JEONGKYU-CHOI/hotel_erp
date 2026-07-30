@@ -1,5 +1,6 @@
 package io.github.jeongkyuchoi.hotel.erp.common.domain.payment;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,4 +15,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
 	Optional<Payment> findByPaymentKey(String paymentKey);
+
+	/** 예약 한 건의 결제 내역(폴리오 조립용, D-038). 승인 시각 순으로 원장 라인을 만든다. */
+	List<Payment> findByReservationIdOrderByApprovedAt(Long reservationId);
 }
