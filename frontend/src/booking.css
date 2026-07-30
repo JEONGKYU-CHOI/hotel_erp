@@ -32,6 +32,17 @@
   font-size: 0.9rem;
 }
 .topnav a:hover { color: #2563eb; }
+.topnav .who { color: #111827; font-weight: 600; font-size: 0.9rem; }
+.topnav .linkbtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #4b5563;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.topnav .linkbtn:hover { color: #2563eb; }
 
 /* 예약 상태 배지 */
 .status-badge {
@@ -158,6 +169,22 @@
 }
 .hold-summary dt { color: #6b7280; font-size: 0.9rem; margin: 0; }
 .hold-summary dd { margin: 0; font-weight: 600; }
+
+/* 인증 화면 */
+.auth-card { max-width: 420px; }
+.field-error { color: #b91c1c; font-size: 0.8rem; }
+
+/* 내 예약 목록 */
+.res-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.res-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+}
+.res-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.res-no { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em; }
+.res-body { margin-bottom: 4px; }
+.res-meta { font-size: 0.9rem; margin: 0; }
 
 @media (max-width: 520px) {
   .search-form { grid-template-columns: 1fr; }

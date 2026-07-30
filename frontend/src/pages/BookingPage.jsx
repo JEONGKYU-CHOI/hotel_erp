@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ANONYMOUS, loadTossPayments } from '@tosspayments/tosspayments-sdk'
 import { api } from '../api/client.js'
+import { useAuth } from '../auth/AuthContext.jsx'
 
 // 검색 화면에서 넘어온 조건(state)으로 HOLD 를 만든다.
 // 흐름: 요금정책 로드 → 예약자 정보 입력 → HOLD 생성 → 예약번호·만료·총액 표시 → (다음) 결제.
 export default function BookingPage() {
   const { state } = useLocation()
   const navigate = useNavigate()
+  const { member } = useAuth()
 
   // 검색을 거치지 않고 직접 들어오면 검색으로 돌려보낸다.
   useEffect(() => {
@@ -28,6 +30,14 @@ export default function BookingPage() {
 
   // 멱등키는 화면당 한 번만 만든다 — 재시도(더블클릭)에도 같은 키라 중복 예약이 안 생긴다.
   const idempotencyKey = useRef(crypto.randomUUID())
+
+  // 로그인 회원이면 예약자 정보를 회원 프로필로 미리 채운다 — 그대로 확정하거나 고칠 수 있다.
+  useEffect(() => {
+    if (!member) return
+    setGuestName((v) => v || member.name || '')
+    setGuestPhone((v) => v || member.phone || '')
+    setGuestEmail((v) => v || member.email || '')
+  }, [member])
 
   useEffect(() => {
     if (!state?.roomTypeId) return
