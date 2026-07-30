@@ -252,4 +252,33 @@ public class Reservation extends BaseEntity {
 		this.status = ReservationStatus.CONFIRMED;
 		this.holdExpiresAt = null;
 	}
+
+	/**
+	 * 예약 취소. HOLD 또는 CONFIRMED 예약을 CANCELLED 로 전이한다(D-027).
+	 *
+	 * <p>재고 반환(HOLD 면 {@code held_qty}, CONFIRMED 면 {@code sold_qty})은 호출자(취소
+	 * 서비스)가 잠근 재고 행에 대고 따로 한다 — 이 메서드는 예약 상태와 취소 메타(시각·사유)만
+	 * 바꾼다. <b>어느 버킷을 되돌릴지는 취소 직전 상태가 결정하므로, 서비스가 이 메서드를
+	 * 부르기 전에 상태를 먼저 읽어야 한다.</b>
+	 *
+	 * <p>{@code hold_expires_at} 은 null 로 지운다 — 취소된 예약은 더 이상 만료 대상이
+	 * 아니다(확정과 같은 처리).
+	 *
+	 * <p><b>취소할 수 없는 상태</b> — CHECKED_IN·CHECKED_OUT 은 이미 투숙이 시작/완료돼
+	 * 취소가 아니라 다른 업무(중도퇴실·환불)의 영역이다. EXPIRED·NO_SHOW·CANCELLED 는 이미
+	 * 재고를 점유하지 않으므로 취소로 되돌릴 것이 없다. 이미 CANCELLED 인 예약의 재취소(멱등)는
+	 * 서비스가 이 메서드를 부르기 전에 걸러 낸다.
+	 *
+	 * @throws IllegalStateException HOLD·CONFIRMED 가 아닌 상태에서 부르면.
+	 */
+	public void cancel(String reason) {
+		if (status != ReservationStatus.HOLD && status != ReservationStatus.CONFIRMED) {
+			throw new IllegalStateException(
+					"취소할 수 없는 상태입니다. no=" + reservationNo + " status=" + status);
+		}
+		this.status = ReservationStatus.CANCELLED;
+		this.cancelledAt = LocalDateTime.now();
+		this.cancelReason = reason;
+		this.holdExpiresAt = null;
+	}
 }

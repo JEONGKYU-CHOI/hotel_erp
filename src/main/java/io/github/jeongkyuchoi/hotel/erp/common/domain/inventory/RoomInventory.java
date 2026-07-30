@@ -144,6 +144,29 @@ public class RoomInventory extends BaseEntity {
 	}
 
 	/**
+	 * 확정 취소. CONFIRMED 예약이 취소될 때 {@code soldQty} 를 되돌린다(D-027).
+	 *
+	 * <p>{@link #releaseHold} 와 대칭이다 — HOLD 취소는 {@code heldQty} 를, CONFIRMED
+	 * 취소는 {@code soldQty} 를 되돌린다. 어느 버킷을 되돌릴지는 <b>취소 직전 예약 상태</b>가
+	 * 결정하며, 그 판단은 취소 서비스가 한다. 이 메서드는 {@code soldQty} 만 내린다.
+	 *
+	 * <p>{@link #hold} 와 달리 가용량 검사가 없다 — 반환은 재고를 늘리는 방향이라
+	 * 오버부킹({@code sold + held <= total})을 위협하지 않는다. 호출자가 재고 행을
+	 * {@code FOR UPDATE} 로 잠근 채 불러야 갱신 유실이 없다는 규약은 {@link #releaseHold}
+	 * 와 같다(D-018).
+	 */
+	public void releaseSold(int qty) {
+		if (qty <= 0) {
+			throw new IllegalArgumentException("반환 수량은 1 이상이어야 합니다. qty=" + qty);
+		}
+		if (soldQty < qty) {
+			throw new IllegalStateException(
+					stayDate + " 확정 반환 불가: 확정 " + soldQty + " < 반환 " + qty);
+		}
+		this.soldQty -= qty;
+	}
+
+	/**
 	 * 점유 → 확정 전이. 결제 성공 시 {@code heldQty} 를 {@code soldQty} 로 옮긴다.
 	 *
 	 * <p>총량은 그대로이므로 CHECK 제약을 새로 위협하지 않는다. 점유분이 이미
