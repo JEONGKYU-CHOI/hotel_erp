@@ -16,6 +16,8 @@
 | Bash 툴에서 `rm` 차단됨 | `~/.claude/settings.json`의 `deny: Bash(rm:*)` | PowerShell `Remove-Item` 사용 |
 | `BLOCKED: refusing to edit on protected branch 'main'` | `~/.claude/hooks/block-main-branch-edits.sh` (전역 훅) | **feature 브랜치에서 작업.** 훅을 끄지 말 것 |
 | `git add`/`commit` 시 LF→CRLF 경고 다발 | `.gitattributes`가 의도대로 동작 중 | 무시 |
+| `git mv` 로 소스 디렉터리 이동 시 `Permission denied` | **Gradle 데몬(fork된 java)이 소스 트리를 물고 있음.** `--stop` 만으로 안 풀릴 때가 있음 | PowerShell `Move-Item` 으로 이동 후 `git add -A`(git 이 rename 인식). 남은 빈 폴더는 `Remove-Item -Recurse` |
+| 커밋에 없던 코드가 워킹트리에 나타남 (미커밋) | **미상 — IntelliJ 재설치 후 발생.** Local History 복원 / AI 어시스턴트 자동삽입 의심 | 출처 불명 코드는 신뢰·커밋하지 말 것. `git diff HEAD` 로 확인 후 `git checkout HEAD -- <file>` 로 폐기하고 필요하면 직접 재작성 |
 
 ---
 
