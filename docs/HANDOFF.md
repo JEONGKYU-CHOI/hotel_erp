@@ -1,6 +1,6 @@
-# HANDOFF — 호텔 PMS + 부킹엔진 (Day 3 + 결제)
+# HANDOFF — 호텔 PMS + 부킹엔진 (Day 3 + 결제 + React 부킹화면)
 
-- 작성일: 2026-07-31 (Day 3 이어서 결제 모듈 추가)
+- 작성일: 2026-07-31 (Day 3 이어서 결제 모듈 + React 부킹엔진 화면)
 - 브랜치: **`dev`** (개발선). `main` 은 안정 기준선·원격 기본 브랜치 — D-033.
 - **함께 로드할 파일 (중복 수록 안 함 — 반드시 읽을 것)**
   - `docs/decisions.md` — 설계 결정 D-001~D-033 전체
@@ -21,6 +21,15 @@
 vs 서버 저장액) · 3겹 멱등(선조회+UNIQUE+확정서비스) · 웹훅 사후 정합 · 확정 REST 노출.
 `POST /api/payments/confirm`·`/webhook`. 전체 스위트 71건 통과(실제 MySQL, 토스만 mock).
 토스 키는 환경변수/`application-local.yml`(local 프로파일, gitignore)로만 — 커밋 안 됨.
+
+React 부킹엔진 화면 완료(2026-07-31): `frontend/`(Vite+React19, JS). 흐름 = 검색(타입·날짜)
+→ 가용조회 → HOLD → 토스 결제창 → 승인·확정. 백엔드 보완: `GET /api/room-types`,
+`GET /api/room-types/{id}/rate-plans`, `GET /api/payments/config`(공개 클라이언트 키만).
+**실제 토스 테스트 결제로 end-to-end 검증됨** — 실 paymentKey 발급·금액검증·HOLD→CONFIRMED·
+결제기록·재고 held→sold 전부 확인, 에러 0(로그 근거). 미결제 HOLD 는 만료 회수도 실측.
+남은 다듬기: 프로덕션 SPA 라우팅 폴백(`/payment/success` 등에 Spring 이 index.html 서빙),
+예약 조회 화면(서브4). 결제 결과 착지는 `/payment/success`·`/payment/fail`(프록시 `/payments`
+와 겹치지 않게 단수 경로).
 
 Day 3 커밋 8건 (dev):
 ```
@@ -72,15 +81,18 @@ a50dff2  feat: add night-close batch with proven posting idempotency     (D-026)
 
 ## 3. 즉시 다음 단계
 
-추천 순서: 체크인아웃(완료) → 회원인증(완료) → 결제(완료, D-034) → **React** → 회원예약연결 → NO_SHOW.
+추천 순서: 결제(완료, D-034) → React 부킹화면(완료, 실결제 검증) → **SPA 폴백 → 예약조회 화면
+→ 회원예약연결 → NO_SHOW**.
 
-1. **React 부킹엔진 화면 (다음 순위).** `/api`(availability·hold·lookup·auth·me·**payments/confirm**)를
-   소비. 날짜선택→가용→HOLD→**결제창(토스 클라이언트 키·`/api/payments/confirm` 연동)**→조회 흐름.
-   결제 백엔드가 섰으니 여기서 처음으로 **진짜 end-to-end 결제**가 돈다(지금까진 mock 검증만).
-   JS/Vite(D-013), 별도 스택. 토스 결제위젯 SDK + 클라이언트 키 필요(둘 다 확보됨).
-2. **회원 예약 연결.** 로그인 회원의 HOLD 에 `memberId` 연결 + `GET /api/me/reservations`.
+1. **프로덕션 SPA 라우팅 폴백.** 지금 결제 착지(`/payment/success` 등)는 dev 에서 vite 가
+   index.html 을 주지만, 배포(빌드 산출물을 jar static 으로) 시엔 Spring 이 그 경로에서
+   index.html 을 forward 해야 새로고침·리다이렉트가 404 로 안 튄다. 백오피스(`/admin/**`)·
+   API(`/api/**`)를 건드리지 않는 catch-all forward 컨트롤러가 필요.
+2. **예약 조회 화면(서브4).** 이미 있는 `GET /api/reservations/{no}?phone=`(D-028)을 소비하는
+   React 화면. 결제 후/재방문 시 예약 확인. 백엔드는 그대로, 프론트만 추가.
+3. **회원 예약 연결.** 로그인 회원의 HOLD 에 `memberId` 연결 + `GET /api/me/reservations`.
    현재 hold 는 비회원만(memberId=null). 인증 컨텍스트의 회원 id 를 커맨드에 싣는다.
-3. **NO_SHOW 판정.** 당일 미투숙 CONFIRMED → NO_SHOW 를 야간마감(D-026)에 붙인다.
+4. **NO_SHOW 판정.** 당일 미투숙 CONFIRMED → NO_SHOW 를 야간마감(D-026)에 붙인다.
    라이프사이클 전이는 이미 갖춰짐(D-031).
 
 ---
