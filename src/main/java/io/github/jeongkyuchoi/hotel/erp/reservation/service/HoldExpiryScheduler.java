@@ -49,8 +49,9 @@ public class HoldExpiryScheduler {
 		int processed = 0;
 		for (Long id : dueIds) {
 			try {
-				expiryService.expireOne(id, now);
-				processed++;
+				if (expiryService.expireOne(id, now)) {
+					processed++; // 실제로 만료시킨 건만 센다. 경합에서 진 no-op 은 제외.
+				}
 			} catch (RuntimeException e) {
 				// 한 건 실패가 나머지를 막지 않게 삼키고 로그만 남긴다. 다음 주기에 재시도된다.
 				log.warn("HOLD 만료 처리 실패 id={} — 다음 주기에 재시도", id, e);

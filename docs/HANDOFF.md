@@ -63,7 +63,7 @@ e500293  docs: D-008~D-017 기록, D-001/D-007 supersede
 
 ```
 JDK        Temurin 21.0.11  (JAVA_HOME 시스템 등록 완료)
-IDE        IntelliJ IDEA Community 2025.2.6.2
+IDE        IntelliJ IDEA Ultimate 2026.2.0.1  (build IU-262.8665.337)
 MySQL      8.4.9 로컬 설치. 서비스명 MySQL84, Automatic 시작
            설정  C:\ProgramData\MySQL\MySQL Server 8.4\my.ini
            서버 타임존 +09:00, utf8mb4 / utf8mb4_0900_ai_ci

@@ -56,11 +56,13 @@ public class ReservationExpiryService {
 	 * 안전하다.
 	 */
 	@Transactional
-	public void expireOne(Long reservationId, LocalDateTime now) {
-		Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
+	public boolean expireOne(Long reservationId, LocalDateTime now) {
+		// ★ 예약 행을 먼저 잠근다(D-025). 확정과 같은 순서(예약 → 재고)로 잠가 직렬화한다.
+		//    확정이 먼저 커밋됐다면 여기 락 읽기가 최신 CONFIRMED 를 보고 아래에서 통과한다.
+		Reservation reservation = reservationRepository.findByIdForUpdate(reservationId).orElse(null);
 		if (reservation == null || !reservation.isHoldExpired(now)) {
-			// 경합에서 졌거나(확정됨) 아직 만료 전. 조용히 통과하는 것이 멱등성이다.
-			return;
+			// 경합에서 졌거나(확정됨) 아직 만료 전. 아무 것도 하지 않는 것이 멱등성이다.
+			return false;
 		}
 
 		LocalDate firstNight = reservation.getCheckInDate();
@@ -86,5 +88,6 @@ public class ReservationExpiryService {
 		log.info("HOLD 만료: no={} {}~{} 재고 반환 완료",
 				reservation.getReservationNo(),
 				reservation.getCheckInDate(), reservation.getCheckOutDate());
+		return true;
 	}
 }

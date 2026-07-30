@@ -1,10 +1,12 @@
 package io.github.jeongkyuchoi.hotel.erp.common.domain.reservation;
 
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 /**
@@ -30,6 +32,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 			Long tenantId, String reservationNo, String guestPhone);
 
 	boolean existsByReservationNo(String reservationNo);
+
+	/**
+	 * 예약 행을 {@code FOR UPDATE} 로 잠근 채 조회한다.
+	 *
+	 * <p>상태 전이(확정·만료·취소)가 같은 예약을 두고 경합할 때, 이 행 락이
+	 * <b>직렬화 지점</b>이 된다. 먼저 잠근 트랜잭션이 전이를 끝내고 커밋하면, 뒤이은
+	 * 트랜잭션은 <b>최신</b> 상태(락 읽기는 스냅샷이 아닌 최신 커밋을 본다)를 읽고
+	 * 자신의 가드/멱등 처리로 넘어간다. 재고 여유와 무관하게 이 예약의 전이가 겹치지 않는다.
+	 *
+	 * <p>락 순서는 언제나 <b>예약 → 재고</b>다. 확정·만료 서비스 모두 이 순서를 지켜
+	 * 데드락을 피한다.
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select r from Reservation r where r.id = :id")
+	Optional<Reservation> findByIdForUpdate(Long id);
 
 	/**
 	 * 만료된 HOLD 의 id 목록. 스케줄러가 훑는 경로다({@code idx_reservation_hold} 사용).

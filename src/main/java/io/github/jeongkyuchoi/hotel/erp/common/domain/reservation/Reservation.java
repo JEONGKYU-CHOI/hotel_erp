@@ -230,4 +230,26 @@ public class Reservation extends BaseEntity {
 		}
 		this.status = ReservationStatus.EXPIRED;
 	}
+
+	/**
+	 * HOLD → CONFIRMED 전이. 결제 성공 시 부른다.
+	 *
+	 * <p>재고의 {@code held_qty → sold_qty} 이동은 호출자(확정 서비스)가 잠근 재고 행에
+	 * 대고 따로 한다 — 이 메서드는 예약 상태만 바꾼다. {@code hold_expires_at} 은 null 로
+	 * 지운다: 확정된 예약은 더 이상 만료 대상이 아니므로, 스케줄러가 훑는 조건
+	 * ({@code status=HOLD and hold_expires_at < now})에서 자연히 빠진다.
+	 *
+	 * <p><b>만료된 뒤에는 확정할 수 없다.</b> 이미 EXPIRED 면 재고가 반환돼 다른 손님에게
+	 * 팔렸을 수 있다. 결제가 만료 직후 도착하면 여기서 거부하고, 환불은 상위 계층이 맡는다.
+	 *
+	 * @throws IllegalStateException HOLD 가 아닌 상태에서 부르면.
+	 */
+	public void confirm() {
+		if (status != ReservationStatus.HOLD) {
+			throw new IllegalStateException(
+					"HOLD 가 아닌 예약을 확정할 수 없습니다. no=" + reservationNo + " status=" + status);
+		}
+		this.status = ReservationStatus.CONFIRMED;
+		this.holdExpiresAt = null;
+	}
 }
