@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -70,11 +71,17 @@ public class BookingApiController {
 		return availabilityService.check(roomTypeId, checkIn, checkOut);
 	}
 
-	/** HOLD 생성. 오버부킹은 재고 락으로 막힌다(D-023). 멱등키로 중복 생성을 막는다. */
+	/**
+	 * HOLD 생성. 오버부킹은 재고 락으로 막힌다(D-023). 멱등키로 중복 생성을 막는다.
+	 *
+	 * <p>로그인 회원이면 인증 컨텍스트의 회원 id 가 예약에 연결된다(D-032). 토큰이 없으면
+	 * {@code memberId} 는 null 이라 비회원 예약이 된다 — 비회원 경로는 그대로 열려 있다(D-008).
+	 */
 	@PostMapping("/reservations")
 	@ResponseStatus(HttpStatus.CREATED)
-	public HoldResponse hold(@Valid @RequestBody HoldRequest request) {
-		return HoldResponse.from(reservationService.hold(request.toCommand()));
+	public HoldResponse hold(@Valid @RequestBody HoldRequest request,
+			@AuthenticationPrincipal Long memberId) {
+		return HoldResponse.from(reservationService.hold(request.toCommand(memberId)));
 	}
 
 	/** 예약 조회 (예약번호 + 전화, 비회원 경로, D-028). */

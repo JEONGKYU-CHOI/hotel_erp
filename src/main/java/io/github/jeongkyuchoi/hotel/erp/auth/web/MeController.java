@@ -2,6 +2,9 @@ package io.github.jeongkyuchoi.hotel.erp.auth.web;
 
 import io.github.jeongkyuchoi.hotel.erp.auth.dto.MeResponse;
 import io.github.jeongkyuchoi.hotel.erp.auth.service.MemberAuthService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.dto.MyReservationSummary;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationQueryService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +24,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class MeController {
 
 	private final MemberAuthService memberAuthService;
+	private final ReservationQueryService reservationQueryService;
 
 	@GetMapping
 	public MeResponse me(@AuthenticationPrincipal Long memberId) {
 		return MeResponse.from(memberAuthService.getActiveMember(memberId));
+	}
+
+	/** 로그인 회원의 예약 목록(D-032). 인증된 회원 id 로만 조회한다 — 소유 증명 불필요. */
+	@GetMapping("/reservations")
+	public List<MyReservationSummary> myReservations(@AuthenticationPrincipal Long memberId) {
+		return reservationQueryService.listForMember(memberId);
 	}
 }

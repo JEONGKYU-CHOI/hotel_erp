@@ -2,8 +2,10 @@ package io.github.jeongkyuchoi.hotel.erp.reservation.service;
 
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotFoundException;
+import io.github.jeongkyuchoi.hotel.erp.reservation.dto.MyReservationSummary;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationDetail;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,5 +46,17 @@ public class ReservationQueryService {
 				.findByTenantIdAndReservationNoAndGuestPhone(TENANT_ID, reservationNo, guestPhone)
 				.map(r -> ReservationDetail.from(r, LocalDateTime.now()))
 				.orElseThrow(() -> new NotFoundException("예약을 찾을 수 없습니다."));
+	}
+
+	/**
+	 * 로그인 회원의 예약 목록(D-032). 인증된 회원 id 로만 조회하므로 소유 증명이 따로 필요 없다
+	 * — 남의 예약이 섞일 수 없다. 읽기 전용 트랜잭션에서 요약으로 조립한다(지연로딩 접근).
+	 */
+	@Transactional(readOnly = true)
+	public List<MyReservationSummary> listForMember(Long memberId) {
+		LocalDateTime now = LocalDateTime.now();
+		return reservationRepository.findForMember(TENANT_ID, memberId).stream()
+				.map(r -> MyReservationSummary.from(r, now))
+				.toList();
 	}
 }

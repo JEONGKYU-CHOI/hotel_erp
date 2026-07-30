@@ -38,6 +38,23 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	 */
 	Optional<Reservation> findByTenantIdAndReservationNo(Long tenantId, String reservationNo);
 
+	/**
+	 * 로그인 회원의 예약 목록(D-032). 최근 체크인 순으로 돌려준다.
+	 *
+	 * <p>{@code join fetch} 로 roomType·ratePlan 을 함께 가져온다 — OSIV 를 껐으므로
+	 * ({@code open-in-view: false}) 목록 매핑 시 지연로딩 연관을 건드리면
+	 * {@code LazyInitializationException} 이 난다. {@code nights} 컬렉션은 fetch 하지 않는다
+	 * (요약에는 숙박일수만 필요하고, 컬렉션 fetch 는 행을 뻥튀기한다).
+	 */
+	@Query("""
+			select r from Reservation r
+			join fetch r.roomType
+			join fetch r.ratePlan
+			where r.tenantId = :tenantId and r.member.id = :memberId
+			order by r.checkInDate desc, r.id desc
+			""")
+	List<Reservation> findForMember(Long tenantId, Long memberId);
+
 	boolean existsByReservationNo(String reservationNo);
 
 	/**

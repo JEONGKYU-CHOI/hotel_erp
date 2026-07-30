@@ -51,10 +51,14 @@ public record HoldRequest(
 		@NotBlank(message = "멱등키는 필수입니다.")
 		String idempotencyKey) {
 
-	/** 서비스 입력으로 변환한다. 비회원(memberId=null)이 기본이다. */
-	public ReservationHoldCommand toCommand() {
+	/**
+	 * 서비스 입력으로 변환한다. 로그인 회원이면 인증 컨텍스트의 {@code memberId} 를 싣고,
+	 * 비회원이면 {@code null} 이다(D-032). 회원 여부는 클라이언트가 보내는 값이 아니라
+	 * 서버가 토큰에서 뽑은 값이라, 남의 회원 id 로 예약을 붙이는 위조가 성립하지 않는다.
+	 */
+	public ReservationHoldCommand toCommand(Long memberId) {
 		return new ReservationHoldCommand(
-				null, guestName, guestPhone, guestEmail,
+				memberId, guestName, guestPhone, guestEmail,
 				roomTypeId, ratePlanId, checkInDate, checkOutDate,
 				adults, children, idempotencyKey);
 	}
