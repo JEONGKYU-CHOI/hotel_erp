@@ -89,9 +89,13 @@ class NoShowTest {
 
 	/** 주어진 도착일에 1박 확정 예약을 만든다. */
 	private Long confirmedArrival(LocalDate arrival, String idem) {
+		return confirmedArrival(arrival, idem, ratePlanId);
+	}
+
+	private Long confirmedArrival(LocalDate arrival, String idem, Long planId) {
 		Long id = reservationService.hold(new ReservationHoldCommand(
 				null, "손님", "010-1234-5678", null,
-				roomTypeId, ratePlanId, arrival, arrival.plusDays(1), 2, 0, idem)).getId();
+				roomTypeId, planId, arrival, arrival.plusDays(1), 2, 0, idem)).getId();
 		confirmService.confirm(id);
 		return id;
 	}
@@ -118,6 +122,35 @@ class NoShowTest {
 				.filter(n -> n.getStayDate().equals(D0))
 				.collect(Collectors.toMap(n -> n.getStayDate(), ReservationNight::isPosted, (a, b) -> a || b));
 		assertThat(postedByDate).containsEntry(D0, true);
+	}
+
+	@Test
+	@DisplayName("노쇼 위약금(D-037): 환불불가 정책 → no_show_fee = 총액 스냅샷 저장")
+	void noShow_nonRefundable_storesFullFee() {
+		Long nrPlanId = ratePlanRepository.save(RatePlan.builder()
+				.tenantId(1L).roomType(roomTypeRepository.findById(roomTypeId).orElseThrow())
+				.code("NSNR").name("환불불가").baseAmount(RATE)
+				.breakfastIncluded(false).refundable(false)
+				.cancelDeadlineDays((short) 1).penaltyRate(new BigDecimal("0")).active(true)
+				.build()).getId();
+		Long id = confirmedArrival(D0, "ns-nr", nrPlanId);
+		BigDecimal total = reservationRepository.findById(id).orElseThrow().getTotalAmount();
+
+		noShowService.markNoShows(D0);
+
+		var r = reservationRepository.findById(id).orElseThrow();
+		assertThat(r.getStatus()).isEqualTo(ReservationStatus.NO_SHOW);
+		assertThat(r.getNoShowFee()).as("환불불가 노쇼는 전액 위약금").isEqualByComparingTo(total);
+	}
+
+	@Test
+	@DisplayName("노쇼 위약금: 환불가능·penalty_rate 0 정책 → no_show_fee 0")
+	void noShow_refundableZeroRate_storesZeroFee() {
+		Long id = confirmedArrival(D0, "ns-zero"); // seed 정책: refundable, penaltyRate 0
+		noShowService.markNoShows(D0);
+
+		assertThat(reservationRepository.findById(id).orElseThrow().getNoShowFee())
+				.isEqualByComparingTo("0");
 	}
 
 	@Test

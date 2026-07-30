@@ -145,6 +145,14 @@ public class Reservation extends BaseEntity {
 	private BigDecimal cancellationFee;
 
 	/**
+	 * 노쇼 위약금 스냅샷(D-037). 노쇼 판정 시점에 요금정책으로 계산해 굳힌다 —
+	 * {@link #cancellationFee} 와 대칭이다. 야간마감의 첫날 게시(폴리오)와는 별개의 값이며,
+	 * 둘의 정합은 정산(후속)이 맞춘다. NULL 이면 노쇼가 아니거나 위약금 미적용이다.
+	 */
+	@Column(name = "no_show_fee", precision = 12, scale = 2)
+	private BigDecimal noShowFee;
+
+	/**
 	 * 일자별 요금 스냅샷. 예약과 생사를 같이 하므로 {@code cascade = ALL} +
 	 * {@code orphanRemoval} 로 묶는다. 예약 없이 존재할 이유가 없는 데이터다.
 	 *
@@ -343,13 +351,18 @@ public class Reservation extends BaseEntity {
 	 *
 	 * <p>재판정(멱등)은 서비스의 조회 필터(CONFIRMED 만)가 걸러 이 메서드까지 오지 않는다.
 	 *
+	 * <p>{@code noShowFee} 는 호출자(노쇼 서비스)가 {@link CancellationPolicy#quoteNoShow} 로
+	 * 계산해 넘긴 위약금 스냅샷이다 — 취소({@link #cancel})와 같은 규율로, 계산은 순수 함수에
+	 * 맡기고 이 메서드는 결과를 굳히기만 한다.
+	 *
 	 * @throws IllegalStateException 확정 상태가 아니면.
 	 */
-	public void noShow() {
+	public void noShow(BigDecimal noShowFee) {
 		if (status != ReservationStatus.CONFIRMED) {
 			throw new IllegalStateException(
 					"확정된 예약만 노쇼 처리할 수 있습니다. no=" + reservationNo + " status=" + status);
 		}
 		this.status = ReservationStatus.NO_SHOW;
+		this.noShowFee = noShowFee;
 	}
 }

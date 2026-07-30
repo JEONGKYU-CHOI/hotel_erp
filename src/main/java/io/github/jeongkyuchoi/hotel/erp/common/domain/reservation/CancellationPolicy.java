@@ -52,12 +52,38 @@ public final class CancellationPolicy {
 
 		// 3) 기한 경과 — penalty_rate% 를 원 단위로 반올림. 총액을 넘지 않게 클램프한다
 		//    (penalty_rate 는 DB CHECK 로 0~100 이지만, 방어적으로 상한을 못 박는다).
-		BigDecimal penalty = totalAmount
-				.multiply(plan.getPenaltyRate())
+		BigDecimal penalty = percentPenalty(totalAmount, plan.getPenaltyRate());
+		return new CancellationCharge(
+				penalty, totalAmount.subtract(penalty), CancellationCharge.Basis.DEADLINE_PASSED);
+	}
+
+	/**
+	 * 노쇼 과금을 계산한다(D-037) — 도착 후의 늦은 취소로 보아 취소 정책과 통일한다.
+	 *
+	 * <p><b>{@link #quote}와의 유일한 차이는 "무료 취소 기한"이 없다는 것</b>이다. 노쇼는 이미
+	 * 도착일이 지났으므로 무료 구간에 해당할 수 없다 — 그래서 FREE 분기를 두지 않는다. 환불불가
+	 * 정책은 전액, 그 외는 {@code penalty_rate%} 를 물린다. 야간마감의 첫날 게시(폴리오)와는
+	 * 별개의 스냅샷이며, 둘의 정합은 정산(후속 범위)이 맞춘다.
+	 *
+	 * @param plan        예약이 참조한 요금정책
+	 * @param totalAmount 결제 총액
+	 */
+	public static CancellationCharge quoteNoShow(RatePlan plan, BigDecimal totalAmount) {
+		if (!plan.isRefundable()) {
+			return new CancellationCharge(
+					totalAmount, BigDecimal.ZERO, CancellationCharge.Basis.NON_REFUNDABLE);
+		}
+		BigDecimal penalty = percentPenalty(totalAmount, plan.getPenaltyRate());
+		return new CancellationCharge(
+				penalty, totalAmount.subtract(penalty), CancellationCharge.Basis.DEADLINE_PASSED);
+	}
+
+	/** 총액의 {@code rate%} 를 원 단위로 반올림하고, 총액을 넘지 않게 클램프한다. */
+	private static BigDecimal percentPenalty(BigDecimal totalAmount, BigDecimal rate) {
+		return totalAmount
+				.multiply(rate)
 				.divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP)
 				.min(totalAmount)
 				.max(BigDecimal.ZERO);
-		return new CancellationCharge(
-				penalty, totalAmount.subtract(penalty), CancellationCharge.Basis.DEADLINE_PASSED);
 	}
 }

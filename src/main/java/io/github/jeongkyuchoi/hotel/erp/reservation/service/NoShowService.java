@@ -1,5 +1,7 @@
 package io.github.jeongkyuchoi.hotel.erp.reservation.service;
 
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.CancellationCharge;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.CancellationPolicy;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import java.time.LocalDate;
@@ -20,7 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
  * 잡히지 않는다. 도메인 {@link Reservation#noShow()} 가드가 한 번 더 못 박는다.
  *
  * <p><b>재고는 건드리지 않는다.</b> 도착일이 지난 재고를 되돌려도 그 밤을 다시 팔 수 없다
- * (취소와 갈리는 지점, {@link Reservation#noShow()} 주석 참조).
+ * (취소와 갈리는 지점, {@link Reservation#noShow} 주석 참조).
+ *
+ * <p><b>위약금(D-037).</b> 노쇼를 도착 후의 늦은 취소로 보고 {@link CancellationPolicy#quoteNoShow}
+ * 로 위약금을 계산해 예약에 스냅샷으로 굳힌다(취소와 통일). 야간마감의 첫날 게시(폴리오)와는
+ * 별개의 값이며, 정합은 정산(후속)이 맞춘다.
  */
 @Slf4j
 @Service
@@ -41,7 +47,9 @@ public class NoShowService {
 		List<Reservation> candidates =
 				reservationRepository.findNoShowCandidates(TENANT_ID, arrivalDate);
 		for (Reservation r : candidates) {
-			r.noShow();
+			CancellationCharge charge =
+					CancellationPolicy.quoteNoShow(r.getRatePlan(), r.getTotalAmount());
+			r.noShow(charge.penalty());
 		}
 		if (!candidates.isEmpty()) {
 			log.info("NO_SHOW 판정: arrival={} {}건", arrivalDate, candidates.size());

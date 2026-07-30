@@ -100,6 +100,41 @@ class CancellationPolicyTest {
 	}
 
 	@Test
+	@DisplayName("노쇼: 환불불가 정책 → 위약금 100%")
+	void noShow_nonRefundable_fullPenalty() {
+		RatePlan plan = plan(false, 1, "0");
+		BigDecimal total = new BigDecimal("120000.00");
+
+		CancellationCharge charge = CancellationPolicy.quoteNoShow(plan, total);
+
+		assertThat(charge.basis()).isEqualTo(Basis.NON_REFUNDABLE);
+		assertThat(charge.penalty()).isEqualByComparingTo(total);
+		assertThat(charge.refund()).isEqualByComparingTo("0");
+	}
+
+	@Test
+	@DisplayName("노쇼: 환불가능 정책 → penalty_rate% 위약금")
+	void noShow_refundable_percentPenalty() {
+		RatePlan plan = plan(true, 1, "30");
+		CancellationCharge charge = CancellationPolicy.quoteNoShow(plan, new BigDecimal("100000.00"));
+
+		assertThat(charge.basis()).isEqualTo(Basis.DEADLINE_PASSED);
+		assertThat(charge.penalty()).isEqualByComparingTo("30000");
+		assertThat(charge.refund()).isEqualByComparingTo("70000");
+	}
+
+	@Test
+	@DisplayName("노쇼는 무료취소 기한이 없다 — deadline 0 정책이어도 과금된다")
+	void noShow_noFreeWindow_evenWhenDeadlineZero() {
+		// 취소였다면 deadline 0 + 당일은 FREE 지만, 노쇼는 도착 후라 무료 구간이 없다.
+		RatePlan plan = plan(true, 0, "40");
+		CancellationCharge charge = CancellationPolicy.quoteNoShow(plan, new BigDecimal("100000.00"));
+
+		assertThat(charge.basis()).isEqualTo(Basis.DEADLINE_PASSED);
+		assertThat(charge.penalty()).isEqualByComparingTo("40000");
+	}
+
+	@Test
 	@DisplayName("penalty_rate 100 → 위약금이 총액을 넘지 않는다")
 	void fullRate_penaltyEqualsTotal() {
 		RatePlan plan = plan(true, 1, "100");
