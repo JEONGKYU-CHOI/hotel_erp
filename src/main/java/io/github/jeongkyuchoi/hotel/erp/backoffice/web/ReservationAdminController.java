@@ -1,6 +1,7 @@
 package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 
 import io.github.jeongkyuchoi.hotel.erp.backoffice.service.ReservationAdminService;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.CancellationCharge;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationCancelService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.StayService;
@@ -89,8 +90,10 @@ public class ReservationAdminController {
 			@RequestParam(required = false) String reason,
 			RedirectAttributes redirect) {
 		try {
-			reservationCancelService.cancel(id, reason);
-			redirect.addFlashAttribute("flashSuccess", "예약을 취소했습니다.");
+			CancellationCharge charge = reservationCancelService.cancel(id, reason);
+			redirect.addFlashAttribute("flashSuccess", String.format(
+					"예약을 취소했습니다. 위약금 %,d원 · 환불 %,d원",
+					charge.penalty().longValue(), charge.refund().longValue()));
 		} catch (IllegalStateException e) {
 			redirect.addFlashAttribute("flashError", "취소할 수 없는 상태입니다.");
 		}

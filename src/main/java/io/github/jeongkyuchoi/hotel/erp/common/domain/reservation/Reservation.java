@@ -137,6 +137,14 @@ public class Reservation extends BaseEntity {
 	private String cancelReason;
 
 	/**
+	 * 취소 위약금 스냅샷(D-037). 취소 시점에 요금정책으로 계산해 굳힌다 — 정책이 나중에 바뀌어도
+	 * 이 예약에 물린 금액은 변하지 않는다({@link RatePlan#update} 와 같은 규율). NULL 이면
+	 * 아직 취소되지 않았거나 위약금 계산이 적용되지 않은 예약이다.
+	 */
+	@Column(name = "cancellation_fee", precision = 12, scale = 2)
+	private BigDecimal cancellationFee;
+
+	/**
 	 * 일자별 요금 스냅샷. 예약과 생사를 같이 하므로 {@code cascade = ALL} +
 	 * {@code orphanRemoval} 로 묶는다. 예약 없이 존재할 이유가 없는 데이터다.
 	 *
@@ -269,9 +277,13 @@ public class Reservation extends BaseEntity {
 	 * 재고를 점유하지 않으므로 취소로 되돌릴 것이 없다. 이미 CANCELLED 인 예약의 재취소(멱등)는
 	 * 서비스가 이 메서드를 부르기 전에 걸러 낸다.
 	 *
+	 * <p>{@code cancellationFee} 는 호출자(취소 서비스)가 {@link CancellationPolicy} 로 계산해
+	 * 넘긴 위약금 스냅샷이다 — 미결제(HOLD) 취소는 0 이다. 여기서 다시 계산하지 않는다: 계산은
+	 * 순수 함수로 떼어 두고(테스트 용이), 이 메서드는 그 결과를 굳히기만 한다.
+	 *
 	 * @throws IllegalStateException HOLD·CONFIRMED 가 아닌 상태에서 부르면.
 	 */
-	public void cancel(String reason) {
+	public void cancel(String reason, BigDecimal cancellationFee) {
 		if (status != ReservationStatus.HOLD && status != ReservationStatus.CONFIRMED) {
 			throw new IllegalStateException(
 					"취소할 수 없는 상태입니다. no=" + reservationNo + " status=" + status);
@@ -279,6 +291,7 @@ public class Reservation extends BaseEntity {
 		this.status = ReservationStatus.CANCELLED;
 		this.cancelledAt = LocalDateTime.now();
 		this.cancelReason = reason;
+		this.cancellationFee = cancellationFee;
 		this.holdExpiresAt = null;
 	}
 

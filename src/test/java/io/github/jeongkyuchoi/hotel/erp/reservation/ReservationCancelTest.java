@@ -10,6 +10,7 @@ import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomType;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomTypeRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventory;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventoryRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.CancellationCharge;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
@@ -88,9 +89,13 @@ class ReservationCancelTest {
 	}
 
 	private Long createHold(String idem) {
+		return createHold(idem, ratePlanId);
+	}
+
+	private Long createHold(String idem, Long planId) {
 		return reservationService.hold(new ReservationHoldCommand(
 				null, "손님", "010-1234-5678", null,
-				roomTypeId, ratePlanId, NIGHT, NIGHT.plusDays(1), 2, 0, idem)).getId();
+				roomTypeId, planId, NIGHT, NIGHT.plusDays(1), 2, 0, idem)).getId();
 	}
 
 	private RoomInventory inventory() {
@@ -146,6 +151,44 @@ class ReservationCancelTest {
 				.isInstanceOf(IllegalStateException.class);
 		// 만료가 이미 반환했으므로 재고는 그대로 0.
 		assertThat(inventory().getHeldQty()).isZero();
+	}
+
+	@Test
+	@DisplayName("환불불가 정책 확정 취소 → 위약금=총액이 예약에 저장되고 반환된다(D-037)")
+	void cancelConfirmed_nonRefundable_storesFullPenalty() {
+		// 환불불가 요금정책을 따로 만들어 그 위에 예약을 세운다.
+		Long nrPlanId = ratePlanRepository.save(RatePlan.builder()
+				.tenantId(1L).roomType(roomTypeRepository.findById(roomTypeId).orElseThrow())
+				.code("CXLNR").name("환불불가").baseAmount(new BigDecimal("100000"))
+				.breakfastIncluded(false).refundable(false)
+				.cancelDeadlineDays((short) 1).penaltyRate(new BigDecimal("0")).active(true)
+				.build()).getId();
+
+		Long id = createHold("idem-cxl-nr", nrPlanId);
+		confirmService.confirm(id);
+		BigDecimal total = reservationRepository.findById(id).orElseThrow().getTotalAmount();
+
+		CancellationCharge charge = cancelService.cancel(id, "환불불가 취소");
+
+		assertThat(charge.basis()).isEqualTo(CancellationCharge.Basis.NON_REFUNDABLE);
+		assertThat(charge.penalty()).isEqualByComparingTo(total);
+		assertThat(charge.refund()).isEqualByComparingTo("0");
+		// 예약 행에 스냅샷으로 굳었는지 확인.
+		assertThat(reservationRepository.findById(id).orElseThrow().getCancellationFee())
+				.isEqualByComparingTo(total);
+	}
+
+	@Test
+	@DisplayName("HOLD 취소 → 위약금 0(미결제), fee 스냅샷도 0")
+	void cancelHold_unpaid_zeroFee() {
+		Long id = createHold("idem-cxl-unpaid");
+
+		CancellationCharge charge = cancelService.cancel(id, "미결제 변심");
+
+		assertThat(charge.basis()).isEqualTo(CancellationCharge.Basis.UNPAID);
+		assertThat(charge.penalty()).isEqualByComparingTo("0");
+		assertThat(reservationRepository.findById(id).orElseThrow().getCancellationFee())
+				.isEqualByComparingTo("0");
 	}
 
 	@RepeatedTest(8)
