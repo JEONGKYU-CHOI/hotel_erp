@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class NightCloseScheduler {
 
 	private final NightCloseService nightCloseService;
+	private final NoShowService noShowService;
 
 	/**
 	 * 매일 03:05 에 <b>직전 영업일</b>(방금 끝난 밤)을 마감한다.
@@ -51,6 +52,10 @@ public class NightCloseScheduler {
 			log.info("야간마감 실행 date={} 게시 {}건 합계={}",
 					businessDate, result.postedNightCount(), result.postedAmount());
 		}
+
+		// 마감(첫날 과금) 뒤에 NO_SHOW 를 판정한다(D-036). 순서를 지켜야 노쇼 첫날이
+		// 게시된다. 판정은 멱등이라 마감이 스킵되는 재실행에서도 안전하다.
+		noShowService.markNoShows(businessDate);
 		return result;
 	}
 }

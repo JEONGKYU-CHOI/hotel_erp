@@ -319,4 +319,24 @@ public class Reservation extends BaseEntity {
 		}
 		this.status = ReservationStatus.CHECKED_OUT;
 	}
+
+	/**
+	 * CONFIRMED → NO_SHOW 전이(D-036). 도착일에 투숙하지 않은 확정 예약을 야간마감이 판정한다.
+	 *
+	 * <p><b>재고는 건드리지 않는다.</b> 도착일이 이미 지났으므로 {@code sold_qty} 를 되돌려도
+	 * 그 밤을 다시 팔 수 없다 — 취소(투숙 전, 재고 반환)와 갈리는 지점이다. 첫날 숙박료는
+	 * 야간마감이 이 전이 <b>전에</b> 이미 게시했다(노쇼 첫날 과금). 이후 밤은 NO_SHOW 가
+	 * 게시 대상 상태(CONFIRMED·CHECKED_IN)에서 빠져 게시되지 않는다.
+	 *
+	 * <p>재판정(멱등)은 서비스의 조회 필터(CONFIRMED 만)가 걸러 이 메서드까지 오지 않는다.
+	 *
+	 * @throws IllegalStateException 확정 상태가 아니면.
+	 */
+	public void noShow() {
+		if (status != ReservationStatus.CONFIRMED) {
+			throw new IllegalStateException(
+					"확정된 예약만 노쇼 처리할 수 있습니다. no=" + reservationNo + " status=" + status);
+		}
+		this.status = ReservationStatus.NO_SHOW;
+	}
 }

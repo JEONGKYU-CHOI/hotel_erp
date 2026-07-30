@@ -55,6 +55,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 			""")
 	List<Reservation> findForMember(Long tenantId, Long memberId);
 
+	/**
+	 * 도착일이 지났는데도 아직 CONFIRMED(미투숙)인 예약. 야간마감의 NO_SHOW 판정 대상이다(D-036).
+	 *
+	 * <p>조회를 CONFIRMED 로 한정하므로 재실행해도(이미 NO_SHOW 로 바뀐 건) 다시 잡히지 않는다
+	 * — 판정의 멱등이 이 필터에서 성립한다. 정시 3시 배치는 직전 영업일(어제 도착)을 대상으로
+	 * 부르지만, 파라미터를 날짜로 받아 테스트가 결정적으로 검증하게 한다.
+	 */
+	@Query("""
+			select r from Reservation r
+			where r.tenantId = :tenantId
+			  and r.status = io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus.CONFIRMED
+			  and r.checkInDate = :arrivalDate
+			""")
+	List<Reservation> findNoShowCandidates(Long tenantId, LocalDate arrivalDate);
+
 	boolean existsByReservationNo(String reservationNo);
 
 	/**
