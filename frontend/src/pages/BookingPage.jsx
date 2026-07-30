@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ANONYMOUS, loadTossPayments } from '@tosspayments/tosspayments-sdk'
 import { api } from '../api/client.js'
 
 // 검색 화면에서 넘어온 조건(state)으로 HOLD 를 만든다.
@@ -63,9 +64,31 @@ export default function BookingPage() {
     }
   }
 
+  // 토스 결제창을 띄운다. 성공하면 토스가 successUrl 로 리다이렉트하므로 이 함수 뒤 코드는
+  // 실행되지 않는다(페이지 전환). 승인·확정은 그 결과 화면(/payment/success)이 맡는다.
+  async function pay() {
+    setError(null)
+    try {
+      const { clientKey } = await api.paymentConfig()
+      const tossPayments = await loadTossPayments(clientKey)
+      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
+      await payment.requestPayment({
+        method: 'CARD',
+        amount: { currency: 'KRW', value: Number(hold.totalAmount) },
+        orderId: hold.reservationNo, // 우리 예약번호 = 토스 orderId
+        orderName: `${state.roomTypeName} ${hold.nightCount}박`,
+        successUrl: window.location.origin + '/payment/success',
+        failUrl: window.location.origin + '/payment/fail',
+      })
+    } catch (err) {
+      // 사용자가 결제창을 닫으면 에러가 온다 — 조용히 메시지만 표시한다.
+      setError(err.message || '결제를 시작할 수 없습니다.')
+    }
+  }
+
   if (!state?.roomTypeId) return null
 
-  // HOLD 성공 — 예약번호·만료·총액을 보여주고 결제 단계로 이어질 자리를 남긴다.
+  // HOLD 성공 — 예약번호·만료·총액을 보여주고 결제로 잇는다.
   if (hold) {
     return (
       <div className="card">
@@ -78,10 +101,8 @@ export default function BookingPage() {
           <div><dt>결제 금액</dt><dd>{Number(hold.totalAmount).toLocaleString()}원</dd></div>
           <div><dt>점유 만료</dt><dd>{new Date(hold.holdExpiresAt).toLocaleString()}</dd></div>
         </dl>
-        {/* 다음 단계(서브3): 토스 결제창을 띄우고 /api/payments/confirm 으로 확정한다. */}
-        <button type="button" className="cta" disabled title="다음 단계에서 연동">
-          결제하기 (준비 중)
-        </button>
+        {error && <p className="error">⚠ {error}</p>}
+        <button type="button" className="cta" onClick={pay}>결제하기</button>
         <p><Link to="/">← 다른 날짜로 다시 검색</Link></p>
       </div>
     )

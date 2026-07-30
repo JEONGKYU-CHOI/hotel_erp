@@ -41,4 +41,8 @@ export const api = {
     request('/availability', { params: { roomTypeId, checkIn, checkOut } }),
   // HOLD 생성. 201 로 예약번호·총액·만료시각을 돌려준다.
   hold: (payload) => request('/reservations', { method: 'POST', body: payload }),
+  // 결제창 초기화용 공개 클라이언트 키.
+  paymentConfig: () => request('/payments/config'),
+  // 결제 승인 → 예약 확정. 결제창 성공 후 paymentKey/orderId/amount 를 넘긴다.
+  confirmPayment: (payload) => request('/payments/confirm', { method: 'POST', body: payload }),
 }

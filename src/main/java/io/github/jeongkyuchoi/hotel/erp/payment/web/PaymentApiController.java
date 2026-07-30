@@ -1,10 +1,13 @@
 package io.github.jeongkyuchoi.hotel.erp.payment.web;
 
+import io.github.jeongkyuchoi.hotel.erp.payment.TossProperties;
 import io.github.jeongkyuchoi.hotel.erp.payment.service.PaymentService;
 import jakarta.validation.Valid;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +27,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentApiController {
 
 	private final PaymentService paymentService;
+	private final TossProperties tossProperties;
+
+	/**
+	 * 프론트 결제창 초기화에 필요한 <b>공개</b> 클라이언트 키를 내려준다. 시크릿 키는 절대
+	 * 노출하지 않는다 — 클라이언트 키는 원래 브라우저에 심는 공개값이라 안전하다. 키를 프론트
+	 * 빌드에 중복 저장하지 않고 서버 설정을 단일 출처로 삼기 위한 엔드포인트다.
+	 */
+	@GetMapping("/config")
+	public Map<String, String> config() {
+		return Map.of("clientKey", tossProperties.clientKey());
+	}
 
 	/**
 	 * 결제 승인. 프론트가 결제창 성공 후 넘긴 값으로 토스 승인을 확정하고 예약을 CONFIRMED 로
