@@ -82,4 +82,23 @@ public class ReservationNight extends BaseTimeEntity {
 	void assignTo(Reservation reservation) {
 		this.reservation = reservation;
 	}
+
+	/**
+	 * 야간마감이 이 숙박분을 폴리오에 게시했다고 표시한다(D-026).
+	 *
+	 * <p>{@code posted} 를 false → true 로 바꾼다. <b>이미 게시된 숙박분을 다시 게시하지
+	 * 않는다.</b> 이미 {@code posted = true} 면 예외를 던져, 마감이 게시 대상 조회
+	 * ({@code posted = false} 필터)를 빠뜨린 채 같은 행을 두 번 건드리는 사고를 드러낸다.
+	 * 이 가드가 숙박분 단위 멱등성(V2 주석 ②)의 도메인 표현이다.
+	 *
+	 * @throws IllegalStateException 이미 게시된 숙박분을 다시 게시하려 하면.
+	 */
+	public void post() {
+		if (posted) {
+			throw new IllegalStateException(
+					"이미 게시된 숙박분입니다. stay_date=" + stayDate + " reservation_id="
+							+ (reservation != null ? reservation.getId() : null));
+		}
+		this.posted = true;
+	}
 }
