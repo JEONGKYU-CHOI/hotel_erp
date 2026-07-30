@@ -1,0 +1,70 @@
+package io.github.jeongkyuchoi.hotel.erp.booking.web;
+
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.AvailabilityResponse;
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldRequest;
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldResponse;
+import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationDetail;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.AvailabilityService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationQueryService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationService;
+import jakarta.validation.Valid;
+import java.time.LocalDate;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * 부킹엔진 REST — 고객 대면 예약 흐름(D-030). React 부킹엔진의 백엔드다.
+ *
+ * <p><b>흐름</b>: 가용 조회({@code GET /api/availability}) → HOLD 생성
+ * ({@code POST /api/reservations}) → 예약 조회({@code GET /api/reservations/{no}}).
+ *
+ * <p><b>확정(HOLD → CONFIRMED)은 이 컨트롤러에 없다.</b> 확정의 트리거는 결제 성공이다
+ * (D-010, D-023). 결제 검증 없이 확정을 여는 REST 엔드포인트는 "돈 안 내고 확정"의 구멍이
+ * 되므로, 확정은 결제 모듈의 웹훅이 붙을 때 그쪽에서 노출한다.
+ *
+ * <p><b>보안</b> — 이 체인은 아직 {@code permitAll} 이다(JWT 미구현, D-008). 그러므로
+ * <b>JWT 전에는 외부에 노출하면 안 된다</b>. 조회는 예약번호+전화로 소유를 확인하고(D-028),
+ * 생성은 멱등키·재고 락으로 보호되지만, 인증 자체는 아직 없다.
+ */
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+public class BookingApiController {
+
+	private final AvailabilityService availabilityService;
+	private final ReservationService reservationService;
+	private final ReservationQueryService reservationQueryService;
+
+	/** 날짜 범위의 가용 재고. 락 없는 표시 경로다(D-018). */
+	@GetMapping("/availability")
+	public AvailabilityResponse availability(
+			@RequestParam Long roomTypeId,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
+		return availabilityService.check(roomTypeId, checkIn, checkOut);
+	}
+
+	/** HOLD 생성. 오버부킹은 재고 락으로 막힌다(D-023). 멱등키로 중복 생성을 막는다. */
+	@PostMapping("/reservations")
+	@ResponseStatus(HttpStatus.CREATED)
+	public HoldResponse hold(@Valid @RequestBody HoldRequest request) {
+		return HoldResponse.from(reservationService.hold(request.toCommand()));
+	}
+
+	/** 예약 조회 (예약번호 + 전화, 비회원 경로, D-028). */
+	@GetMapping("/reservations/{reservationNo}")
+	public ReservationDetail lookup(
+			@PathVariable String reservationNo,
+			@RequestParam String phone) {
+		return reservationQueryService.findForGuest(reservationNo, phone);
+	}
+}

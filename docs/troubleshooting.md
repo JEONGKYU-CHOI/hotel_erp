@@ -60,6 +60,7 @@ powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 8080 -State 
 | 로그인 POST가 403 | 폼에 CSRF 토큰이 없음 | `<form>` 에 `th:action` 을 쓴다. 순수 `action="/login"` 이면 Thymeleaf가 토큰을 안 넣는다 |
 | `hasRole("ADMIN")` 이 항상 실패 | 권한 문자열에 `ROLE_` 접두사가 없음 | `UserDetails` 에 `ROLE_ADMIN` 으로 등록. `hasRole` 은 내부적으로 접두사를 붙여 찾는다 |
 | `@AutoConfigureMockMvc` 임포트가 `package ... does not exist` | **Boot 4 는 3.x 와 테스트 자동설정 패키지가 다르다.** `org.springframework.boot.test.autoconfigure.web.servlet` → `org.springframework.boot.webmvc.test.autoconfigure`(모듈 분리, D-011) | 새 패키지로 임포트. 인터넷 3.x 예제의 임포트를 그대로 붙이지 말 것 |
+| `@SpringBootTest` 에서 `ObjectMapper` 빈 주입 실패(`NoSuchBeanDefinitionException`) | Boot 4 테스트 컨텍스트에서 Jackson `ObjectMapper` 가 빈으로 안 올라오는 경우가 있음(모듈 분리 영향 추정) | 테스트에서 요청 JSON 은 문자열로 직접 쓰고, 응답 파싱은 `com.jayway.jsonpath.JsonPath`(spring-test 에 이미 포함)로. 손 JSON 이 계약도 더 또렷하다 |
 
 ---
 

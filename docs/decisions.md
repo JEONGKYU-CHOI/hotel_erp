@@ -888,3 +888,40 @@ now 로 만료 전 HOLD / 만료 후 EXPIRED 표시를 직접 검증. 실제 MyS
 **검증** Day 2 화면 렌더링 테스트(D-029, MockMvc + Testcontainers + `@WithMockUser`):
 2박 확정 예약으로 목록·상세를 실제 HTML 로 렌더 → 예약번호·고객·타입·요금정책·야간
 스냅샷·상태 배지가 모두 나오고 `LazyInitializationException` 이 없음을 확인. 실제 MySQL 통과.
+
+---
+
+## D-030. 부킹엔진 REST — 가용·HOLD·조회만, 확정은 결제 트리거라 비노출
+
+**결정일** 2026-07-30
+
+**결정** 부킹엔진(`/api`) REST 를 다음 범위·규칙으로 짠다.
+
+1. **엔드포인트는 셋.** `GET /api/availability`(가용 조회) · `POST /api/reservations`
+   (HOLD 생성, 201) · `GET /api/reservations/{no}?phone=`(조회). 고객 예약 흐름의 앞단이다.
+2. **확정(HOLD→CONFIRMED)은 REST 로 열지 않는다.** 확정의 트리거는 결제 성공이다
+   (D-010, D-023). 결제 검증 없는 공개 확정 엔드포인트는 "돈 안 내고 확정"의 구멍이다.
+   확정은 결제 모듈의 웹훅이 붙을 때 그쪽에서 노출한다. `ReservationConfirmService` 는
+   이미 있으니 배선만 남는다.
+3. **가용 조회는 무락 표시 경로(D-018).** `AvailabilityService` 는 읽기 전용 트랜잭션에
+   락 없는 조회만 쓴다. 확정 경로의 `lockForUpdateNative` 와 엄격히 분리한다 — 섞이면
+   영속성 컨텍스트가 락 조회의 최신값을 가려 오버부킹이 난다(D-018 실측). 가용은
+   `총량−확정−점유`(raw)로 계산하고, 만료 HOLD 정밀 차감은 하지 않는다(스케줄러 1분
+   주기가 오차 상한, 안전한 방향이라 표시 경로는 raw 로 둔다).
+4. **예외 → HTTP 는 `/api` 한정 `@RestControllerAdvice`.** 없음 404 · 재고 부족 409
+   (경합의 정상 결과) · 검증 400(필드 메시지 동반). `basePackageClasses` 로 booking
+   패키지에만 걸어, 백오피스(HTML·플래시)의 오류 처리를 건드리지 않는다.
+5. **요청 검증은 REST DTO(`HoldRequest`)에서.** `@NotBlank`/`@NotNull`/`@Future` 등으로
+   막고, 통과분만 서비스 커맨드로 변환한다 — 서비스가 웹 DTO 에 의존하지 않는다.
+
+**감수하는 대가**
+- 이 체인은 아직 `permitAll`(JWT 미구현, D-008)이다. **JWT 전에는 외부 노출 금지**
+   (핸드오프에도 명시). 조회는 예약번호+전화로 소유만 확인할 뿐 인증은 없다.
+- 회원 예약(memberId) 경로는 인증(D-009)이 붙을 때 추가한다. 지금은 비회원만.
+
+**폐기한 대안** 공개 confirm 엔드포인트 — 위 2번(결제 우회 구멍). 전역 예외 어드바이스 —
+백오피스 HTML 오류까지 JSON 이 된다.
+
+**검증** Day 2 통합테스트(D-030, MockMvc + Testcontainers): 가용 조회(일자별·bookableQty),
+HOLD 생성 201(예약번호·총액 200000), 검증 실패 400(필드 메시지), 재고 부족 409 NO_INVENTORY,
+조회 200(전화 일치)/404(불일치). 실제 MySQL 통과.
