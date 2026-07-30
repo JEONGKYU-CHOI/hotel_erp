@@ -3,6 +3,7 @@ package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.service.ReservationAdminService;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationCancelService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.StayService;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -30,6 +31,7 @@ public class ReservationAdminController {
 
 	private final ReservationAdminService reservationAdminService;
 	private final ReservationCancelService reservationCancelService;
+	private final StayService stayService;
 
 	/** 상태 필터 드롭다운 선택지. enum 상수라 DB 조회가 없어 모든 화면에 실려도 비용이 없다. */
 	@ModelAttribute("statuses")
@@ -65,8 +67,13 @@ public class ReservationAdminController {
 
 	@GetMapping("/{id}")
 	public String detail(@PathVariable Long id, Model model) {
-		model.addAttribute("r", reservationAdminService.get(id));
+		var detail = reservationAdminService.get(id);
+		model.addAttribute("r", detail);
 		model.addAttribute("reservationId", id);
+		// 확정 상태면 체크인 호실 선택지를 함께 싣는다.
+		if (detail.status() == ReservationStatus.CONFIRMED) {
+			model.addAttribute("assignableRooms", reservationAdminService.assignableRoomsFor(id));
+		}
 		return "admin/reservation/detail";
 	}
 
@@ -86,6 +93,34 @@ public class ReservationAdminController {
 			redirect.addFlashAttribute("flashSuccess", "예약을 취소했습니다.");
 		} catch (IllegalStateException e) {
 			redirect.addFlashAttribute("flashError", "취소할 수 없는 상태입니다.");
+		}
+		return "redirect:/admin/reservations/" + id;
+	}
+
+	/**
+	 * 체크인 — 확정 예약에 호실을 배정한다(D-031). 배정 불가/상태 오류는 서버에서 막고
+	 * 오류 플래시로 되돌린다.
+	 */
+	@PostMapping("/{id}/check-in")
+	public String checkIn(@PathVariable Long id, @RequestParam Long roomId,
+			RedirectAttributes redirect) {
+		try {
+			stayService.checkIn(id, roomId);
+			redirect.addFlashAttribute("flashSuccess", "체크인했습니다.");
+		} catch (IllegalStateException | IllegalArgumentException e) {
+			redirect.addFlashAttribute("flashError", "체크인할 수 없습니다: " + e.getMessage());
+		}
+		return "redirect:/admin/reservations/" + id;
+	}
+
+	/** 체크아웃 — 투숙 예약을 퇴실 처리하고 호실을 청소 대상으로 되돌린다(D-031). */
+	@PostMapping("/{id}/check-out")
+	public String checkOut(@PathVariable Long id, RedirectAttributes redirect) {
+		try {
+			stayService.checkOut(id);
+			redirect.addFlashAttribute("flashSuccess", "체크아웃했습니다.");
+		} catch (IllegalStateException e) {
+			redirect.addFlashAttribute("flashError", "체크아웃할 수 없습니다: " + e.getMessage());
 		}
 		return "redirect:/admin/reservations/" + id;
 	}

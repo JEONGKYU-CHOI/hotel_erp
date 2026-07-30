@@ -281,4 +281,42 @@ public class Reservation extends BaseEntity {
 		this.cancelReason = reason;
 		this.holdExpiresAt = null;
 	}
+
+	/**
+	 * CONFIRMED → CHECKED_IN 전이. 이 시점에 물리 호실을 배정한다(D-031).
+	 *
+	 * <p>예약은 타입 단위로만 팔리고 호실은 비워 두었다가(D-003) 체크인 때 배정한다. 호실의
+	 * 점유 상태(OCCUPIED) 전환은 호출자(체크인 서비스)가 잠근 호실 행에 대고 따로 한다 —
+	 * 이 메서드는 예약 상태와 배정 호실만 바꾼다.
+	 *
+	 * @throws IllegalStateException 확정 상태가 아니면. 미결제(HOLD)·취소·이미 투숙 중인
+	 *         예약을 체크인하는 사고를 드러낸다.
+	 */
+	public void checkIn(Room room) {
+		if (status != ReservationStatus.CONFIRMED) {
+			throw new IllegalStateException(
+					"확정된 예약만 체크인할 수 있습니다. no=" + reservationNo + " status=" + status);
+		}
+		if (room == null) {
+			throw new IllegalArgumentException("배정할 호실이 필요합니다. no=" + reservationNo);
+		}
+		this.status = ReservationStatus.CHECKED_IN;
+		this.room = room;
+	}
+
+	/**
+	 * CHECKED_IN → CHECKED_OUT 전이. 배정 호실은 그대로 둔다(누가 어디에 묵었는지 기록).
+	 *
+	 * <p>호실의 점유 해제·청소 표시는 호출자가 잠근 호실 행에 대고 한다 — 이 메서드는 예약
+	 * 상태만 바꾼다.
+	 *
+	 * @throws IllegalStateException 투숙 중이 아니면.
+	 */
+	public void checkOut() {
+		if (status != ReservationStatus.CHECKED_IN) {
+			throw new IllegalStateException(
+					"투숙 중인 예약만 체크아웃할 수 있습니다. no=" + reservationNo + " status=" + status);
+		}
+		this.status = ReservationStatus.CHECKED_OUT;
+	}
 }

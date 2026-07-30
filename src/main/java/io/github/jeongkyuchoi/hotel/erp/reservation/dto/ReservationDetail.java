@@ -38,6 +38,7 @@ public record ReservationDetail(
 		LocalDateTime holdExpiresAt,
 		LocalDateTime cancelledAt,
 		String cancelReason,
+		String assignedRoomNo,
 		List<ReservationNightView> nightViews) {
 
 	/**
@@ -73,6 +74,7 @@ public record ReservationDetail(
 				r.getHoldExpiresAt(),
 				r.getCancelledAt(),
 				r.getCancelReason(),
+				r.getRoom() != null ? r.getRoom().getRoomNo() : null,
 				views);
 	}
 }

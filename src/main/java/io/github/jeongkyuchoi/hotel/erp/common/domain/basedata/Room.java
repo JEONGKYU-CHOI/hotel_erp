@@ -109,4 +109,33 @@ public class Room extends BaseEntity {
 				&& occupancyStatus == OccupancyStatus.VACANT
 				&& (cleanStatus == CleanStatus.CLEAN || cleanStatus == CleanStatus.INSPECTED);
 	}
+
+	/**
+	 * 체크인 배정 — 점유 상태를 OCCUPIED 로 올린다(D-031).
+	 *
+	 * <p>이미 투숙 중인 호실을 다시 배정하면 두 손님이 한 방을 쓰는 사고다. 호출자(체크인
+	 * 서비스)가 이 호실 행을 {@code FOR UPDATE} 로 잠근 채 불러 동시 배정을 직렬화한다.
+	 * 청결 상태는 건드리지 않는다 — 이미 배정 조건({@link #isAssignable})에서 걸렀다.
+	 *
+	 * @throws IllegalStateException 공실이 아닌 호실을 배정하려 하면.
+	 */
+	public void occupy() {
+		if (occupancyStatus != OccupancyStatus.VACANT) {
+			throw new IllegalStateException(
+					"공실이 아닌 호실은 배정할 수 없습니다. room=" + roomNo + " status=" + occupancyStatus);
+		}
+		this.occupancyStatus = OccupancyStatus.OCCUPIED;
+	}
+
+	/**
+	 * 체크아웃 — 점유를 풀고 청소 대상으로 표시한다(D-031).
+	 *
+	 * <p>퇴실한 방은 곧바로 다음 손님에게 배정하지 않는다. {@link CleanStatus#DIRTY} 로 두어
+	 * 하우스키핑이 청소한 뒤에야 {@link #isAssignable} 를 다시 만족한다. 하우스키핑 모듈은
+	 * 1차 범위 밖이지만(스키마 주석) 이 한 줄로 흐름은 성립한다.
+	 */
+	public void checkOutVacate() {
+		this.occupancyStatus = OccupancyStatus.VACANT;
+		this.cleanStatus = CleanStatus.DIRTY;
+	}
 }

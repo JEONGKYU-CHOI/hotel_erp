@@ -1,6 +1,8 @@
 package io.github.jeongkyuchoi.hotel.erp.backoffice.service;
 
+import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.AssignableRoom;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.ReservationListRow;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
@@ -30,6 +32,7 @@ public class ReservationAdminService {
 	private static final Long TENANT_ID = 1L;
 
 	private final ReservationRepository reservationRepository;
+	private final RoomRepository roomRepository;
 
 	/**
 	 * 예약 목록. 상태·체크인 기간으로 선택 필터한다(전부 null 이면 전체).
@@ -53,5 +56,23 @@ public class ReservationAdminService {
 				.filter(x -> TENANT_ID.equals(x.getTenantId()))
 				.orElseThrow(() -> new NotFoundException("예약을 찾을 수 없습니다. id=" + id));
 		return ReservationDetail.from(r, LocalDateTime.now());
+	}
+
+	/**
+	 * 이 예약에 배정 가능한 호실 목록(체크인 화면 선택지, D-031).
+	 *
+	 * <p>예약의 객실타입에 속한 활성·공실·청소완료 호실만 돌려준다. 확정 상태가 아니어도
+	 * 조회는 되지만(호출자가 상태로 노출을 정한다), 실제 배정은 {@code StayService} 가
+	 * 확정 상태·타입 일치·배정 가능 여부를 다시 검증한다.
+	 */
+	@Transactional(readOnly = true)
+	public List<AssignableRoom> assignableRoomsFor(Long reservationId) {
+		Reservation r = reservationRepository.findById(reservationId)
+				.filter(x -> TENANT_ID.equals(x.getTenantId()))
+				.orElseThrow(() -> new NotFoundException(
+						"예약을 찾을 수 없습니다. id=" + reservationId));
+		return roomRepository.findAssignable(TENANT_ID, r.getRoomType().getId()).stream()
+				.map(AssignableRoom::from)
+				.toList();
 	}
 }

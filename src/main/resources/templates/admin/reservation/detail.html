@@ -16,12 +16,46 @@
             <p class="text-secondary small mb-0">예약 상세</p>
         </div>
         <div class="ms-auto d-flex gap-2">
+            <!-- 확정 예약만 체크인. 호실 선택 패널을 연다. -->
+            <button th:if="${r.status.name() == 'CONFIRMED'}"
+                    class="btn btn-primary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#checkInPanel">체크인</button>
+            <!-- 투숙 중이면 체크아웃(사유 없이 즉시). -->
+            <form th:if="${r.status.name() == 'CHECKED_IN'}" method="post"
+                  th:action="@{/admin/reservations/{id}/check-out(id=${reservationId})}" class="m-0">
+                <button class="btn btn-primary" type="submit">체크아웃</button>
+            </form>
             <!-- 취소 가능 상태(임시점유·확정)에서만 버튼을 연다. 표시 상태 기준이라
                  만료로 보이는 예약에는 뜨지 않는다. 서버(D-027)도 상태를 재검증한다. -->
             <button th:if="${r.status.name() == 'HOLD' or r.status.name() == 'CONFIRMED'}"
                     class="btn btn-outline-danger" type="button"
                     data-bs-toggle="collapse" data-bs-target="#cancelPanel">예약 취소</button>
             <a class="btn btn-outline-secondary" th:href="@{/admin/reservations}">목록으로</a>
+        </div>
+    </div>
+
+    <div class="collapse mb-3" th:if="${r.status.name() == 'CONFIRMED'}" id="checkInPanel">
+        <div class="card border-primary">
+            <div class="card-body">
+                <h2 class="h6 text-primary mb-2">체크인 — 호실 배정</h2>
+                <div th:if="${#lists.isEmpty(assignableRooms)}" class="alert alert-warning mb-0 small">
+                    배정 가능한 호실이 없습니다. 이 객실타입의 공실·청소완료 호실을 먼저 준비하세요.
+                </div>
+                <form th:unless="${#lists.isEmpty(assignableRooms)}" method="post"
+                      th:action="@{/admin/reservations/{id}/check-in(id=${reservationId})}"
+                      class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <label for="roomId" class="form-label small">배정 호실</label>
+                        <select id="roomId" name="roomId" class="form-select" required>
+                            <option th:each="room : ${assignableRooms}" th:value="${room.id}"
+                                    th:text="${room.roomNo} + (${room.floor != null} ? ' (' + ${room.floor} + '층)' : '')">101</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" type="submit">체크인 확정</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -87,6 +121,9 @@
                         <dd class="col-8" th:text="${#temporals.format(r.checkOutDate, 'yyyy-MM-dd (E)')}">2026-08-03</dd>
                         <dt class="col-4 text-secondary">숙박일수</dt>
                         <dd class="col-8"><span th:text="${r.nights}">2</span>박</dd>
+                        <dt class="col-4 text-secondary" th:if="${r.assignedRoomNo != null}">배정 호실</dt>
+                        <dd class="col-8 fw-semibold" th:if="${r.assignedRoomNo != null}"
+                            th:text="${r.assignedRoomNo} + '호'">101호</dd>
                         <dt class="col-4 text-secondary" th:if="${r.holdExpiresAt != null}">점유 만료</dt>
                         <dd class="col-8" th:if="${r.holdExpiresAt != null}"
                             th:text="${#temporals.format(r.holdExpiresAt, 'yyyy-MM-dd HH:mm')}">2026-08-01 12:00</dd>

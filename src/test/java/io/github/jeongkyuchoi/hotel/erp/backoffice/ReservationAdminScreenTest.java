@@ -10,8 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import io.github.jeongkyuchoi.hotel.erp.TestcontainersConfiguration;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.CleanStatus;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.OccupancyStatus;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RatePlan;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RatePlanRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.Room;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomType;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomTypeRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventory;
@@ -54,12 +58,14 @@ class ReservationAdminScreenTest {
 	@Autowired private ReservationConfirmService confirmService;
 	@Autowired private ReservationRepository reservationRepository;
 	@Autowired private RoomInventoryRepository roomInventoryRepository;
+	@Autowired private RoomRepository roomRepository;
 	@Autowired private RoomTypeRepository roomTypeRepository;
 	@Autowired private RatePlanRepository ratePlanRepository;
 
 	private Long reservationId;
 	private String reservationNo;
 	private Long roomTypeId;
+	private Long roomId;
 
 	@BeforeEach
 	void seed() {
@@ -79,6 +85,10 @@ class ReservationAdminScreenTest {
 					.totalQty(5).soldQty(0).heldQty(0)
 					.build());
 		}
+		roomId = roomRepository.save(Room.builder()
+				.tenantId(1L).roomType(roomType).roomNo("201").floor((short) 2)
+				.occupancyStatus(OccupancyStatus.VACANT).cleanStatus(CleanStatus.CLEAN).active(true)
+				.build()).getId();
 		var held = reservationService.hold(new ReservationHoldCommand(
 				null, "홍길동", "010-1234-5678", "gil@example.com",
 				roomType.getId(), ratePlanId, D0, D0.plusDays(2), 2, 1, "idem-scr"));
@@ -91,6 +101,7 @@ class ReservationAdminScreenTest {
 	void cleanup() {
 		reservationRepository.deleteAll();
 		roomInventoryRepository.deleteAll();
+		roomRepository.deleteAll();
 		ratePlanRepository.deleteAll();
 		roomTypeRepository.deleteAll();
 	}
@@ -138,5 +149,22 @@ class ReservationAdminScreenTest {
 		var inv = roomInventoryRepository
 				.findByRoomTypeIdAndStayDateBetweenOrderByStayDate(roomTypeId, D0, D0).get(0);
 		org.assertj.core.api.Assertions.assertThat(inv.getSoldQty()).isZero();
+	}
+
+	@Test
+	@DisplayName("체크인 POST → 리다이렉트, CHECKED_IN·호실 OCCUPIED")
+	void checkIn_transitionsAndOccupiesRoom() throws Exception {
+		mockMvc.perform(post("/admin/reservations/{id}/check-in", reservationId)
+						.param("roomId", roomId.toString())
+						.with(csrf()))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/admin/reservations/" + reservationId));
+
+		org.assertj.core.api.Assertions.assertThat(
+						reservationRepository.findById(reservationId).orElseThrow().getStatus().name())
+				.isEqualTo("CHECKED_IN");
+		org.assertj.core.api.Assertions.assertThat(
+						roomRepository.findById(roomId).orElseThrow().getOccupancyStatus())
+				.isEqualTo(OccupancyStatus.OCCUPIED);
 	}
 }
