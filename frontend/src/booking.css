@@ -1,0 +1,97 @@
+/* 부킹엔진 전용 스타일. 스캐폴드의 index.css(리셋·기본 폰트) 위에 얹는다. */
+
+.booking-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+  text-align: left;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 28px;
+}
+.brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.card h1 { font-size: 1.4rem; margin: 0 0 20px; }
+
+.search-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.search-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+.search-form select,
+.search-form input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+.search-form button {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.search-form button:disabled { background: #9ca3af; cursor: default; }
+
+.error {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+}
+
+.result { margin-top: 24px; }
+.summary {
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.summary.ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.summary.soldout { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+.nights { width: 100%; border-collapse: collapse; }
+.nights th, .nights td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+.nights th { font-size: 0.8rem; color: #6b7280; }
+.nights td.zero { color: #dc2626; font-weight: 600; }
+
+@media (max-width: 520px) {
+  .search-form { grid-template-columns: 1fr; }
+}

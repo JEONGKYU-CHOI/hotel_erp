@@ -3,12 +3,15 @@ package io.github.jeongkyuchoi.hotel.erp.booking.web;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.AvailabilityResponse;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldRequest;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldResponse;
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.RoomTypeSummary;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationDetail;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.AvailabilityService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationQueryService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.RoomTypeCatalogService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -43,6 +46,13 @@ public class BookingApiController {
 	private final AvailabilityService availabilityService;
 	private final ReservationService reservationService;
 	private final ReservationQueryService reservationQueryService;
+	private final RoomTypeCatalogService roomTypeCatalogService;
+
+	/** 판매 중인 객실타입 목록. 고객이 타입을 고르는 첫 화면이 소비한다. */
+	@GetMapping("/room-types")
+	public List<RoomTypeSummary> roomTypes() {
+		return roomTypeCatalogService.listBookable();
+	}
 
 	/** 날짜 범위의 가용 재고. 락 없는 표시 경로다(D-018). */
 	@GetMapping("/availability")

@@ -71,6 +71,7 @@ public class SecurityConfig {
 						// 회원가입·로그인은 인증 전 경로다.
 						.requestMatchers("/api/auth/**").permitAll()
 						// 비회원 예약 경로 — 인증 없이 계속 동작한다(D-008).
+						.requestMatchers(HttpMethod.GET, "/api/room-types").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/availability").permitAll()
 						.requestMatchers("/api/reservations/**").permitAll()
 						// 결제 승인 콜백·토스 웹훅 — 인증 주체가 없는 경로다(D-034). 승인은
