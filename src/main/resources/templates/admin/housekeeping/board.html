@@ -11,7 +11,7 @@
         <div>
             <h1 class="h4 mb-1">하우스키핑</h1>
             <p class="text-secondary small mb-0">
-                체크아웃한 호실을 청소한다. 청소필요 → 청소중 → 청소완료 순으로 처리하면 다시 배정 대상이 됩니다.
+                체크아웃한 호실을 청소한다. 청소필요 → 청소중 → 청소완료 → 점검완료 순으로 처리한다.
             </p>
         </div>
     </div>
@@ -38,6 +38,8 @@
                               class="badge text-bg-warning" th:text="${r.cleanStatus.label}">청소필요</span>
                         <span th:if="${r.cleanStatus.name() == 'IN_PROGRESS'}"
                               class="badge text-bg-info" th:text="${r.cleanStatus.label}">청소중</span>
+                        <span th:if="${r.cleanStatus.name() == 'CLEAN'}"
+                              class="badge text-bg-success" th:text="${r.cleanStatus.label}">청소완료</span>
                     </td>
                     <td class="text-end">
                         <form th:if="${r.cleanStatus.name() == 'DIRTY'}"
@@ -49,6 +51,11 @@
                               th:action="@{/admin/housekeeping/{id}/finish(id=${r.id})}" method="post"
                               class="d-inline">
                             <button type="submit" class="btn btn-sm btn-success">청소 완료</button>
+                        </form>
+                        <form th:if="${r.cleanStatus.name() == 'CLEAN'}"
+                              th:action="@{/admin/housekeeping/{id}/inspect(id=${r.id})}" method="post"
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">점검 완료</button>
                         </form>
                     </td>
                 </tr>

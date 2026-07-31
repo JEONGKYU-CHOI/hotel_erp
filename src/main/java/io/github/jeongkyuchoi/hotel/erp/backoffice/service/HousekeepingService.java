@@ -26,7 +26,7 @@ public class HousekeepingService {
 
 	private final RoomRepository roomRepository;
 
-	/** 청소 대상(청소필요·청소중) 호실 현황. 읽기 전용. */
+	/** 처리 대상(청소필요·청소중·점검대기) 호실 현황. 점검완료(INSPECTED)면 빠진다. 읽기 전용. */
 	@Transactional(readOnly = true)
 	public List<Room> board() {
 		return roomRepository.findForHousekeeping(TENANT_ID);
@@ -43,6 +43,13 @@ public class HousekeepingService {
 	public void finishCleaning(Long roomId) {
 		room(roomId).finishCleaning();
 		log.info("청소 완료 — roomId={}", roomId);
+	}
+
+	/** 점검 완료 — CLEAN → INSPECTED(D-044). 파이프라인을 닫고 현황판에서 뺀다. */
+	@Transactional
+	public void inspect(Long roomId) {
+		room(roomId).inspect();
+		log.info("점검 완료 — roomId={}", roomId);
 	}
 
 	private Room room(Long roomId) {

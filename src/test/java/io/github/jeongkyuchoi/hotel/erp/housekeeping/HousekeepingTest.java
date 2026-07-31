@@ -22,8 +22,9 @@ import org.springframework.context.annotation.Import;
 /**
  * 하우스키핑 청소 흐름 테스트 (D-040).
  *
- * <p>증명: ① DIRTY → IN_PROGRESS → CLEAN 3단계 전이, ② 청소 완료 호실은 다시 배정 대상,
- * ③ 상태 가드(청소필요 아닌데 시작·청소중 아닌데 완료는 거부), ④ 현황판은 청소필요·청소중만.
+ * <p>증명: ① DIRTY → IN_PROGRESS → CLEAN → INSPECTED 전이(D-044), ② 청소 완료 호실은 다시
+ * 배정 대상, ③ 상태 가드(청소필요 아닌데 시작·청소중 아닌데 완료·청소완료 아닌데 점검은 거부),
+ * ④ 현황판은 처리 대상(청소필요·청소중·점검대기)만 — 점검완료·사용불가는 빠진다.
  */
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
@@ -63,7 +64,7 @@ class HousekeepingTest {
 	}
 
 	@Test
-	@DisplayName("DIRTY → 청소시작 → IN_PROGRESS → 청소완료 → CLEAN, 완료 후 배정 대상")
+	@DisplayName("DIRTY → 청소시작 → 청소완료 → 점검완료(INSPECTED), 완료 후 배정 대상")
 	void fullCleaningFlow() {
 		Long id = saveRoom("301", CleanStatus.DIRTY).getId();
 
@@ -74,6 +75,19 @@ class HousekeepingTest {
 		assertThat(cleanOf(id)).isEqualTo(CleanStatus.CLEAN);
 		assertThat(roomRepository.findById(id).orElseThrow().isAssignable())
 				.as("청소완료·공실이면 다시 배정 가능").isTrue();
+
+		housekeepingService.inspect(id);
+		assertThat(cleanOf(id)).isEqualTo(CleanStatus.INSPECTED);
+		assertThat(roomRepository.findById(id).orElseThrow().isAssignable())
+				.as("점검완료도 배정 대상(점검은 배정 게이트가 아니다, D-044)").isTrue();
+	}
+
+	@Test
+	@DisplayName("청소완료 아닌 호실은 점검할 수 없다")
+	void cannotInspect_whenNotClean() {
+		Long id = saveRoom("305", CleanStatus.IN_PROGRESS).getId();
+		assertThatThrownBy(() -> housekeepingService.inspect(id))
+				.isInstanceOf(IllegalStateException.class);
 	}
 
 	@Test
@@ -93,16 +107,17 @@ class HousekeepingTest {
 	}
 
 	@Test
-	@DisplayName("현황판은 청소필요·청소중만 — 청소완료·사용불가는 빠진다")
+	@DisplayName("현황판은 청소필요·청소중·점검대기(청소완료)만 — 점검완료·사용불가는 빠진다")
 	void board_showsOnlyActionable() {
 		saveRoom("401", CleanStatus.DIRTY);
 		saveRoom("402", CleanStatus.IN_PROGRESS);
-		saveRoom("403", CleanStatus.CLEAN);
-		saveRoom("404", CleanStatus.OUT_OF_ORDER);
+		saveRoom("403", CleanStatus.CLEAN);       // 점검대기 — 이제 포함(D-044)
+		saveRoom("404", CleanStatus.OUT_OF_ORDER); // 사용불가 — 빠짐
+		saveRoom("405", CleanStatus.INSPECTED);    // 점검완료 — 빠짐
 
 		var board = housekeepingService.board();
 
 		assertThat(board).extracting(Room::getRoomNo)
-				.containsExactlyInAnyOrder("401", "402");
+				.containsExactlyInAnyOrder("401", "402", "403");
 	}
 }

@@ -166,4 +166,22 @@ public class Room extends BaseEntity {
 		}
 		this.cleanStatus = CleanStatus.CLEAN;
 	}
+
+	/**
+	 * 점검 완료 — CLEAN → INSPECTED(D-044). 청소된 방을 관리자가 최종 점검 확인해 파이프라인을
+	 * 닫는다. 점검 후 호실은 현황판에서 빠진다.
+	 *
+	 * <p><b>배정 가능 여부는 바뀌지 않는다.</b> {@link #isAssignable} 는 CLEAN·INSPECTED 를 모두
+	 * 배정 대상으로 본다 — 점검은 운영상 확인일 뿐, 이번 범위에서 배정의 전제가 아니다. 점검을
+	 * 배정·판매의 게이트로 삼는 것(청소완료만으로는 못 팔게)은 후속 업그레이드다(재고·배정 연계).
+	 *
+	 * @throws IllegalStateException 청소완료 상태가 아니면.
+	 */
+	public void inspect() {
+		if (cleanStatus != CleanStatus.CLEAN) {
+			throw new IllegalStateException(
+					"청소완료 상태만 점검할 수 있습니다. room=" + roomNo + " clean=" + cleanStatus);
+		}
+		this.cleanStatus = CleanStatus.INSPECTED;
+	}
 }

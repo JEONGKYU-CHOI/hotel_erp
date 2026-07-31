@@ -50,4 +50,15 @@ public class HousekeepingController {
 		}
 		return "redirect:/admin/housekeeping";
 	}
+
+	@PostMapping("/{id}/inspect")
+	public String inspect(@PathVariable Long id, RedirectAttributes redirect) {
+		try {
+			housekeepingService.inspect(id);
+			redirect.addFlashAttribute("flashSuccess", "점검을 완료했습니다.");
+		} catch (IllegalStateException e) {
+			redirect.addFlashAttribute("flashError", "점검할 수 없습니다: " + e.getMessage());
+		}
+		return "redirect:/admin/housekeeping";
+	}
 }

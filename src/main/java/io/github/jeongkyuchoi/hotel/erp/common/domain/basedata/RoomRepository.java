@@ -59,8 +59,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 	List<Room> findAllForList(Long tenantId);
 
 	/**
-	 * 하우스키핑 현황 — 청소 대상(청소필요·청소중) 호실(D-040). 처리할 방만 추려 현황판에 띄운다.
-	 * {@code join fetch} 로 타입을 함께 가져온다(N+1 방지). 정렬은 층 → 호실번호.
+	 * 하우스키핑 현황 — 처리 대상(청소필요·청소중·점검대기) 호실(D-040, D-044). 점검완료
+	 * (INSPECTED)·사용불가는 파이프라인을 벗어나 빠진다. {@code join fetch} 로 타입을 함께
+	 * 가져온다(N+1 방지). 정렬은 층 → 호실번호.
 	 */
 	@Query("""
 			select r from Room r
@@ -69,7 +70,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 			  and r.active = true
 			  and r.cleanStatus in (
 			      io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.CleanStatus.DIRTY,
-			      io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.CleanStatus.IN_PROGRESS)
+			      io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.CleanStatus.IN_PROGRESS,
+			      io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.CleanStatus.CLEAN)
 			order by r.floor asc nulls last, r.roomNo asc
 			""")
 	List<Room> findForHousekeeping(Long tenantId);
