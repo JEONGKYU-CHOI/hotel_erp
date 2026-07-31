@@ -77,6 +77,7 @@ public class ReservationAdminController {
 		model.addAttribute("r", detail);
 		model.addAttribute("reservationId", id);
 		model.addAttribute("folio", folioService.forAdmin(id)); // 청구서 패널(D-038)
+		model.addAttribute("history", reservationAdminService.history(id)); // 환불·취소 이력(D-042)
 		// 확정 상태면 체크인 호실 선택지를 함께 싣는다.
 		if (detail.status() == ReservationStatus.CONFIRMED) {
 			model.addAttribute("assignableRooms", reservationAdminService.assignableRoomsFor(id));

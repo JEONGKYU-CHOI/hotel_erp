@@ -145,10 +145,26 @@ class ReservationAdminScreenTest {
 		var r = reservationRepository.findById(reservationId).orElseThrow();
 		org.assertj.core.api.Assertions.assertThat(r.getStatus().name()).isEqualTo("CANCELLED");
 		org.assertj.core.api.Assertions.assertThat(r.getCancelReason()).isEqualTo("고객 요청");
+		// 로그인 직원이 행위자로 굳는다(D-042).
+		org.assertj.core.api.Assertions.assertThat(r.getCancelledBy()).isEqualTo("frontdesk");
 		// 확정(sold=1)이 취소로 반환돼 0.
 		var inv = roomInventoryRepository
 				.findByRoomTypeIdAndStayDateBetweenOrderByStayDate(roomTypeId, D0, D0).get(0);
 		org.assertj.core.api.Assertions.assertThat(inv.getSoldQty()).isZero();
+	}
+
+	@Test
+	@DisplayName("취소 후 상세 → 환불·취소 이력 패널에 처리자·사유 렌더(D-042)")
+	void detailScreen_afterCancel_showsHistory() throws Exception {
+		mockMvc.perform(post("/admin/reservations/{id}/cancel", reservationId)
+						.param("reason", "고객 요청").with(csrf()))
+				.andExpect(status().is3xxRedirection());
+
+		mockMvc.perform(get("/admin/reservations/{id}", reservationId))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("환불·취소 이력")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("고객 요청")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("frontdesk")));
 	}
 
 	@Test

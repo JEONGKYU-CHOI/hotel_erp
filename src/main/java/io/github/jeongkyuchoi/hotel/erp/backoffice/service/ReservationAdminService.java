@@ -1,8 +1,10 @@
 package io.github.jeongkyuchoi.hotel.erp.backoffice.service;
 
 import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.AssignableRoom;
+import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.ReservationHistoryView;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.ReservationListRow;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentCancelRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
@@ -33,6 +35,7 @@ public class ReservationAdminService {
 
 	private final ReservationRepository reservationRepository;
 	private final RoomRepository roomRepository;
+	private final PaymentCancelRepository paymentCancelRepository;
 
 	/**
 	 * 예약 목록. 상태·체크인 기간으로 선택 필터한다(전부 null 이면 전체).
@@ -56,6 +59,21 @@ public class ReservationAdminService {
 				.filter(x -> TENANT_ID.equals(x.getTenantId()))
 				.orElseThrow(() -> new NotFoundException("예약을 찾을 수 없습니다. id=" + id));
 		return ReservationDetail.from(r, LocalDateTime.now());
+	}
+
+	/**
+	 * 예약의 환불·취소 이력(D-042 후속). 취소 스냅샷(위약금·행위자)과 환불 원장을 시각 순으로
+	 * 합친다. 백오피스 상세 전용 — 행위자는 직원 정보라 비회원 조회에는 싣지 않는다.
+	 *
+	 * @throws NotFoundException 없거나 다른 테넌트의 예약이면.
+	 */
+	@Transactional(readOnly = true)
+	public ReservationHistoryView history(Long id) {
+		Reservation r = reservationRepository.findById(id)
+				.filter(x -> TENANT_ID.equals(x.getTenantId()))
+				.orElseThrow(() -> new NotFoundException("예약을 찾을 수 없습니다. id=" + id));
+		return ReservationHistoryView.of(
+				r, paymentCancelRepository.findByReservationIdOrderByCreatedAt(id));
 	}
 
 	/**

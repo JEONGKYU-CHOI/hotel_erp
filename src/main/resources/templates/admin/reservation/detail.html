@@ -251,6 +251,41 @@
             </form>
         </div>
     </div>
+
+    <!-- 환불·취소 이력 — 누가·언제·얼마·왜 (D-042) -->
+    <div class="card mt-3" th:unless="${history.isEmpty()}">
+        <div class="card-header bg-white">
+            <span class="fw-semibold">환불·취소 이력</span>
+            <span class="text-secondary small ms-1">누가 · 언제 · 얼마 · 왜</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 small">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:6rem;">구분</th>
+                    <th class="text-end" style="width:10rem;">금액</th>
+                    <th>사유</th>
+                    <th style="width:10rem;">처리자</th>
+                    <th style="width:12rem;">시각</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${history.entries()}">
+                    <td>
+                        <span class="badge"
+                              th:classappend="${e.type() == '환불'} ? 'text-bg-warning' : 'text-bg-danger'"
+                              th:text="${e.type()}">환불</span>
+                    </td>
+                    <td class="text-end"
+                        th:text="${#numbers.formatInteger(e.amount(), 0, 'COMMA')} + '원'">140,000원</td>
+                    <td th:text="${e.reason()} ?: '-'">사유</td>
+                    <td th:text="${e.actor()} ?: '-'">staff</td>
+                    <td th:text="${#temporals.format(e.at(), 'yyyy-MM-dd HH:mm')}">2026-07-31 14:05</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </main>
 </body>
 </html>
