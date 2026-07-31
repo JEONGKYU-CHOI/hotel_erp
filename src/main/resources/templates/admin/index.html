@@ -7,22 +7,132 @@
 </head>
 <body>
 <main>
-    <h1 class="h4 mb-4">대시보드</h1>
+    <div class="d-flex align-items-center mb-4">
+        <div>
+            <h1 class="h4 page-title mb-1">대시보드</h1>
+            <p class="text-secondary small mb-0">오늘의 운영 현황 한눈에 보기</p>
+        </div>
+        <a class="btn btn-primary btn-sm ms-auto" th:href="@{/admin/reservations}">
+            <i class="bi bi-journal-text me-1"></i> 예약 관리
+        </a>
+    </div>
 
-    <div class="alert alert-secondary">
-        구축 중입니다. 현재 사용 가능한 화면은 <b>기준정보 &gt; 객실타입</b> 입니다.
+    <!-- KPI 타일 -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-2">
+            <div class="stat-card">
+                <span class="stat-ico tint-green mb-2"><i class="bi bi-box-arrow-in-right"></i></span>
+                <div class="stat-val" th:text="${dash.arrivalsToday}">0</div>
+                <div class="stat-lbl">오늘 도착 예정</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="stat-card">
+                <span class="stat-ico tint-blue mb-2"><i class="bi bi-box-arrow-right"></i></span>
+                <div class="stat-val" th:text="${dash.departuresToday}">0</div>
+                <div class="stat-lbl">오늘 출발 예정</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="stat-card">
+                <span class="stat-ico tint-indigo mb-2"><i class="bi bi-people"></i></span>
+                <div class="stat-val" th:text="${dash.inHouse}">0</div>
+                <div class="stat-lbl">현재 재실</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="stat-card">
+                <span class="stat-ico tint-amber mb-2"><i class="bi bi-plus-circle"></i></span>
+                <div class="stat-val" th:text="${dash.newToday}">0</div>
+                <div class="stat-lbl">오늘 신규 예약</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="stat-card">
+                <span class="stat-ico tint-slate mb-2"><i class="bi bi-journals"></i></span>
+                <div class="stat-val" th:text="${dash.activeReservations}">0</div>
+                <div class="stat-lbl">활성 예약</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-2">
+            <div class="stat-card">
+                <span class="stat-ico tint-rose mb-2"><i class="bi bi-stars"></i></span>
+                <div class="stat-val" th:text="${dash.housekeepingPending}">0</div>
+                <div class="stat-lbl">청소 대기</div>
+            </div>
+        </div>
     </div>
 
     <div class="row g-3">
-        <div class="col-12 col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="h6 text-secondary">다음 작업</h2>
-                    <ol class="small mb-0 ps-3">
-                        <li>기준정보 — 객실타입 · 호실 · 요금정책</li>
-                        <li>일자별 재고 생성 배치</li>
-                        <li>예약 · 동시성 제어</li>
-                    </ol>
+        <!-- 최근 예약 -->
+        <div class="col-12 col-xl-8">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex align-items-center">
+                    <span class="fw-semibold">최근 예약</span>
+                    <a class="ms-auto small" th:href="@{/admin/reservations}">전체 보기 →</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>예약번호</th>
+                            <th>고객</th>
+                            <th>객실타입</th>
+                            <th>일정</th>
+                            <th>상태</th>
+                            <th class="text-end">금액</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="r : ${dash.recent}">
+                            <td>
+                                <a class="fw-semibold text-decoration-none"
+                                   th:href="@{/admin/reservations/{id}(id=${r.id})}"
+                                   th:text="${r.reservationNo}">R2607301234</a>
+                            </td>
+                            <td th:text="${r.guestName}">홍길동</td>
+                            <td th:text="${r.roomTypeName}">디럭스 더블</td>
+                            <td class="small text-secondary">
+                                <span th:text="${#temporals.format(r.checkInDate, 'MM/dd')}">08/01</span>
+                                –
+                                <span th:text="${#temporals.format(r.checkOutDate, 'MM/dd')}">08/03</span>
+                            </td>
+                            <td>
+                                <th:block th:replace="~{admin/reservation/fragments :: statusBadge(${r.status})}"></th:block>
+                            </td>
+                            <td class="text-end"
+                                th:text="${#numbers.formatInteger(r.totalAmount, 0, 'COMMA')} + '원'">200,000원</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(dash.recent)}">
+                            <td colspan="6" class="text-secondary text-center py-4">예약이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하우스키핑 스냅샷 -->
+        <div class="col-12 col-xl-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex align-items-center">
+                    <span class="fw-semibold">하우스키핑</span>
+                    <a class="ms-auto small" th:href="@{/admin/housekeeping}">현황판 →</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex align-items-center"
+                         th:each="room : ${dash.housekeeping}">
+                        <span class="fw-semibold" th:text="${room.roomNo}">301</span>
+                        <span class="text-secondary small ms-2" th:text="${room.roomType.name}">스탠다드 트윈</span>
+                        <span class="badge ms-auto"
+                              th:classappend="${room.cleanStatus.name() == 'DIRTY'} ? 'text-bg-warning'
+                                  : (${room.cleanStatus.name() == 'IN_PROGRESS'} ? 'text-bg-info' : 'text-bg-success')"
+                              th:text="${room.cleanStatus.label}">청소필요</span>
+                    </div>
+                    <div class="list-group-item text-secondary text-center py-4"
+                         th:if="${#lists.isEmpty(dash.housekeeping)}">
+                        정리할 호실이 없습니다.
+                    </div>
                 </div>
             </div>
         </div>
