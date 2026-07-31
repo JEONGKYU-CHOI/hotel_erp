@@ -1,7 +1,25 @@
-# HANDOFF — 호텔 PMS + 부킹엔진 (정산·환불·하우스키핑까지)
+# HANDOFF — 호텔 PMS + 부킹엔진 (정산·환불·하우스키핑 + UI 개편)
 
-- 작성일: 2026-07-31 (폴리오·환불·하우스키핑 + 회원화면·위약금)
+- 작성일: 2026-08-01 (D-041~044 + 환불/취소 이력 UI + 관리자 대시보드 + 부킹엔진 개편)
 - 브랜치: **`dev`** (개발선). `main` 은 안정 기준선·원격 기본 브랜치 — D-033.
+
+## 0. 로컬 실행 (다음 세션 시작 명령어)
+
+전제: **MySQL 8.4 가 3306 에서 돌고 있어야 함**(DB `hotel_erp`, root, 비번은 gitignore 된
+`application-local.yml`). 스키마는 Flyway 가 만든다.
+
+- **백엔드**(Bash 에선 JAVA_HOME 수동): 
+  ```
+  export JAVA_HOME="C:/Program Files/Eclipse Adoptium/jdk-21.0.11.10-hotspot"
+  ./gradlew bootRun --args='--spring.profiles.active=local,dev'
+  ```
+  → 관리자 **http://localhost:8080/admin** · 직원 로그인 `admin`/`staff` · 비번 `dev1234!`
+- **프론트(부킹엔진)**: `cd frontend && npm run dev` → **http://localhost:5173** (Vite 가 `/api` 를 8080 로 프록시)
+- **포트 정리**(8080 이미 점유 시): 이전 세션 인스턴스가 살아 있을 수 있다. 
+  `powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 8080 -State Listen | % { Stop-Process -Id \$_.OwningProcess -Force }"`
+- **데모 데이터**: 이미 DB 에 시드돼 있다(재시작에도 유지). DB 를 초기화했으면
+  `scripts/dev-seed-demo.sql` 로 1회 재시드(파일+`--default-character-set=utf8mb4` 필수 — 한글 함정).
+- **테스트**: `./gradlew test` (Testcontainers 실제 MySQL, 112건). JAVA_HOME 필요.
 - **함께 로드할 파일 (중복 수록 안 함 — 반드시 읽을 것)**
   - `docs/decisions.md` — 설계 결정 D-001~D-040
     (이번: **D-037** 취소·노쇼 위약금 · **D-038** 폴리오 · **D-039** 환불 · **D-040** 하우스키핑)
@@ -13,25 +31,24 @@
 
 ## 1. 현재 상태 요약
 
-예약 라이프사이클이 **돈으로 닫혔다**: 예약 → 결제 → 투숙 → 체크아웃 → 청소 → 재배정,
-그리고 취소/노쇼 → 위약금 → 청구서(폴리오) → 환불 실행. 이번 세션에 그 위에 회원 화면
-(로그인·내 예약·청구서)·정책 위약금·정산·환불·하우스키핑을 얹었다. 핵심 3과제(오버부킹 0 ·
-HOLD 만료 복원 · 마감 멱등)와 고객 부킹엔진·회원 흐름은 이전 세션에 완성. **전 기능
-Testcontainers(실제 MySQL) 통합테스트 101건 통과.** 마이그레이션 V4~V7 추가.
+예약 라이프사이클은 **돈으로 닫혀** 있고(예약→결제→투숙→체크아웃→청소→재배정, 취소/노쇼→
+위약금→폴리오→환불), 이번 세션은 그 위의 **감사·동시성 보강**과 **UI 개편**을 했다.
+**전 기능 Testcontainers 통합테스트 112건 통과.** 마이그레이션 V8 추가.
 
-이번 세션 커밋(dev, 최신순):
-```
-3e6af88 docs: record D-040 housekeeping cleaning flow decision
-7c167ed feat: add housekeeping cleaning flow DIRTY to CLEAN (D-040)
-9469106 docs: record D-039 refund execution decision
-e6ceaf0 feat: add refund execution via Toss payment cancel (D-039)
-6c287b3 docs: record D-038 folio (assembled billing statement) decision
-061c893 feat: add folio (billing statement) assembled on read (D-038)
-e041448 docs: record D-037 cancellation/no-show penalty policy decision
-ab42fa2 feat: add policy-based no-show fee, unified with cancellation (D-037)
-3c1224e feat: add cancellation fee policy on reservation cancel (D-037)
-cc90153 feat: add member login/signup and my-reservations screens
-```
+이번 세션에 한 것:
+- **핸드오프 1~5 완료**: 환불 동시성(결제 행 FOR UPDATE, D-041) · 웹훅 재조회 검증(D-041) ·
+  환불/취소 행위자+원장(payment_cancel, cancelled_by, D-042) · HOLD 만료 표시 규칙 통합
+  (`Reservation.displayStatus`, D-043) · troubleshooting 보강.
+- **하우스키핑 점검 단계**(CLEAN→INSPECTED, D-044) — 배정/재고 연계(A·B)는 후속으로 남김.
+- **환불/취소 이력 화면**(백오피스 예약 상세, D-042 후속 UI).
+- **관리자 대시보드 개편**: 다크 사이드바 셸 + `/admin` KPI 대시보드(DashboardService).
+- **부킹엔진 개편**: 파르나스풍 — 모던 산세리프(Inter+Noto), 니어블랙+크림 미니멀, 히어로 +
+  가로 예약 바(객실타입·체크인·체크아웃·인원 + "객실 찾기"). 클래스명 유지.
+- **데모 데이터 시드**: 객실타입 3종·요금제·호실·재고(오늘~+60일). `scripts/dev-seed-demo.sql`.
+
+주요 커밋(dev, 최신순): `0eb115e`(부킹엔진 파르나스풍) · `ccff7c1`(관리자 대시보드) ·
+`e1e9dba`/`61cc2f9`(D-044 점검) · `e4aadde`(환불/취소 이력 화면) · `62b9708`/`63fab7c`(D-041 웹훅) ·
+`a1bc94d`(D-043) · `600f23e`(D-042) · `e9a4225`(환불 동시성 락).
 
 ---
 
@@ -55,27 +72,25 @@ cc90153 feat: add member login/signup and my-reservations screens
 
 ## 3. 즉시 다음 단계
 
-1. **환불 동시성 수정 (최우선).** `ReservationCancelService`·`ReservationConfirmService` 등은
-   전이 전 `findByIdForUpdate` 로 행을 잠그는데(D-025 규율), **`RefundService`(D-039)만 락 없이**
-   폴리오·결제를 읽고 취소한다. 동시 환불 요청 2건이 둘 다 `balance<0` 을 보고 둘 다 토스 취소를
-   부르면 이중 환불 여지 — 멱등은 순차 재요청만 막는다. → 결제 행을 `FOR UPDATE` 로 잠그고
-   환불하도록 고치고, 동시 이중환불 회귀 테스트 추가(ReservationCancelTest 의 `@RepeatedTest`
-   동시성 패턴 참고).
-2. **토스 웹훅 서명 검증** — D-034 에서 감수한 보안 갭. 위조 웹훅 오확정 방지.
-3. **환불/취소 행위자 기록 + 부분환불 이력** — 지금은 로그만, 원장에 누가·언제·개별 이벤트가 없다.
-4. **HOLD 만료 표시 규칙 통합** — `MyReservationSummary`·`ReservationDetail`·`FolioService` 가
-   "만료 지난 HOLD = EXPIRED 표시"를 각자 갖고 있다(3중복). 도메인 메서드로 모을 것.
-5. **troubleshooting.md 보강**(이번 세션 미반영분): python `/tmp` · 브라우저 0x0 · `local,dev`
-   로그인 — §2 의 함정들을 troubleshooting 에 승격.
+핸드오프 1~5 + 후속(이력 화면·점검 단계)·UI 개편은 **모두 완료**. 다음 세션 후보:
 
-전체 부족한 부분 리뷰(우선순위)는 이 세션 대화 말미에 정리돼 있다 — 위 1~5 가 그 상위 항목이다.
+1. **부킹엔진 마무리(진행 중이던 것).** ① 히어로 이미지가 아직 placeholder(`frontend/src/assets/hero.png`)
+   — 실제 호텔 사진으로 교체하면 파르나스풍이 산다. ② 예약 전체 흐름 라이브 검증(검색→HOLD→
+   토스 결제→성공/실패). ③ 나머지 페이지(내 예약·조회·결제결과)를 새 톤에 맞춰 미세 정리.
+   ④ **에이전트 브라우저 pane 은 이 환경에서 페인트 검증(스크린샷·getComputedStyle)이 얼어
+   불가** — 실제 확인은 사용자 브라우저에서. 디자인 반영은 소스·빌드·DOM 으로만 검증했다.
+2. **하우스키핑 A·B 업그레이드(D-044 후속).** A: 점검을 배정 게이트로(`isAssignable=INSPECTED only`).
+   B: OUT_OF_ORDER 현황판 처리 + 기간만큼 객실타입 재고 차감(오버셀 방어) — 오버부킹 0 불변식을
+   건드리므로 스펙·동시성 테스트 필요.
+3. **부분환불 사유 코드 체계**(D-039/D-042 후속) — 지금은 자유텍스트 reason.
 
 ---
 
 ## 4. 결정과 근거
 
-이번 세션의 설계 결정은 `docs/decisions.md` **D-037~D-040** 에 있다(취소·노쇼 위약금 통일 /
-폴리오 조립형 / 환불 실행 백오피스 수동 / 하우스키핑 3단계). 여기서 재서술하지 않는다.
+이번 세션의 설계 결정은 `docs/decisions.md` **D-041~D-044** 에 있다(웹훅 재조회+환불 동시성 /
+환불 원장+취소 행위자 / 만료 표시 통합 / 하우스키핑 점검 단계). 여기서 재서술하지 않는다.
+직전 세션 D-037~D-040(위약금·폴리오·환불·청소 3단계)도 유효하다.
 
 핸드오프에만 남기는 판단(이번 작업의 순서·처리):
 - **사용자 로드맵 순서대로 갔다** — 문서 빚(D-037 기록) → 폴리오 → 환불 → 하우스키핑.
