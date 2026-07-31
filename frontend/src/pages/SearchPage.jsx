@@ -14,6 +14,7 @@ export default function SearchPage() {
   const [roomTypeId, setRoomTypeId] = useState('')
   const [checkIn, setCheckIn] = useState(isoDate(1))
   const [checkOut, setCheckOut] = useState(isoDate(2))
+  const [adults, setAdults] = useState(2)
 
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -49,37 +50,53 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="card">
-      <h1>객실 검색</h1>
+    <>
+      <section className="hero">
+        <div className="hero-inner">
+          <div className="hero-eyebrow">THE STAY · 도심 속 휴식</div>
+          <h1 className="hero-title">머무는 순간, 여행이 됩니다</h1>
+          <p className="hero-sub">
+            날짜만 고르면 됩니다. 남은 객실을 실시간으로 확인하고 바로 예약하세요.
+          </p>
+        </div>
+      </section>
 
-      <form className="search-form" onSubmit={search}>
-        <label>
-          객실 타입
+      <form className="booking-bar" onSubmit={search}>
+        <label className="bb-field">
+          <span>객실 타입</span>
           <select value={roomTypeId} onChange={(e) => setRoomTypeId(e.target.value)}>
             {roomTypes.length === 0 && <option value="">불러오는 중…</option>}
             {roomTypes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} (기준 {t.standardOccupancy}인 · 최대 {t.maxOccupancy}인)
-              </option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </label>
 
-        <label>
-          체크인
+        <label className="bb-field">
+          <span>체크인</span>
           <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
         </label>
 
-        <label>
-          체크아웃
+        <label className="bb-field">
+          <span>체크아웃</span>
           <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
         </label>
 
-        <button type="submit" disabled={loading || !roomTypeId}>
-          {loading ? '조회 중…' : '가용 조회'}
+        <label className="bb-field">
+          <span>인원</span>
+          <select value={adults} onChange={(e) => setAdults(e.target.value)}>
+            {[1, 2, 3, 4].map((n) => (
+              <option key={n} value={n}>성인 {n}명</option>
+            ))}
+          </select>
+        </label>
+
+        <button type="submit" className="bb-go" disabled={loading || !roomTypeId}>
+          {loading ? '조회 중…' : '객실 찾기'}
         </button>
       </form>
 
+      <div className="section">
       {error && <p className="error">⚠ {error}</p>}
 
       {result && (
@@ -113,6 +130,7 @@ export default function SearchPage() {
                     roomTypeName: roomTypes.find((t) => String(t.id) === String(roomTypeId))?.name,
                     checkIn,
                     checkOut,
+                    adults,
                   },
                 })
               }
@@ -122,6 +140,7 @@ export default function SearchPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

@@ -21,7 +21,7 @@ export default function BookingPage() {
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
-  const [adults, setAdults] = useState(2)
+  const [adults, setAdults] = useState(state?.adults ? Number(state.adults) : 2)
   const [children, setChildren] = useState(0)
 
   const [hold, setHold] = useState(null)

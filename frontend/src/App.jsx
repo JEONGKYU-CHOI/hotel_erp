@@ -34,7 +34,7 @@ function App() {
   return (
     <div className="booking-shell">
       <header className="topbar">
-        <Link to="/" className="brand">🏨 호텔 예약</Link>
+        <Link to="/" className="brand">더 스테이</Link>
         <nav className="topnav">
           <Link to="/">객실 검색</Link>
           <Link to="/lookup">예약 조회</Link>
@@ -53,6 +53,10 @@ function App() {
           <Route path="/my-reservations" element={<MyReservationsPage />} />
         </Routes>
       </main>
+      <footer className="site-footer">
+        <div className="foot-brand">더 스테이</div>
+        <div>고요한 하룻밤, 정성스러운 아침. — 예약·문의는 프론트데스크로.</div>
+      </footer>
     </div>
   )
 }

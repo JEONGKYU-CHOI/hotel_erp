@@ -1,53 +1,48 @@
+/* ============================================================================
+   더 스테이 부킹엔진 — 디자인 베이스 (리셋 + 토큰 + 타이포)
+   호텔 홈페이지 톤: 따뜻한 페이퍼 배경, 잉크 텍스트, 브라스(골드) 액센트,
+   제목엔 세리프(Cormorant), 본문엔 산세리프(Noto Sans KR).
+   ========================================================================== */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* 색 — 파르나스풍 럭셔리 미니멀: 니어블랙 + 크림 + 절제된 웜 브론즈 액센트. */
+  --ink: #17140f;          /* 제목·강조·주요 버튼(니어블랙) */
+  --body: #4b463d;         /* 본문 */
+  --muted: #8d867a;        /* 보조·힌트 */
+  --paper: #f4f1ea;        /* 페이지 배경(크림) */
+  --surface: #ffffff;      /* 카드 */
+  --surface-2: #ece8df;    /* 옅은 면 */
+  --border: #e2ddd1;       /* 헤어라인 */
+  --accent: #9a7b48;       /* 액센트(절제된 웜 브론즈) */
+  --accent-dark: #7c6236;  /* 액센트 hover */
+  --accent-soft: #f0ebe0;  /* 액센트 옅은 배경 */
+  --ok: #3f7d5a;
+  --ok-soft: #e8f2ea;
+  --danger: #b3402f;
+  --danger-soft: #fbeae6;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 2px rgba(27, 24, 21, 0.05);
+  --shadow: 0 12px 30px -12px rgba(27, 24, 21, 0.18);
+  --shadow-lg: 0 30px 60px -20px rgba(27, 24, 21, 0.28);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  /* 파르나스는 제목까지 모던 산세리프. 세리프 변수는 산세리프로 통일한다. */
+  --sans: 'Inter', 'Noto Sans KR', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --serif: var(--sans);
+
+  font: 16px/1.6 var(--sans);
+  color: var(--body);
+  background: var(--paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  text-rendering: optimizeLegibility;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
@@ -55,57 +50,39 @@ body {
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3 {
+  font-family: var(--sans);
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.18;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
 p {
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+a {
+  color: var(--accent-dark);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent);
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
