@@ -116,6 +116,8 @@ class ReservationCancelTest {
 		assertThat(r.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
 		assertThat(r.getCancelledAt()).isNotNull();
 		assertThat(r.getCancelReason()).isEqualTo("고객 변심");
+		assertThat(r.getCancelledBy()).as("취소 행위자 기록(비인증 테스트는 SYSTEM, D-042)")
+				.isEqualTo("SYSTEM");
 		assertThat(inventory().getHeldQty()).as("held 반환").isZero();
 		assertThat(inventory().getSoldQty()).isZero();
 	}

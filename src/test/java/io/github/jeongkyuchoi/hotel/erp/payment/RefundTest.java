@@ -14,6 +14,8 @@ import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomTypeRepositor
 import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventory;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventoryRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.Payment;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentCancel;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentCancelRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentStatus;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
@@ -30,6 +32,7 @@ import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,6 +71,7 @@ class RefundTest {
 	@Autowired private RefundService refundService;
 	@Autowired private ReservationRepository reservationRepository;
 	@Autowired private PaymentRepository paymentRepository;
+	@Autowired private PaymentCancelRepository paymentCancelRepository;
 	@Autowired private RoomInventoryRepository roomInventoryRepository;
 	@Autowired private RoomTypeRepository roomTypeRepository;
 	@Autowired private RatePlanRepository ratePlanRepository;
@@ -101,6 +105,7 @@ class RefundTest {
 
 	@AfterEach
 	void cleanup() {
+		paymentCancelRepository.deleteAll();
 		paymentRepository.deleteAll();
 		reservationRepository.deleteAll();
 		roomInventoryRepository.deleteAll();
@@ -141,6 +146,13 @@ class RefundTest {
 		assertThat(p.getStatus()).as("부분취소라 APPROVED 유지").isEqualTo(PaymentStatus.APPROVED);
 		assertThat(f.balance()).isEqualByComparingTo("0");
 		assertThat(f.settlement()).isEqualTo(Settlement.PAID);
+
+		// 환불 이벤트 원장(D-042) — 이 환불이 개별 이벤트로 남고 누가·얼마가 보존된다.
+		List<PaymentCancel> ledger = paymentCancelRepository.findByReservationIdOrderByCreatedAt(id);
+		assertThat(ledger).hasSize(1);
+		assertThat(ledger.get(0).getCancelAmount()).isEqualByComparingTo("140000");
+		assertThat(ledger.get(0).getPaymentId()).isEqualTo(p.getId());
+		assertThat(ledger.get(0).getCreatedBy()).as("비인증 테스트 경로는 SYSTEM").isEqualTo("SYSTEM");
 	}
 
 	@Test
@@ -170,6 +182,8 @@ class RefundTest {
 		// 토스 취소는 정확히 한 번만.
 		verify(tossPaymentClient, org.mockito.Mockito.times(1)).cancel(eq("pk-idem"), any(), any());
 		assertThat(paymentOf(id).getCanceledAmount()).isEqualByComparingTo("200000");
+		// 원장도 한 행만 — 무동작 재요청은 이벤트를 더 쌓지 않는다(D-042).
+		assertThat(paymentCancelRepository.findByReservationIdOrderByCreatedAt(id)).hasSize(1);
 	}
 
 	@Test

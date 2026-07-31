@@ -137,6 +137,13 @@ public class Reservation extends BaseEntity {
 	private String cancelReason;
 
 	/**
+	 * 취소 행위자(D-042). 취소 시점에 굳힌다 — {@code updatedBy}(마지막 수정자)와 달리 이후
+	 * 수정에 덮이지 않는다. 로그인 직원명 또는 비인증/배치 경로의 SYSTEM. NULL 이면 미취소.
+	 */
+	@Column(name = "cancelled_by", length = 50)
+	private String cancelledBy;
+
+	/**
 	 * 취소 위약금 스냅샷(D-037). 취소 시점에 요금정책으로 계산해 굳힌다 — 정책이 나중에 바뀌어도
 	 * 이 예약에 물린 금액은 변하지 않는다({@link RatePlan#update} 와 같은 규율). NULL 이면
 	 * 아직 취소되지 않았거나 위약금 계산이 적용되지 않은 예약이다.
@@ -289,9 +296,12 @@ public class Reservation extends BaseEntity {
 	 * 넘긴 위약금 스냅샷이다 — 미결제(HOLD) 취소는 0 이다. 여기서 다시 계산하지 않는다: 계산은
 	 * 순수 함수로 떼어 두고(테스트 용이), 이 메서드는 그 결과를 굳히기만 한다.
 	 *
+	 * <p>{@code actor} 는 취소를 실행한 주체다(D-042) — 백오피스는 로그인 직원명, 배치·비인증
+	 * 경로는 SYSTEM. 취소 시점에 굳혀 이후 수정에 덮이지 않게 한다.
+	 *
 	 * @throws IllegalStateException HOLD·CONFIRMED 가 아닌 상태에서 부르면.
 	 */
-	public void cancel(String reason, BigDecimal cancellationFee) {
+	public void cancel(String reason, BigDecimal cancellationFee, String actor) {
 		if (status != ReservationStatus.HOLD && status != ReservationStatus.CONFIRMED) {
 			throw new IllegalStateException(
 					"취소할 수 없는 상태입니다. no=" + reservationNo + " status=" + status);
@@ -300,6 +310,7 @@ public class Reservation extends BaseEntity {
 		this.cancelledAt = LocalDateTime.now();
 		this.cancelReason = reason;
 		this.cancellationFee = cancellationFee;
+		this.cancelledBy = actor;
 		this.holdExpiresAt = null;
 	}
 

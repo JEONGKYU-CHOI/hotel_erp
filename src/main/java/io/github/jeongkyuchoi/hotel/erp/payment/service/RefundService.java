@@ -1,6 +1,8 @@
 package io.github.jeongkyuchoi.hotel.erp.payment.service;
 
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.Payment;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentCancel;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentCancelRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.payment.PaymentRepository;
 import io.github.jeongkyuchoi.hotel.erp.folio.dto.FolioResponse;
 import io.github.jeongkyuchoi.hotel.erp.folio.service.FolioService;
@@ -40,6 +42,7 @@ public class RefundService {
 
 	private final FolioService folioService;
 	private final PaymentRepository paymentRepository;
+	private final PaymentCancelRepository paymentCancelRepository;
 	private final TossPaymentClient tossPaymentClient;
 
 	/**
@@ -81,6 +84,15 @@ public class RefundService {
 			// ★ 토스 취소 먼저 — 성공해야 원장을 바꾼다. 실패 시 예외로 롤백.
 			tossPaymentClient.cancel(p.getPaymentKey(), cancelAmount, reason);
 			p.applyCancel(cancelAmount, LocalDateTime.now());
+			// 환불 이벤트를 원장에 남긴다(D-042). 누적액(payment)과 별개로 누가·언제·얼마·왜를
+			// 개별 행으로 보존한다. createdBy·createdAt 은 JPA 감사가 채운다.
+			paymentCancelRepository.save(PaymentCancel.builder()
+					.tenantId(p.getTenantId())
+					.paymentId(p.getId())
+					.reservationId(reservationId)
+					.cancelAmount(cancelAmount)
+					.reason(reason)
+					.build());
 			left = left.subtract(cancelAmount);
 			log.info("환불 실행 — reservationId={} paymentKey={} 취소={} 남은유효={}",
 					reservationId, p.getPaymentKey(), cancelAmount, p.effectiveAmount());
