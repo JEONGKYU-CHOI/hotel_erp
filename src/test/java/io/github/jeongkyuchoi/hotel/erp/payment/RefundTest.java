@@ -30,9 +30,15 @@ import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -176,5 +182,40 @@ class RefundTest {
 		verify(tossPaymentClient, never()).cancel(any(), any(), any());
 		assertThat(f.settlement()).isEqualTo(Settlement.PAID);
 		assertThat(paymentOf(id).getCanceledAmount()).isEqualByComparingTo("0");
+	}
+
+	@RepeatedTest(8)
+	@DisplayName("동시 이중 환불 → 토스 취소 정확히 한 번, 취소액=전액(이중 환불 없음)")
+	void concurrentDoubleRefund_cancelsExactlyOnce() throws InterruptedException {
+		Long id = confirmedAndPaid("ref-race", "pk-race");
+		cancelService.cancel(id, "고객 변심"); // 미래라 무료취소 → 전액(20만) 환불 대상
+
+		ExecutorService pool = Executors.newFixedThreadPool(2);
+		CountDownLatch start = new CountDownLatch(1);
+		CountDownLatch done = new CountDownLatch(2);
+		AtomicInteger errors = new AtomicInteger();
+
+		Runnable task = () -> {
+			try {
+				start.await();
+				refundService.refund(id, "경합 환불");
+			} catch (Throwable t) {
+				errors.incrementAndGet();
+			} finally {
+				done.countDown();
+			}
+		};
+		pool.submit(task);
+		pool.submit(task);
+
+		start.countDown();
+		done.await(30, TimeUnit.SECONDS);
+		pool.shutdownNow();
+
+		// 결제 행 락이 직렬화 지점 — 앞이 20만을 취소·커밋하면 뒤는 유효액 0 을 보고 무동작한다.
+		verify(tossPaymentClient, org.mockito.Mockito.times(1))
+				.cancel(eq("pk-race"), eq(new BigDecimal("200000.00")), any());
+		assertThat(paymentOf(id).getCanceledAmount()).as("이중 환불 없음 — 전액 한 번만")
+				.isEqualByComparingTo("200000");
 	}
 }

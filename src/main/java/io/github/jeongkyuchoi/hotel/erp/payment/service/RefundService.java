@@ -27,6 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p><b>멱등.</b> 환불 후 잔액은 0 이 되므로, 재실행하면 "돌려줄 것 없음"으로 무동작한다.
  * 이미 환불된 만큼은 {@code effectiveAmount} 가 줄어 다시 취소 대상이 되지 않는다.
+ *
+ * <p><b>동시성.</b> 폴리오·결제를 읽기 <b>전에</b> 결제 행을 {@code FOR UPDATE} 로 잠근다(D-025
+ * 와 같은 규율 — 전이 전 잠그기). 락 없이 읽으면 동시 환불 둘이 같은 {@code balance<0} 을 보고
+ * 둘 다 토스 취소를 불러 이중 환불이 날 수 있다(멱등은 순차 재요청만 막는다). 결제 행을 먼저
+ * 잠그면 뒤 트랜잭션은 앞이 커밋한 갱신된 유효액을 읽어 무동작한다.
  */
 @Slf4j
 @Service
@@ -44,6 +49,12 @@ public class RefundService {
 	 */
 	@Transactional
 	public FolioResponse refund(Long reservationId, String reason) {
+		// ★ 결제 행을 먼저 잠근다(D-025 규율). 폴리오 잔액 판정과 취소 실행 사이에 다른 환불이
+		//    끼어들지 못하게 하는 직렬화 지점 — 동시 이중 환불을 막는다. 같은 트랜잭션에서 뒤이어
+		//    folioService 가 결제를 다시 읽어도 방금 잠근 최신 유효액을 본다.
+		List<Payment> payments =
+				paymentRepository.findByReservationIdForUpdateOrderByApprovedAt(reservationId);
+
 		FolioResponse folio = folioService.forAdmin(reservationId);
 
 		// 돌려줄 것이 없다 — 미수(>0)·완납(0) 이면 무동작(멱등).
@@ -56,8 +67,8 @@ public class RefundService {
 		BigDecimal refundDue = folio.balance().negate();
 		BigDecimal left = refundDue;
 
-		// 결제들의 남은 유효액에서 순서대로 환불한다(보통 예약당 승인 결제 1건).
-		List<Payment> payments = paymentRepository.findByReservationIdOrderByApprovedAt(reservationId);
+		// 결제들의 남은 유효액에서 순서대로 환불한다(보통 예약당 승인 결제 1건). 위에서 잠근 행을
+		// 재사용한다.
 		for (Payment p : payments) {
 			if (left.signum() == 0) {
 				break;
