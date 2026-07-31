@@ -30,6 +30,7 @@ public class TossPaymentClient {
 
 	private static final String CONFIRM_PATH = "/v1/payments/confirm";
 	private static final String CANCEL_PATH = "/v1/payments/{paymentKey}/cancel";
+	private static final String GET_PATH = "/v1/payments/{paymentKey}";
 
 	private final RestClient restClient;
 
@@ -87,6 +88,28 @@ public class TossPaymentClient {
 					throw new PaymentException(error.code(), error.message());
 				})
 				.toBodilessEntity();
+	}
+
+	/**
+	 * 결제 한 건을 조회한다(웹훅 재조회 검증, D-041). 토스 {@code GET /v1/payments/{paymentKey}}
+	 * 로 <b>권위 있는</b> 결제 객체를 받아 온다 — 상태·주문번호·금액의 진짜 출처는 토스다.
+	 *
+	 * <p><b>웹훅 위조 방어의 핵심.</b> 웹훅 본문은 공개 경로로 아무나 보낼 수 있어 믿지 않고,
+	 * 본문의 {@code paymentKey} 로 여기서 토스에 다시 물어본다. 시크릿 키는 서버에만 있으므로
+	 * 위조자는 이 응답을 흉내 낼 수 없다. 실재하지 않는 키·조회 실패는 {@link PaymentException}
+	 * 으로 던져, 호출부가 확정을 보류하게 한다. 승인 응답과 필드 모양이 같아 같은 DTO 를 쓴다.
+	 */
+	public TossConfirmResponse getPayment(String paymentKey) {
+		return restClient.get()
+				.uri(GET_PATH, paymentKey)
+				.retrieve()
+				.onStatus(status -> status.isError(), (request, response) -> {
+					TossError error = readError(response.getBody());
+					log.warn("토스 결제 조회 실패 — status={} code={} message={}",
+							response.getStatusCode(), error.code(), error.message());
+					throw new PaymentException(error.code(), error.message());
+				})
+				.body(TossConfirmResponse.class);
 	}
 
 	/** 오류 바디를 읽되, 형식이 어긋나도 죽지 않고 일반 코드로 감싼다. */

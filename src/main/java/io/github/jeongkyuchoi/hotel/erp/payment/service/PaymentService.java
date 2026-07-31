@@ -96,34 +96,63 @@ public class PaymentService {
 	}
 
 	/**
-	 * 토스 웹훅 기반 사후 정합 (D-034). successUrl 콜백이 커밋 전에 끊긴 드문 창을 메운다.
+	 * 토스 웹훅 기반 사후 정합 (D-034, 재조회 검증 D-041). successUrl 콜백이 커밋 전에 끊긴
+	 * 드문 창을 메운다.
 	 *
-	 * <p>웹훅은 재시도·중복 전송된다. {@code DONE} 승인 이벤트만 다루고, 이미 기록된 결제면
-	 * 아무 것도 하지 않는다(멱등). 웹훅이 토스가 보낸 신호이므로 여기서 승인 API 를 다시
-	 * 부르지 않는다 — 다만 금액을 예약 저장값과 대조해 위조 이벤트로 잘못 확정하지 않는다.
-	 * 웹훅 서명 검증은 1차 범위 밖(감수 대가) — 멱등·금액 대조가 오확정을 막는 최소 방어다.
+	 * <p><b>웹훅 본문은 믿지 않는다(재조회 검증).</b> {@code /api/payments/webhook} 은 인증 주체가
+	 * 없는 공개 경로라, 위조자가 "결제 완료" 이벤트를 직접 보낼 수 있다. 그래서 본문의 금액·상태·
+	 * 주문번호는 신뢰하지 않고, 본문의 {@code paymentKey} 로 토스에 결제를 <b>다시 조회</b>해
+	 * (시크릿 키 인증) 권위 응답으로 정합한다. 위조 웹훅은 실재하지 않는 키라 조회에서 걸러지고,
+	 * 조작된 금액·상태는 권위 응답에 없어 오확정되지 않는다. 본문 {@code status} 는 값싼 사전
+	 * 필터로만 쓴다(불필요한 조회 API 호출 절약).
+	 *
+	 * <p><b>멱등.</b> 웹훅은 재시도·중복 전송된다. 이미 기록된 결제면 아무 것도 하지 않는다.
+	 * 경합으로 선조회를 놓쳐도 {@code uk_payment_key} 와 확정 서비스 멱등이 최후에 막는다.
 	 */
 	@Transactional
-	public void reconcileFromWebhook(String paymentKey, String orderId, BigDecimal amount,
-			String status) {
+	public void reconcileFromWebhook(String paymentKey, String status) {
 		if (!"DONE".equals(status)) {
-			return; // 승인 완료 이벤트만 정합 대상. 취소·실패 등은 1차 범위 밖.
+			return; // 본문 상태는 값싼 사전 필터. 권위 판정은 아래 재조회로 한다.
+		}
+		if (paymentKey == null || paymentKey.isBlank()) {
+			log.warn("웹훅 정합 — paymentKey 없음, 무시.");
+			return;
 		}
 		if (paymentRepository.findByPaymentKey(paymentKey).isPresent()) {
 			return; // 이미 처리됨(멱등). 대개 successUrl 콜백이 먼저 끝낸 경우다.
 		}
+
+		// ★ 재조회 검증(D-041). 본문 대신 토스에 직접 물어 권위 응답을 받는다. 위조 웹훅은
+		//    조회 실패(존재하지 않는 키)로 걸러진다.
+		TossConfirmResponse actual;
+		try {
+			actual = tossPaymentClient.getPayment(paymentKey);
+		} catch (PaymentException e) {
+			log.warn("웹훅 정합 — 토스 결제 조회 실패(위조 의심 포함), 무시. paymentKey={} code={}",
+					paymentKey, e.getCode());
+			return;
+		}
+		if (!"DONE".equals(actual.status())) {
+			log.warn("웹훅 정합 — 토스 실제 상태가 DONE 아님, 확정 보류. paymentKey={} status={}",
+					paymentKey, actual.status());
+			return;
+		}
+
 		Reservation reservation = reservationRepository
-				.findByTenantIdAndReservationNo(TENANT_ID, orderId).orElse(null);
+				.findByTenantIdAndReservationNo(TENANT_ID, actual.orderId()).orElse(null);
 		if (reservation == null) {
-			log.warn("웹훅 정합 — 예약 없음, 무시. orderId={}", orderId);
+			log.warn("웹훅 정합 — 예약 없음, 무시. orderId={}", actual.orderId());
 			return;
 		}
-		if (amount == null || reservation.getTotalAmount().compareTo(amount) != 0) {
-			log.warn("웹훅 정합 — 금액 불일치, 확정 보류. orderId={} webhookAmount={}", orderId, amount);
+		if (actual.totalAmount() == null
+				|| reservation.getTotalAmount().compareTo(actual.totalAmount()) != 0) {
+			log.warn("웹훅 정합 — 금액 불일치, 확정 보류. orderId={} tossAmount={}",
+					actual.orderId(), actual.totalAmount());
 			return;
 		}
-		persistApproved(reservation, paymentKey, orderId, reservation.getTotalAmount(), null, null);
-		log.info("웹훅 정합으로 확정 완료 — orderId={} paymentKey={}", orderId, paymentKey);
+		persistApproved(reservation, paymentKey, actual.orderId(), reservation.getTotalAmount(),
+				actual.method(), parseApprovedAt(actual.approvedAt()));
+		log.info("웹훅 재조회 정합으로 확정 완료 — orderId={} paymentKey={}", actual.orderId(), paymentKey);
 	}
 
 	/** 확정 배선(HOLD → CONFIRMED) + 결제 기록. 만료 뒤 도착이면 확정 서비스 가드가 거부한다. */

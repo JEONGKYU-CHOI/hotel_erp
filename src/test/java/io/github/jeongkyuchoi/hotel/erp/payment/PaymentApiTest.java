@@ -128,6 +128,14 @@ class PaymentApiTest {
 						"DONE", "간편결제", "2030-05-01T12:00:00+09:00"));
 	}
 
+	/** 웹훅 재조회(getPayment)가 권위 있는 DONE 결제를 돌려주도록 mock (D-041). */
+	private void givenTossQueryReturns(String paymentKey, String orderId, BigDecimal amount) {
+		given(tossPaymentClient.getPayment(paymentKey))
+				.willReturn(new TossConfirmResponse(
+						paymentKey, orderId, amount, "DONE", "간편결제",
+						"2030-05-01T12:00:00+09:00"));
+	}
+
 	private String confirmJson(String paymentKey, String orderId, String amount) {
 		return """
 				{ "paymentKey": "%s", "orderId": "%s", "amount": %s }
@@ -225,9 +233,11 @@ class PaymentApiTest {
 	}
 
 	@Test
-	@DisplayName("웹훅 DONE → 예약 확정·결제 기록, 재전송해도 결제 1건(멱등)")
+	@DisplayName("웹훅 DONE → 재조회로 확정·결제 기록, 재전송해도 결제 1건(멱등)")
 	void webhook_reconcilesAndIsIdempotent() throws Exception {
 		String no = createHold("pay-webhook");
+		// ★ 재조회 검증(D-041) — 서비스가 paymentKey 로 토스에 다시 물으면 권위 DONE 을 준다.
+		givenTossQueryReturns(PAYMENT_KEY, no, AMOUNT);
 		String body = """
 				{ "eventType": "PAYMENT_STATUS_CHANGED",
 				  "data": { "paymentKey": "%s", "orderId": "%s",
@@ -244,5 +254,31 @@ class PaymentApiTest {
 		assertThat(statusOf(no)).isEqualTo(ReservationStatus.CONFIRMED);
 		assertThat(paymentRepository.count()).as("웹훅 재전송에도 결제 1건").isEqualTo(1);
 		assertThat(inventory().getSoldQty()).isEqualTo(1);
+	}
+
+	@Test
+	@DisplayName("위조 웹훅 → 재조회 실패로 확정 안 됨, 결제 0건, HOLD 유지(D-041)")
+	void webhook_forged_rejectedByRequery() throws Exception {
+		String no = createHold("pay-forged");
+		// 위조자는 실재하지 않는 결제로 "DONE" 을 지어낸다 — 재조회가 예외로 걸러 낸다.
+		given(tossPaymentClient.getPayment(anyString())).willThrow(
+				new io.github.jeongkyuchoi.hotel.erp.common.exception.PaymentException(
+						"NOT_FOUND_PAYMENT", "존재하지 않는 결제"));
+		String body = """
+				{ "eventType": "PAYMENT_STATUS_CHANGED",
+				  "data": { "paymentKey": "forged_key", "orderId": "%s",
+				            "status": "DONE", "totalAmount": 100000 } }
+				""".formatted(no);
+
+		// 컨트롤러는 토스에 재전송 폭주를 막으려 항상 200 을 준다 — 확정 여부로 방어를 확인한다.
+		mockMvc.perform(post("/api/payments/webhook")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(body))
+				.andExpect(status().isOk());
+
+		assertThat(statusOf(no)).as("위조 웹훅으로 확정되면 안 됨").isEqualTo(ReservationStatus.HOLD);
+		assertThat(paymentRepository.count()).as("결제 미기록").isZero();
+		assertThat(inventory().getHeldQty()).isEqualTo(1);
+		assertThat(inventory().getSoldQty()).isZero();
 	}
 }

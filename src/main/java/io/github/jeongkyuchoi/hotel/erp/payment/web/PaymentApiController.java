@@ -56,10 +56,10 @@ public class PaymentApiController {
 	public ResponseEntity<Void> webhook(@RequestBody TossWebhookRequest request) {
 		if (request.data() != null) {
 			try {
+				// 본문 금액·주문번호는 넘기지 않는다 — 서비스가 paymentKey 로 재조회해 권위 값을
+				// 쓴다(재조회 검증, D-041). status 는 값싼 사전 필터로만 넘긴다.
 				paymentService.reconcileFromWebhook(
 						request.data().paymentKey(),
-						request.data().orderId(),
-						request.data().totalAmount(),
 						request.data().status());
 			} catch (Exception e) {
 				// 재전송 폭주를 막으려 200 으로 삼킨다. 정합 실패는 로그·후속 배치로 다룬다.
