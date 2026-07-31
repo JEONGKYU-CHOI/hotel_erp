@@ -64,10 +64,9 @@ public class FolioService {
 
 	private FolioResponse assemble(Reservation reservation) {
 		// 표시 상태 — 만료 시각이 지난 HOLD 는 스케줄러가 아직 청소 전이어도 EXPIRED 로 본다.
-		// 회원 목록(MyReservationSummary)·비회원 조회(D-028)와 같은 규율이라, 청구서가 "만료됨"
-		// 목록과 어긋나 미수로 잡히지 않는다.
-		ReservationStatus displayStatus = reservation.isHoldExpired(LocalDateTime.now())
-				? ReservationStatus.EXPIRED : reservation.getStatus();
+		// 회원 목록·비회원 조회와 같은 규율을 도메인 메서드로 모았다(D-043) — 청구서가 "만료됨"을
+		// 목록과 달리 보고 미수로 잡는 어긋남을 원천 차단한다.
+		ReservationStatus displayStatus = reservation.displayStatus(LocalDateTime.now());
 
 		List<Charge> charges = chargesFor(reservation, displayStatus);
 		List<Credit> credits = creditsFor(reservation);

@@ -48,8 +48,7 @@ public record ReservationDetail(
 	 * @param now 만료 판정 기준 시각(D-003)
 	 */
 	public static ReservationDetail from(Reservation r, LocalDateTime now) {
-		ReservationStatus displayStatus =
-				r.isHoldExpired(now) ? ReservationStatus.EXPIRED : r.getStatus();
+		ReservationStatus displayStatus = r.displayStatus(now); // 표시 규칙은 도메인에(D-043)
 
 		List<ReservationNightView> views = r.getNights().stream()
 				.sorted((a, b) -> a.getStayDate().compareTo(b.getStayDate()))

@@ -237,6 +237,18 @@ public class Reservation extends BaseEntity {
 	}
 
 	/**
+	 * 조회·표시용 상태(D-003). 만료 시각이 지난 HOLD 는 스케줄러가 아직 정리하지 못했어도
+	 * {@link ReservationStatus#EXPIRED} 로 보여준다 — 그 외에는 저장된 상태 그대로다.
+	 *
+	 * <p>회원 목록·비회원 조회·폴리오가 각자 {@code isHoldExpired(now) ? EXPIRED : status}
+	 * 삼항을 반복하던 것을 하나로 모은 것이다(D-043). 표시 규칙을 한 곳에서 바꾸면 세 화면이
+	 * 함께 움직여, 폴리오가 "만료됨"을 목록과 달리 보고 미수로 잡는 어긋남이 원천 차단된다.
+	 */
+	public ReservationStatus displayStatus(LocalDateTime now) {
+		return isHoldExpired(now) ? ReservationStatus.EXPIRED : status;
+	}
+
+	/**
 	 * HOLD → EXPIRED 전이. 스케줄러가 만료분을 정리할 때 부른다(D-003).
 	 *
 	 * <p>재고의 {@code held_qty} 반환은 호출자(만료 서비스)가 잠근 재고 행에 대고

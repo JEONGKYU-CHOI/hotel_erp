@@ -24,11 +24,9 @@ public record MyReservationSummary(
 		BigDecimal totalAmount) {
 
 	public static MyReservationSummary from(Reservation r, LocalDateTime now) {
-		ReservationStatus displayStatus =
-				r.isHoldExpired(now) ? ReservationStatus.EXPIRED : r.getStatus();
 		return new MyReservationSummary(
 				r.getReservationNo(),
-				displayStatus,
+				r.displayStatus(now), // 만료 지난 HOLD 표시 규칙은 도메인에 모았다(D-043)
 				r.getRoomType().getName(),
 				r.getRatePlan().getName(),
 				r.getCheckInDate(),
