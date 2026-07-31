@@ -19,6 +19,8 @@
 | `git mv` 로 소스 디렉터리 이동 시 `Permission denied` | **Gradle 데몬(fork된 java)이 소스 트리를 물고 있음.** `--stop` 만으로 안 풀릴 때가 있음 | PowerShell `Move-Item` 으로 이동 후 `git add -A`(git 이 rename 인식). 남은 빈 폴더는 `Remove-Item -Recurse` |
 | 커밋에 없던 코드가 워킹트리에 나타남 (미커밋) | **미상 — IntelliJ 재설치 후 발생.** Local History 복원 / AI 어시스턴트 자동삽입 의심 | 출처 불명 코드는 신뢰·커밋하지 말 것. `git diff HEAD` 로 확인 후 `git checkout HEAD -- <file>` 로 폐기하고 필요하면 직접 재작성 |
 | 원격 브랜치는 클린인데 `git log --all`/`gc` 가 옛 커밋(예: 지운 Claude 트레일러)을 계속 살림 | **이전 `git filter-branch` 가 남긴 `refs/original/refs/heads/<branch>` 백업 ref** 가 재작성 전 히스토리를 붙들고 있음. 이게 있으면 gc 가 프루닝하지 못한다 | `git update-ref -d refs/original/refs/heads/<branch>` 로 백업 ref 삭제 → `git reflog expire --expire=now --all && git gc --prune=now`. stale 원격추적 ref 도 함께 제거. **원격/깃헙 쪽 잔상(기여자 캐시)은 로컬 정리로 안 사라진다** — 초기 리포면 삭제·재생성이 확실(스타·이슈 없을 때) |
+| 에이전트 Bash에서 `curl -o /tmp/x` 로 받은 파일을 python이 못 읽음 | **MSYS(Git Bash)는 `/tmp` 를 실제 Windows 임시경로로 매핑하지만, Windows python 은 리터럴 `/tmp/x` 로 읽어** 경로가 어긋난다 | 파일을 거치지 말고 파이프로 넘긴다(`curl -s URL \| python ...`). 꼭 파일이면 python 도 이해하는 절대경로(스크래치패드 등)를 쓴다 |
+| 브라우저 pane 의 `read_page` 가 0x0(빈 트리)로 나옴 | pane 이 비컴포지팅 상태라 접근성 트리를 못 만든다 | `get_page_text`·`javascript_tool` 로 우회해 내용을 읽는다 |
 
 ---
 
@@ -30,6 +32,7 @@
 | 앱을 껐는데 `Port 8080 was already in use` | **Gradle 래퍼만 죽고 fork된 java 프로세스는 살아 있음.** 백그라운드 태스크 종료로는 자식 프로세스가 안 죽는다 | 포트로 찾아서 죽인다 (아래 명령) |
 | 템플릿(`.html`)을 고쳤는데 화면이 그대로 | **`bootRun`은 `src/` 가 아니라 `build/resources/main/` 에서 서빙한다.** `spring.thymeleaf.cache: false` 는 "그 위치의 파일을 다시 읽는다"는 뜻이지 `src` 를 본다는 뜻이 아니다 | 재기동(= `processResources` 재실행). IDE에서는 build 후 자동 반영 |
 | `bootRun` 으로 띄웠는데 `/` 가 404 | React 산출물을 `bootJar` 에만 얹었다(의도됨 — 개발 반복 속도) | 개발 중 부킹엔진은 Vite dev server(5173). 통합 확인은 `bootJar` 로 |
+| `local` 프로파일로 띄웠는데 백오피스 직원 로그인(admin/staff)이 안 됨 | **직원 계정은 `DevAccountSeeder`(@Profile("dev"))가 시드한다.** `local` 만으로는 DB 는 붙지만 직원 시드가 없다(D-034) | 라이브 백오피스 검증은 `--spring.profiles.active=local,dev` 로 띄운다(admin/staff · `dev1234!`). 프론트 부킹엔진은 dev 불필요 |
 
 포트 8080을 잡고 있는 프로세스 종료:
 
