@@ -1325,3 +1325,37 @@ end-to-end 재조회는 테스트키로만(자동 스위트는 mock). 환불·�
 
 **폐기한 대안** HMAC 서명 검증 — 새 웹훅키 발급·관리 부담, 이벤트 유형별 서명 제공 불확실(위 2).
 환불 멱등만으로 방어 — 순차 재요청만 막고 동시 요청은 못 막음(위 3).
+
+
+## D-042. 환불 이벤트 원장 + 취소 행위자 — 개별 이력을 append-only 로 남긴다
+
+**결정일** 2026-07-31
+
+**결정** "누가·언제·얼마·왜" 환불·취소했는지 감사 이력을 남긴다. D-039 는 잔액 계산용 누적
+총액만 남겨(로그 외 개별 이벤트 없음) 이 축이 비어 있었다.
+
+1. **환불은 이벤트 원장(payment_cancel)에 append-only 로 쌓는다.** 환불 실행 한 번 = 한 행
+   (payment_id·reservation_id·cancel_amount·reason + 감사컬럼). `payment.canceled_amount`(누적
+   총액)는 그대로 유지하고 — 폴리오·멱등이 이 값을 쓴다(D-038·D-039) — 원장은 그 누적을 개별
+   이벤트로 <b>분해</b>해 보존한다. 부분환불을 여러 번 해도 각 건이 남는다. 원장 합 = 누적액.
+2. **행위자·시각은 기존 JPA 감사를 재사용한다.** `PaymentCancel` 은 {@code BaseEntity} 를 상속해
+   `created_by`(로그인 직원명 또는 배치·비인증의 SYSTEM)·`created_at` 이 `AuditorAware` 로 자동
+   기록된다(JpaAuditingConfig). 별도 행위자 배선을 만들지 않는다. append-only 라 정정하지 않는다.
+3. **취소 행위자는 예약에 못박는다(cancelled_by).** `Reservation.cancel(reason, fee, actor)` 로
+   취소 시점에 굳힌다 — `updated_by`(마지막 수정자)와 달리 이후 수정에 덮이지 않는다. 행위자는
+   취소 서비스가 같은 `AuditorAware` 로 뽑아 넘긴다(도메인은 SecurityContext 를 모른다). 노쇼는
+   취소가 아니라 별도(배치, SYSTEM)이므로 이 컬럼을 쓰지 않는다.
+
+**검증** 통합테스트: `RefundTest` — 부분환불 후 원장 1행(금액·payment_id·created_by=SYSTEM),
+멱등 재요청은 원장에 이벤트를 더 쌓지 않음(1행 유지). `ReservationCancelTest` — 취소 후
+`cancelled_by`=SYSTEM. V8 마이그레이션(payment_cancel + reservation.cancelled_by). 전체 스위트
+110건 통과, 실제 MySQL.
+
+**감수하는 대가** 원장·누적액 두 곳을 함께 갱신한다(한 트랜잭션이라 어긋나지 않음). 부분환불
+사유 코드 체계·백오피스 이력 화면 노출은 후속 — 원장은 조회 리포지토리
+(`findByReservationIdOrderByCreatedAt`)까지만 깔았다. 취소 행위자는 컬럼 하나로, 취소 이력의
+개별 이벤트화(여러 번 상태를 오가는 경우)는 범위 밖(취소는 종단 전이라 1회).
+
+**폐기한 대안** D-039 의 "누적 총액으로 충분" — 잔액엔 맞지만 개별 이벤트·행위자가 없어 감사
+불가. 이번에 요구가 바뀌어(누가·언제·개별 이벤트) 원장을 신설해 그 판단을 갱신한다. 취소
+행위자를 updated_by 로 갈음 — 이후 수정에 덮여 취소자 보존이 깨짐(위 3).
