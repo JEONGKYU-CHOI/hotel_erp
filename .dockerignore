@@ -1,0 +1,18 @@
+# 빌드 컨텍스트에서 제외 — 이미지 크기·빌드 속도.
+.git
+.gitignore
+.gradle
+build
+frontend/node_modules
+frontend/dist
+**/*.log
+.idea
+.vscode
+docs
+scripts
+*.md
+.env
+.env.*
+!.env.example
+# 로컬 개발 비밀값이 이미지에 구워지지 않게 제외(배포는 prod 프로파일 + 환경변수).
+src/main/resources/application-local.yml

@@ -1,0 +1,55 @@
+# =============================================================================
+# 자기완결형 배포/시연 스택 — Spring 앱(프론트+API+백오피스) + MySQL 8.4.
+#
+#   docker compose up --build  →  http://localhost:8080  에서 전체 동작.
+#   그 앞에 cloudflared 터널을 붙이면 외부 URL 하나로 시연할 수 있다(docs/DEPLOY.md).
+#
+#   비밀값은 .env 로 주입한다(.env.example 참고). 커밋 금지(.gitignore 처리됨).
+# =============================================================================
+services:
+  mysql:
+    image: mysql:8.4
+    # 타임존은 이름이 아니라 +09:00 오프셋으로. 이름을 쓰면 ER_UNKNOWN_TIME_ZONE_ERROR(1298).
+    command:
+      - --default-time-zone=+09:00
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: hotel_erp
+      TZ: Asia/Seoul
+    # 호스트의 기존 로컬 MySQL(3306)과 충돌하지 않도록 3307 로 노출(디버깅용).
+    ports:
+      - "3307:3306"
+    volumes:
+      - hotel_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # prod: 운영 로깅/캐시 + 관리자 시드.  demo: 데모 기준 데이터 시드.
+      SPRING_PROFILES_ACTIVE: prod,demo
+      DB_URL: jdbc:mysql://mysql:3306/hotel_erp?characterEncoding=UTF-8&connectionTimeZone=SERVER&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      TOSS_SECRET_KEY: ${TOSS_SECRET_KEY}
+      TOSS_CLIENT_KEY: ${TOSS_CLIENT_KEY}
+      ADMIN_INIT_USERNAME: ${ADMIN_INIT_USERNAME:-admin}
+      ADMIN_INIT_PASSWORD: ${ADMIN_INIT_PASSWORD}
+      TZ: Asia/Seoul
+    ports:
+      - "8080:8080"
+
+volumes:
+  hotel_mysql:
