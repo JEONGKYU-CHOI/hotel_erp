@@ -9,11 +9,13 @@ import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationNig
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotFoundException;
+import io.github.jeongkyuchoi.hotel.erp.notification.event.ReservationCancelledEvent;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,7 @@ public class ReservationCancelService {
 	private final RoomInventoryRepository roomInventoryRepository;
 	/** 취소 행위자를 굳히려고 감사 제공자를 그대로 재사용한다(로그인 직원명 또는 SYSTEM, D-042). */
 	private final AuditorAware<String> auditorAware;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
 	public CancellationCharge cancel(Long reservationId, String reason) {
@@ -103,6 +106,10 @@ public class ReservationCancelService {
 				reservation.getReservationNo(), reservation.getCheckInDate(),
 				reservation.getCheckOutDate(), prior, reason,
 				charge.penalty(), charge.basis(), charge.refund(), actor);
+		// 커밋 후 취소·환불 안내 메일. 실제 전이가 일어난 이 경로에서만 발행한다(멱등 재취소 제외).
+		// 위약금·환불액은 판정 결과를 그대로 싣는다(HOLD 는 결제가 없어 환불 0).
+		eventPublisher.publishEvent(new ReservationCancelledEvent(
+				reservation.getId(), charge.penalty(), charge.refund()));
 		return charge;
 	}
 }

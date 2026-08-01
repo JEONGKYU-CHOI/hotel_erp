@@ -7,11 +7,13 @@ import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationNig
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotFoundException;
+import io.github.jeongkyuchoi.hotel.erp.notification.event.ReservationConfirmedEvent;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class ReservationConfirmService {
 
 	private final ReservationRepository reservationRepository;
 	private final RoomInventoryRepository roomInventoryRepository;
+	private final ApplicationEventPublisher eventPublisher;
 
 	@Transactional
 	public Reservation confirm(Long reservationId) {
@@ -75,6 +78,8 @@ public class ReservationConfirmService {
 		log.info("확정: no={} {}~{} 총액={}",
 				reservation.getReservationNo(), reservation.getCheckInDate(),
 				reservation.getCheckOutDate(), reservation.getTotalAmount());
+		// 커밋 후 예약 확정 안내 메일. 실제 전이가 일어난 이 경로에서만 발행한다(멱등 재확정 제외).
+		eventPublisher.publishEvent(new ReservationConfirmedEvent(reservation.getId()));
 		return reservation;
 	}
 }

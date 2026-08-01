@@ -16,6 +16,7 @@ import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRep
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotEnoughInventoryException;
 import io.github.jeongkyuchoi.hotel.erp.common.exception.NotFoundException;
+import io.github.jeongkyuchoi.hotel.erp.notification.event.ReservationHeldEvent;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationHoldCommand;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +71,7 @@ public class ReservationService {
 	private final BookingPolicyRepository bookingPolicyRepository;
 	private final ReservationNoGenerator reservationNoGenerator;
 	private final EntityManager entityManager;
+	private final ApplicationEventPublisher eventPublisher;
 
 	/**
 	 * HOLD 예약을 만든다. 재고의 {@code heldQty} 를 야간마다 1씩 올린다.
@@ -201,6 +204,8 @@ public class ReservationService {
 		log.info("HOLD 생성: no={} roomType={} {}~{} {}박 총액={} 만료={}",
 				saved.getReservationNo(), roomType.getCode(), cmd.checkInDate(),
 				cmd.checkOutDate(), nights, saved.getTotalAmount(), saved.getHoldExpiresAt());
+		// 커밋 후 임시예약 안내 메일. 트랜잭션이 롤백되면 발행 이벤트도 처리되지 않는다(AFTER_COMMIT).
+		eventPublisher.publishEvent(new ReservationHeldEvent(saved.getId()));
 		return saved;
 	}
 
