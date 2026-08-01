@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout(~{::title}, ~{::main})}"
+      lang="ko">
+<head>
+    <title>예약 정책 · 호텔 PMS</title>
+</head>
+<body>
+<main>
+    <h1 class="h4 mb-1">예약 정책</h1>
+    <p class="text-secondary small mb-4">
+        부킹엔진 예약에 적용되는 정책입니다. 변경하면 즉시 반영됩니다.
+    </p>
+
+    <form th:object="${form}" method="post" th:action="@{/admin/basedata/booking-policy}">
+        <div class="card mb-3" style="max-width: 560px;">
+            <div class="card-body">
+                <label for="sameDayCutoffTime" class="form-label">당일 예약 마감 시각</label>
+                <input type="time" id="sameDayCutoffTime" class="form-control" style="max-width: 180px;"
+                       th:field="*{sameDayCutoffTime}"
+                       th:classappend="${#fields.hasErrors('sameDayCutoffTime')} ? 'is-invalid'">
+                <div class="invalid-feedback" th:errors="*{sameDayCutoffTime}">오류</div>
+                <div class="form-text">
+                    체크인이 <b>오늘</b>인 예약은 이 시각까지만 받습니다. 시각이 지나면 남은 객실이
+                    있어도 당일 예약이 막히고, 내일 이후 날짜만 예약할 수 있습니다.
+                    (지난 날짜는 항상 예약 불가.)
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">저장</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin}">취소</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

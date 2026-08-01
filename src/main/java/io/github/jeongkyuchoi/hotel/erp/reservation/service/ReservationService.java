@@ -1,5 +1,6 @@
 package io.github.jeongkyuchoi.hotel.erp.reservation.service;
 
+import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.BookingPolicyRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RateCalendar;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RateCalendarRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RatePlan;
@@ -55,16 +56,17 @@ public class ReservationService {
 	private static final Duration HOLD_TTL = Duration.ofMinutes(10);
 
 	/**
-	 * 당일 예약 마감 시각(서버 로컬시간, Asia/Seoul). 체크인이 '오늘'이면 이 시각까지만
-	 * 예약을 받고, 지나면 거절한다 — 남은 객실이 있어도 밤 늦은 당일 유입을 막는다.
+	 * 당일 예약 마감 시각의 기본값. 정책 행이 없을 때(방어적)만 쓰인다 — 실제 값은
+	 * {@code booking_policy} 에서 읽고, PMS 기준정보 화면에서 바꾼다.
 	 */
-	private static final LocalTime SAME_DAY_CUTOFF = LocalTime.of(20, 0);
+	private static final LocalTime DEFAULT_SAME_DAY_CUTOFF = LocalTime.of(20, 0);
 
 	private final ReservationRepository reservationRepository;
 	private final RoomInventoryRepository roomInventoryRepository;
 	private final RoomTypeRepository roomTypeRepository;
 	private final RatePlanRepository ratePlanRepository;
 	private final RateCalendarRepository rateCalendarRepository;
+	private final BookingPolicyRepository bookingPolicyRepository;
 	private final ReservationNoGenerator reservationNoGenerator;
 	private final EntityManager entityManager;
 
@@ -95,12 +97,15 @@ public class ReservationService {
 							+ " out=" + cmd.checkOutDate());
 		}
 		// 2-1) 당일 예약 마감. 지난 날짜는 DTO 의 @FutureOrPresent 가 이미 거른다. 오늘
-		//      체크인은 허용하되, 마감 시각(20:00)을 넘겼으면 오늘은 닫는다.
+		//      체크인은 허용하되, 마감 시각(PMS 정책값)을 넘겼으면 오늘은 닫는다.
+		LocalTime cutoff = bookingPolicyRepository.findByTenantId(TENANT_ID)
+				.map(p -> p.getSameDayCutoffTime())
+				.orElse(DEFAULT_SAME_DAY_CUTOFF);
 		if (cmd.checkInDate().isEqual(LocalDate.now())
-				&& LocalTime.now().isAfter(SAME_DAY_CUTOFF)) {
+				&& LocalTime.now().isAfter(cutoff)) {
 			throw new IllegalArgumentException(
-					"당일 예약은 " + SAME_DAY_CUTOFF.getHour() + "시까지 가능합니다. "
-							+ "내일 이후 날짜를 선택해 주세요.");
+					"당일 예약은 " + cutoff.truncatedTo(java.time.temporal.ChronoUnit.MINUTES)
+							+ " 까지 가능합니다. 내일 이후 날짜를 선택해 주세요.");
 		}
 		LocalDate firstNight = cmd.checkInDate();
 		LocalDate lastNight = cmd.checkOutDate().minusDays(1); // 체크아웃 당일은 숙박 아님

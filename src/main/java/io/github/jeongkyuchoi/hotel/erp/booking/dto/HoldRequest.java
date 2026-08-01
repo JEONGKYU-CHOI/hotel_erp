@@ -37,7 +37,7 @@ public record HoldRequest(
 
 		@NotNull(message = "체크인 날짜는 필수입니다.")
 		// 오늘 체크인을 허용한다(당일 예약). 지난 날짜만 막는다. 당일 마감 시각은
-		// 서비스에서 처리한다(ReservationService.SAME_DAY_CUTOFF).
+		// 서비스가 booking_policy(PMS 설정값)를 읽어 처리한다(ReservationService).
 		@FutureOrPresent(message = "체크인 날짜는 오늘 이후여야 합니다.")
 		LocalDate checkInDate,
 
