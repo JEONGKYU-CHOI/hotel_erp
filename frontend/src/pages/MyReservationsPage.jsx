@@ -27,7 +27,7 @@ export default function MyReservationsPage() {
   useEffect(() => {
     if (authLoading) return
     if (!member) {
-      navigate('/login', { replace: true, state: { from: '/my-reservations' } })
+      navigate('/member-login', { replace: true, state: { from: '/my-reservations' } })
       return
     }
     api.myReservations()

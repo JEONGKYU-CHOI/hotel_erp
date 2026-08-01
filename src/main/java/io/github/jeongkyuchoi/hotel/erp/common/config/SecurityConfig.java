@@ -102,7 +102,7 @@ public class SecurityConfig {
 						// forward 하는 경로들 — permitAll 이 아니면 anyRequest 에 걸려 로그인으로
 						// 튕긴다. 결제 착지(/payment/success·fail)도 인증 주체 없는 공개 경로다.
 						.requestMatchers("/book", "/payment/**", "/lookup",
-								"/signup", "/my-reservations",
+								"/member-login", "/signup", "/my-reservations",
 								"/rooms", "/dining", "/facilities", "/location",
 								"/packages", "/faq", "/gallery").permitAll()
 						// 기동 확인용. 상세 정보는 인증된 사용자에게만 보인다(application.yml).

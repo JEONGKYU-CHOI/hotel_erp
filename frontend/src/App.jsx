@@ -34,7 +34,7 @@ function AuthNav() {
       </>
     )
   }
-  return <Link to="/login">로그인</Link>
+  return <Link to="/member-login">로그인</Link>
 }
 
 // 상시 "예약하기" — 데스크톱 상단바 CTA.
@@ -105,7 +105,7 @@ function App() {
             <Route path="/payment/success" element={<PaymentSuccessPage />} />
             <Route path="/payment/fail" element={<PaymentFailPage />} />
             <Route path="/lookup" element={<LookupPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/member-login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/my-reservations" element={<MyReservationsPage />} />
           </Routes>

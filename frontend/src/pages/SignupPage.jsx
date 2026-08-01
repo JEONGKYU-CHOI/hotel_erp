@@ -68,7 +68,7 @@ export default function SignupPage() {
         </button>
       </form>
       <p className="muted">
-        이미 계정이 있으신가요? <Link to="/login" state={{ from }}>로그인</Link>
+        이미 계정이 있으신가요? <Link to="/member-login" state={{ from }}>로그인</Link>
       </p>
     </div>
   )

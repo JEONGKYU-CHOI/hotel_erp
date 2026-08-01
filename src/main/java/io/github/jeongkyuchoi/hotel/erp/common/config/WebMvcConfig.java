@@ -42,8 +42,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 		registry.addViewController("/payment/success").setViewName("forward:/index.html");
 		registry.addViewController("/payment/fail").setViewName("forward:/index.html");
 		registry.addViewController("/lookup").setViewName("forward:/index.html");
-		// 회원 가입·내 예약 화면. (회원 로그인 라우트 '/login' 은 백오피스 로그인이 선점하므로
-		// 여기서 다루지 않는다 — 부킹엔진 로그인은 앱 내부 이동으로 진입한다.)
+		// 회원 로그인·가입·내 예약 화면. 부킹엔진 회원 로그인은 '/member-login' 이다 —
+		// '/login' 은 백오피스(Thymeleaf) 로그인이 선점하므로 경로를 분리했다.
+		registry.addViewController("/member-login").setViewName("forward:/index.html");
 		registry.addViewController("/signup").setViewName("forward:/index.html");
 		registry.addViewController("/my-reservations").setViewName("forward:/index.html");
 		// 홈페이지 콘텐츠 라우트(객실·다이닝·편의시설·위치·프로모션·이용안내·갤러리).
