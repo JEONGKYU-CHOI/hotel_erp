@@ -16,6 +16,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
   const [checkIn, setCheckIn] = useState(isoDate(1))
   const [checkOut, setCheckOut] = useState(isoDate(2))
   const [adults, setAdults] = useState(2)
+  const [children, setChildren] = useState(0)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -76,10 +77,18 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
           <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
         </label>
         <label className="bb-field">
-          <span>인원</span>
+          <span>성인</span>
           <select value={adults} onChange={(e) => setAdults(e.target.value)}>
             {[1, 2, 3, 4].map((n) => (
               <option key={n} value={n}>성인 {n}명</option>
+            ))}
+          </select>
+        </label>
+        <label className="bb-field">
+          <span>아동</span>
+          <select value={children} onChange={(e) => setChildren(e.target.value)}>
+            {[0, 1, 2, 3].map((n) => (
+              <option key={n} value={n}>아동 {n}명</option>
             ))}
           </select>
         </label>
@@ -117,7 +126,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
                   className="cta"
                   onClick={() => {
                     navigate('/book', {
-                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults, ratePlanId: initialRatePlanId || undefined },
+                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults, children, ratePlanId: initialRatePlanId || undefined },
                     })
                     onDone?.()
                   }}
