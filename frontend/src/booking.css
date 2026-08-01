@@ -36,10 +36,18 @@
   color: var(--accent-dark);
 }
 .topnav {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: clamp(14px, 2.5vw, 30px);
+}
+/* 주 메뉴: 브랜드에서 한 칸 떨어져 왼쪽에 붙는다. 유틸: 오른쪽으로 밀어낸다. */
+.topnav-main { margin-left: clamp(28px, 5vw, 64px); }
+.topnav-util { margin-left: auto; }
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; gap: 12px 18px; }
+  .topnav-main { margin-left: 0; order: 3; width: 100%; }
+  .topnav-util { gap: 14px; }
+  .topnav a, .topnav .linkbtn { font-size: 0.76rem; }
 }
 .topnav a,
 .topnav .linkbtn {
@@ -95,14 +103,39 @@
   padding: 72px 24px 120px;
   text-align: center;
   color: #fff;
-  background-image:
-    linear-gradient(180deg, rgba(20, 16, 12, 0.35) 0%, rgba(20, 16, 12, 0.55) 100%),
-    url('./assets/hero.png');
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+  background: #0f1218;
+}
+/* 히어로 슬라이드(크로스페이드) */
+.hero-slides { position: absolute; inset: 0; }
+.hero-slide {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity 1.1s ease-in-out;
+}
+.hero-slide.active { opacity: 1; }
+.hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(16, 18, 24, 0.30) 0%, rgba(16, 18, 24, 0.62) 100%);
 }
 .hero-inner {
+  position: relative;
+  z-index: 1;
   max-width: 760px;
+}
+/* 히어로 인디케이터 닷 */
+.hero-dots {
+  position: absolute; z-index: 1; bottom: 30px; left: 0; right: 0;
+  display: flex; gap: 9px; justify-content: center;
+}
+.hero-dot {
+  width: 9px; height: 9px; border-radius: 50%; cursor: pointer;
+  border: none; background: rgba(255, 255, 255, 0.45); padding: 0;
+  transition: background .2s ease, transform .2s ease;
+}
+.hero-dot.active { background: #fff; transform: scale(1.25); }
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide { transition: none; }
 }
 .hero-eyebrow {
   font-size: 0.78rem;
@@ -516,3 +549,324 @@
 @media (max-width: 720px) {
   .hero { min-height: 52vh; padding: 56px 20px 96px; }
 }
+
+/* ---- 객실 소개 쇼케이스 (홈 랜딩) ------------------------------------- */
+.showcase {
+  max-width: 1120px;
+  margin: 88px auto 8px;
+  padding: 0 24px;
+}
+.showcase-head { text-align: center; margin-bottom: 34px; }
+.showcase-eyebrow {
+  font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--accent-dark); margin-bottom: 12px;
+}
+.showcase-title {
+  font-family: var(--serif); font-weight: 700;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem); color: var(--ink); letter-spacing: -0.01em;
+}
+.showcase-sub { margin: 10px auto 0; max-width: 520px; color: var(--muted); font-size: 0.98rem; }
+
+.room-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+}
+.room-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: var(--shadow-sm); display: flex; flex-direction: column;
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+.room-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.room-photo {
+  aspect-ratio: 4 / 3; background-size: cover; background-position: center;
+  background-color: var(--accent-soft);
+}
+.room-body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.room-name { font-family: var(--serif); font-size: 1.28rem; font-weight: 700; color: var(--ink); }
+.room-desc { color: var(--body); font-size: 0.94rem; line-height: 1.6; flex: 1; }
+.room-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.room-occ { color: var(--muted); font-size: 0.82rem; }
+.room-cta {
+  background: var(--ink); color: #fff; border: none;
+  padding: 9px 16px; border-radius: 999px; font-size: 0.86rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: background .16s ease;
+}
+.room-cta:hover { background: #000; }
+
+@media (max-width: 860px) {
+  .room-cards { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+  .showcase { margin-top: 60px; }
+}
+
+/* ---- 서브 페이지 히어로 (객실/다이닝) -------------------------------- */
+.page-hero {
+  min-height: 40vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 72px 24px; text-align: center; color: #fff;
+  background-size: cover; background-position: center;
+}
+.page-hero-inner { max-width: 720px; }
+.page-eyebrow {
+  font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
+  color: #f0e4cf; margin-bottom: 14px;
+}
+.page-title {
+  font-family: var(--serif); font-weight: 700; color: #fff;
+  font-size: clamp(2rem, 4.6vw, 3.2rem); text-shadow: 0 2px 24px rgba(0,0,0,.3);
+}
+.page-sub { margin: 14px auto 0; max-width: 500px; color: #f3ede2; font-size: 1.02rem; }
+
+/* ---- 상세 행 (객실/다이닝 공용, 이미지+텍스트 교차) ------------------ */
+.detail-list {
+  max-width: 1120px; margin: 0 auto; padding: 64px 24px 24px;
+  display: flex; flex-direction: column; gap: 40px;
+}
+.detail-row {
+  display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center;
+}
+.detail-row.reverse { direction: rtl; }
+.detail-row.reverse > * { direction: ltr; }
+.detail-photo {
+  aspect-ratio: 4 / 3; border-radius: var(--radius-lg);
+  background-size: cover; background-position: center;
+  box-shadow: var(--shadow); background-color: var(--accent-soft);
+}
+.detail-body { display: flex; flex-direction: column; gap: 12px; }
+.detail-eyebrow {
+  font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-dark);
+}
+.detail-name { font-family: var(--serif); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2rem); color: var(--ink); }
+.detail-desc { color: var(--body); font-size: 0.98rem; line-height: 1.7; }
+.detail-specs {
+  list-style: none; padding: 0; margin: 4px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
+}
+.detail-specs li {
+  display: flex; gap: 12px; font-size: 0.92rem; color: var(--ink);
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.detail-specs li span { color: var(--muted); min-width: 44px; }
+.amenity-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.amenity {
+  font-size: 0.8rem; color: var(--body); background: var(--accent-soft);
+  border: 1px solid var(--border); padding: 4px 11px; border-radius: 999px;
+}
+.detail-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-top: 10px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+.detail-price { font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+.detail-price span { font-size: 0.82rem; font-weight: 500; color: var(--muted); margin-right: 4px; }
+.dining-hours { font-size: 0.9rem; color: var(--body); }
+.cta-dark {
+  background: var(--ink); color: #fff; border: none; padding: 11px 20px;
+  border-radius: 999px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  transition: background .16s ease;
+}
+.cta-dark:hover { background: #000; }
+
+@media (max-width: 860px) {
+  .detail-row, .detail-row.reverse { grid-template-columns: 1fr; direction: ltr; gap: 20px; }
+  .detail-list { padding-top: 44px; gap: 48px; }
+}
+
+/* ---- 공통 블록 타이틀 ------------------------------------------------- */
+.block-title {
+  font-family: var(--serif); font-weight: 700; color: var(--ink);
+  font-size: clamp(1.4rem, 2.8vw, 1.9rem); text-align: center; margin: 0 0 24px;
+}
+.block-title.left { text-align: left; margin: 44px 0 18px; }
+
+/* ---- 편의시설 아이콘 그리드 ------------------------------------------ */
+.facility-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+}
+.facility-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 18px; text-align: center;
+  box-shadow: var(--shadow-sm); transition: transform .16s ease, box-shadow .16s ease;
+}
+.facility-item:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.facility-icon { font-size: 1.8rem; margin-bottom: 10px; }
+.facility-name { font-weight: 700; color: var(--ink); font-size: 0.98rem; margin-bottom: 3px; }
+.facility-desc { color: var(--muted); font-size: 0.82rem; }
+
+/* ---- 위치 페이지 ----------------------------------------------------- */
+.location-grid {
+  display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; align-items: stretch;
+}
+.location-info {
+  display: flex; flex-direction: column; gap: 22px; justify-content: center;
+}
+.loc-block { border-left: 2px solid var(--accent); padding-left: 16px; }
+.loc-label {
+  font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--accent-dark); margin-bottom: 6px;
+}
+.loc-value { color: var(--ink); font-size: 1rem; line-height: 1.65; }
+.location-photo {
+  min-height: 300px; border-radius: var(--radius-lg);
+  background-size: cover; background-position: center;
+  box-shadow: var(--shadow); position: relative;
+}
+.map-pin {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: rgba(23, 20, 15, 0.86); color: #fff; font-size: 0.9rem; font-weight: 600;
+  padding: 8px 15px; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+.transport-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+.transport-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm);
+}
+.transport-icon { font-size: 1.4rem; line-height: 1.3; }
+.transport-label { font-weight: 700; color: var(--ink); font-size: 0.96rem; margin-bottom: 3px; }
+.transport-desc { color: var(--body); font-size: 0.9rem; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .facility-grid { grid-template-columns: repeat(2, 1fr); }
+  .location-grid { grid-template-columns: 1fr; gap: 20px; }
+  .transport-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- 홈 랜딩 티저 밴드 ------------------------------------------------ */
+.home-band { max-width: 1120px; margin: 64px auto 0; padding: 0 24px; }
+.home-band.alt { background: transparent; }
+.band-head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px;
+}
+.band-head .block-title.left { margin: 4px 0 0; }
+.band-link {
+  color: var(--accent-dark); font-size: 0.86rem; font-weight: 600; white-space: nowrap; text-decoration: none;
+}
+.band-link:hover { color: var(--ink); }
+.band-link.light { color: #f3ede2; }
+
+.facility-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+.dining-teaser { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.teaser-card {
+  border-radius: var(--radius-lg); overflow: hidden; text-decoration: none;
+  border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.teaser-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.teaser-photo { aspect-ratio: 3 / 2; background-size: cover; background-position: center; }
+.teaser-body { padding: 14px 16px; }
+.teaser-kind { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-dark); }
+.teaser-name { font-family: var(--serif); font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-top: 2px; }
+
+.location-teaser {
+  display: block; border-radius: var(--radius-lg); overflow: hidden;
+  background-size: cover; background-position: center; text-decoration: none;
+  min-height: 260px; display: flex; align-items: center; box-shadow: var(--shadow);
+}
+.loc-teaser-inner { padding: clamp(28px, 5vw, 56px); color: #fff; max-width: 520px; }
+.loc-teaser-title {
+  font-family: var(--serif); font-weight: 700; color: #fff;
+  font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin: 8px 0 10px;
+}
+.loc-teaser-sub { color: #f3ede2; font-size: 1rem; margin: 0 0 16px; }
+
+/* ---- 확장 푸터 ------------------------------------------------------- */
+.foot-grid {
+  max-width: 1120px; margin: 0 auto; padding: 8px 24px 12px;
+  display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr; gap: 32px;
+}
+.foot-col { display: flex; flex-direction: column; gap: 9px; }
+.foot-col h4 {
+  font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin: 0 0 4px; font-weight: 600;
+}
+.foot-col a { color: var(--body); text-decoration: none; font-size: 0.9rem; }
+.foot-col a:hover { color: var(--accent-dark); }
+.foot-col p { color: var(--body); font-size: 0.9rem; line-height: 1.7; margin: 0; }
+.foot-about .foot-brand {
+  font-family: var(--serif); font-size: 1.4rem; font-weight: 700; color: var(--ink); margin-bottom: 8px;
+}
+.foot-base {
+  max-width: 1120px; margin: 20px auto 0; padding: 18px 24px 0;
+  border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .facility-strip { grid-template-columns: repeat(2, 1fr); }
+  .dining-teaser { grid-template-columns: 1fr; }
+  .foot-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+
+/* ---- 통합 예약: CTA · 모바일 하단바 · 모달/바텀시트 ------------------ */
+.reserve-cta {
+  border: none; background: var(--accent); color: #fff;
+  padding: 9px 18px; border-radius: 999px; font-weight: 600; font-size: 0.82rem;
+  letter-spacing: 0.04em; cursor: pointer; transition: background .16s ease;
+}
+.reserve-cta:hover { background: var(--accent-dark); }
+
+.foot-linkbtn {
+  border: none; background: none; padding: 0; text-align: left; cursor: pointer;
+  color: var(--body); font-family: var(--sans); font-size: 0.9rem;
+}
+.foot-linkbtn:hover { color: var(--accent-dark); }
+
+.mobile-reserve { display: none; }
+
+.bookingform-bar .bookingform-result { max-width: 1040px; margin: 22px auto 0; padding: 0 24px; }
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(16, 18, 24, 0.55); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.booking-modal {
+  background: var(--paper); border-radius: var(--radius-lg);
+  width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+  padding: 24px clamp(20px, 4vw, 32px) 28px; box-shadow: var(--shadow-lg);
+  animation: modal-in .22s ease;
+}
+@keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal-head { display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; color: var(--ink); margin: 0; }
+.modal-close {
+  border: none; background: var(--surface-2); color: var(--body);
+  width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer;
+}
+.modal-close:hover { background: var(--border); }
+.modal-hint { color: var(--muted); font-size: 0.9rem; margin: 6px 0 18px; }
+
+/* 모달 안 예약 폼: 세로로 쌓고 히어로 오버랩 제거 */
+.bookingform-modal .booking-bar {
+  margin: 0; flex-direction: column; box-shadow: none;
+  border: 1px solid var(--border); border-radius: 12px;
+}
+.bookingform-modal .bb-field { border-left: none; border-top: 1px solid var(--border); }
+.bookingform-modal .bb-field:first-child { border-top: none; }
+.bookingform-modal .bb-go { border-radius: 0 0 12px 12px; padding: 15px; }
+.bookingform-modal .bookingform-result { margin-top: 18px; }
+
+/* 모바일: 하단 고정 예약바 + 모달을 바텀시트로 */
+@media (max-width: 760px) {
+  .reserve-cta { display: none; }
+  .mobile-reserve {
+    display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(250, 247, 242, 0.94); backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+  }
+  .mobile-reserve-btn {
+    width: 100%; border: none; background: var(--ink); color: #fff;
+    padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
+  }
+  .booking-shell { padding-bottom: 78px; }
+}
+@media (max-width: 640px) {
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .booking-modal { max-width: none; max-height: 92vh; border-radius: 18px 18px 0 0; animation: sheet-in .26s ease; }
+}
+@keyframes sheet-in { from { transform: translateY(100%); } to { transform: none; } }
