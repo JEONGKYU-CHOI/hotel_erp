@@ -1,12 +1,15 @@
 package io.github.jeongkyuchoi.hotel.erp.booking.web;
 
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.AvailabilityResponse;
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.CancelRequest;
+import io.github.jeongkyuchoi.hotel.erp.booking.dto.CancellationResult;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldRequest;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldResponse;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.RatePlanSummary;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.RoomTypeSummary;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationDetail;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.AvailabilityService;
+import io.github.jeongkyuchoi.hotel.erp.reservation.service.CustomerCancellationService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationQueryService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.ReservationService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.RoomTypeCatalogService;
@@ -49,6 +52,7 @@ public class BookingApiController {
 	private final ReservationService reservationService;
 	private final ReservationQueryService reservationQueryService;
 	private final RoomTypeCatalogService roomTypeCatalogService;
+	private final CustomerCancellationService customerCancellationService;
 
 	/** 판매 중인 객실타입 목록. 고객이 타입을 고르는 첫 화면이 소비한다. */
 	@GetMapping("/room-types")
@@ -90,5 +94,24 @@ public class BookingApiController {
 			@PathVariable String reservationNo,
 			@RequestParam String phone) {
 		return reservationQueryService.findForGuest(reservationNo, phone);
+	}
+
+	/**
+	 * 고객 예약 취소. HOLD 는 재고만 반환하고, 결제된 예약은 요금정책에 따라 위약금·환불을
+	 * 함께 처리한다(토스 결제취소). 소유 확인: 로그인 회원이면 인증 id 로, 비회원이면 전화번호로.
+	 *
+	 * <p>회원 여부는 서버가 토큰에서 뽑은 값(memberId)이라 위조가 성립하지 않는다. 토큰이 없으면
+	 * 전화번호로 소유를 증명한다(조회 경로와 같은 규율, D-028).
+	 */
+	@PostMapping("/reservations/{reservationNo}/cancel")
+	public CancellationResult cancel(
+			@PathVariable String reservationNo,
+			@RequestParam(required = false) String phone,
+			@RequestBody(required = false) CancelRequest body,
+			@AuthenticationPrincipal Long memberId) {
+		String reason = body != null ? body.reason() : null;
+		return memberId != null
+				? customerCancellationService.cancelForMember(reservationNo, memberId, reason)
+				: customerCancellationService.cancelForGuest(reservationNo, phone, reason);
 	}
 }

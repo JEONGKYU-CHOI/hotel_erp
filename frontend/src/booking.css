@@ -496,6 +496,11 @@
   font-size: 0.9rem;
   border-radius: 999px;
 }
+/* 취소 같은 파괴적 동작 링크 버튼. */
+.linkbtn.danger { color: var(--danger); font-weight: 600; }
+.linkbtn.danger:hover { color: #8f2f22; }
+.linkbtn.danger:disabled { color: var(--muted); cursor: default; }
+.cancel-link { margin-top: 12px; display: inline-block; }
 
 /* ---- 청구서(폴리오) --------------------------------------------------- */
 .folio {

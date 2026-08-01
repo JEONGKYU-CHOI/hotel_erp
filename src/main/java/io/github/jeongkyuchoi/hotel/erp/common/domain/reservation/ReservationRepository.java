@@ -39,6 +39,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 	Optional<Reservation> findByTenantIdAndReservationNo(Long tenantId, String reservationNo);
 
 	/**
+	 * 로그인 회원 본인 예약을 예약번호로 찾는다(고객 취소의 소유 확인). 회원 id 를 조건에 함께
+	 * 걸어, 남의 예약번호로는 조회되지 않는다 — 비회원 경로가 전화번호로 소유를 증명하는 것과 같은 규율.
+	 */
+	Optional<Reservation> findByTenantIdAndReservationNoAndMember_Id(
+			Long tenantId, String reservationNo, Long memberId);
+
+	/**
 	 * 로그인 회원의 예약 목록(D-032). 최근 체크인 순으로 돌려준다.
 	 *
 	 * <p>{@code join fetch} 로 roomType·ratePlan 을 함께 가져온다 — OSIV 를 껐으므로

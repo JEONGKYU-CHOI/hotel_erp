@@ -24,6 +24,8 @@ export default function LookupPage() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [payError, setPayError] = useState(null)
+  const [cancelMsg, setCancelMsg] = useState(null)
+  const [cancelling, setCancelling] = useState(false)
 
   // 결제 대기(HOLD) 예약을 결제한다. 성공하면 토스가 /payment/success 로 넘긴다.
   async function pay() {
@@ -36,6 +38,27 @@ export default function LookupPage() {
       })
     } catch (e) {
       setPayError(e.message || '결제를 시작할 수 없습니다.')
+    }
+  }
+
+  // 예약 취소. HOLD 는 바로 취소, 결제된 예약은 요금정책에 따라 환불까지 처리된다(백엔드).
+  async function cancel() {
+    if (!window.confirm('예약을 취소하시겠습니까?\n결제된 예약은 요금정책에 따라 환불됩니다.')) return
+    setCancelMsg(null)
+    setCancelling(true)
+    try {
+      const res = await api.cancel(detail.reservationNo, { phone: phone.trim() })
+      const won = (v) => Number(v).toLocaleString()
+      setCancelMsg(res.refunded
+        ? `취소되었습니다. 위약금 ${won(res.penalty)}원 · ${won(res.refund)}원이 환불 처리되었습니다.`
+        : res.basis === 'NON_REFUNDABLE'
+          ? '취소되었습니다. 환불 불가 요금제라 환불 금액은 없습니다.'
+          : '취소되었습니다.')
+      setDetail(await api.lookup(detail.reservationNo, phone.trim())) // 상태 갱신
+    } catch (e) {
+      setCancelMsg('⚠ ' + e.message)
+    } finally {
+      setCancelling(false)
     }
   }
 
@@ -107,6 +130,15 @@ export default function LookupPage() {
               <button type="button" className="cta" onClick={pay}>결제하기</button>
               {payError && <p className="error">⚠ {payError}</p>}
             </>
+          )}
+          {(detail.status === 'HOLD' || detail.status === 'CONFIRMED') && (
+            <button type="button" className="linkbtn danger cancel-link"
+                    onClick={cancel} disabled={cancelling}>
+              {cancelling ? '취소 중…' : '예약 취소'}
+            </button>
+          )}
+          {cancelMsg && (
+            <p className={cancelMsg.startsWith('⚠') ? 'error' : 'muted'}>{cancelMsg}</p>
           )}
         </div>
       )}

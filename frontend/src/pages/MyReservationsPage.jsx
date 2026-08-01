@@ -25,6 +25,8 @@ export default function MyReservationsPage() {
   const [error, setError] = useState(null)
   const [openNo, setOpenNo] = useState(null) // 청구서를 펼친 예약번호
   const [payError, setPayError] = useState(null)
+  const [cancelMsg, setCancelMsg] = useState(null)
+  const [cancellingNo, setCancellingNo] = useState(null)
 
   // 결제 대기(HOLD) 예약을 나중에 결제한다. 성공하면 토스가 /payment/success 로 넘긴다.
   async function pay(r) {
@@ -37,6 +39,27 @@ export default function MyReservationsPage() {
       })
     } catch (e) {
       setPayError(e.message || '결제를 시작할 수 없습니다.')
+    }
+  }
+
+  // 예약 취소. 로그인 회원 경로(토큰으로 소유 확인). 결제된 예약은 요금정책에 따라 환불까지 처리.
+  async function cancel(r) {
+    if (!window.confirm('예약을 취소하시겠습니까?\n결제된 예약은 요금정책에 따라 환불됩니다.')) return
+    setCancelMsg(null)
+    setCancellingNo(r.reservationNo)
+    try {
+      const res = await api.cancel(r.reservationNo)
+      const won = (v) => Number(v).toLocaleString()
+      setCancelMsg(res.refunded
+        ? `${r.reservationNo} 취소 · 위약금 ${won(res.penalty)}원, ${won(res.refund)}원 환불 처리되었습니다.`
+        : res.basis === 'NON_REFUNDABLE'
+          ? `${r.reservationNo} 취소 · 환불 불가 요금제라 환불 금액은 없습니다.`
+          : `${r.reservationNo} 취소되었습니다.`)
+      setList(await api.myReservations()) // 목록 갱신
+    } catch (e) {
+      setCancelMsg('⚠ ' + e.message)
+    } finally {
+      setCancellingNo(null)
     }
   }
 
@@ -85,8 +108,17 @@ export default function MyReservationsPage() {
                     결제하기
                   </button>
                 )}
+                {(r.status === 'HOLD' || r.status === 'CONFIRMED') && (
+                  <button type="button" className="linkbtn danger" onClick={() => cancel(r)}
+                          disabled={cancellingNo === r.reservationNo}>
+                    {cancellingNo === r.reservationNo ? '취소 중…' : '예약 취소'}
+                  </button>
+                )}
               </div>
               {r.status === 'HOLD' && payError && <p className="error">⚠ {payError}</p>}
+              {cancelMsg && cancelMsg.includes(r.reservationNo) && (
+                <p className={cancelMsg.startsWith('⚠') ? 'error' : 'muted'}>{cancelMsg}</p>
+              )}
               {openNo === r.reservationNo && <FolioPanel reservationNo={r.reservationNo} />}
             </li>
         ))}

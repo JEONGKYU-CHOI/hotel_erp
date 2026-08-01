@@ -64,6 +64,14 @@ export const api = {
   // 예약 조회 (예약번호 + 전화). 비회원 소유 확인 경로(D-028).
   lookup: (reservationNo, phone) =>
     request(`/reservations/${encodeURIComponent(reservationNo)}`, { params: { phone } }),
+  // 예약 취소. 로그인 회원은 토큰으로, 비회원은 전화번호로 소유를 확인한다. HOLD 는 재고만
+  // 반환하고, 결제된 예약은 요금정책에 따라 위약금·환불(토스 결제취소)까지 처리된다.
+  cancel: (reservationNo, { phone, reason } = {}) =>
+    request(`/reservations/${encodeURIComponent(reservationNo)}/cancel`, {
+      method: 'POST',
+      params: phone ? { phone } : undefined,
+      body: { reason: reason || null },
+    }),
 
   // 회원 인증 (D-009). signup 은 201 로 MeResponse, login 은 TokenResponse 를 준다.
   signup: (payload) => request('/auth/signup', { method: 'POST', body: payload }),
