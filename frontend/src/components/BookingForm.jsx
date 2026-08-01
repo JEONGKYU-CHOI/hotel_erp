@@ -83,11 +83,13 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
         </label>
         <label className="bb-field">
           <span>체크인</span>
-          <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
+          {/* 오늘부터 선택 가능(당일 예약). 지난 날짜는 막는다. */}
+          <input type="date" min={isoDate(0)} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
         </label>
         <label className="bb-field">
           <span>체크아웃</span>
-          <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
+          {/* 최소 1박 — 체크인 다음날부터. */}
+          <input type="date" min={isoDate(0)} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
         </label>
         <label className="bb-field">
           <span>성인</span>

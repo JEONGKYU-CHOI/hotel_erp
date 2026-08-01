@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,12 @@ public class ReservationService {
 
 	/** HOLD 유효시간. 이 안에 결제하지 않으면 스케줄러가 EXPIRED 로 돌리고 재고를 반환한다. */
 	private static final Duration HOLD_TTL = Duration.ofMinutes(10);
+
+	/**
+	 * 당일 예약 마감 시각(서버 로컬시간, Asia/Seoul). 체크인이 '오늘'이면 이 시각까지만
+	 * 예약을 받고, 지나면 거절한다 — 남은 객실이 있어도 밤 늦은 당일 유입을 막는다.
+	 */
+	private static final LocalTime SAME_DAY_CUTOFF = LocalTime.of(20, 0);
 
 	private final ReservationRepository reservationRepository;
 	private final RoomInventoryRepository roomInventoryRepository;
@@ -86,6 +93,14 @@ public class ReservationService {
 			throw new IllegalArgumentException(
 					"체크아웃은 체크인 다음날 이후여야 합니다. in=" + cmd.checkInDate()
 							+ " out=" + cmd.checkOutDate());
+		}
+		// 2-1) 당일 예약 마감. 지난 날짜는 DTO 의 @FutureOrPresent 가 이미 거른다. 오늘
+		//      체크인은 허용하되, 마감 시각(20:00)을 넘겼으면 오늘은 닫는다.
+		if (cmd.checkInDate().isEqual(LocalDate.now())
+				&& LocalTime.now().isAfter(SAME_DAY_CUTOFF)) {
+			throw new IllegalArgumentException(
+					"당일 예약은 " + SAME_DAY_CUTOFF.getHour() + "시까지 가능합니다. "
+							+ "내일 이후 날짜를 선택해 주세요.");
 		}
 		LocalDate firstNight = cmd.checkInDate();
 		LocalDate lastNight = cmd.checkOutDate().minusDays(1); // 체크아웃 당일은 숙박 아님

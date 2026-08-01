@@ -3,6 +3,7 @@ package io.github.jeongkyuchoi.hotel.erp.booking.dto;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationHoldCommand;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,7 +36,9 @@ public record HoldRequest(
 		Long ratePlanId,
 
 		@NotNull(message = "체크인 날짜는 필수입니다.")
-		@Future(message = "체크인 날짜는 오늘 이후여야 합니다.")
+		// 오늘 체크인을 허용한다(당일 예약). 지난 날짜만 막는다. 당일 마감 시각은
+		// 서비스에서 처리한다(ReservationService.SAME_DAY_CUTOFF).
+		@FutureOrPresent(message = "체크인 날짜는 오늘 이후여야 합니다.")
 		LocalDate checkInDate,
 
 		@NotNull(message = "체크아웃 날짜는 필수입니다.")
