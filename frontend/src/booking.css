@@ -430,6 +430,12 @@
 .auth-card {
   max-width: 440px;
 }
+/* 인증 카드의 보조 문구(회원가입 안내)는 검색폼용 .muted 음수 마진을 쓰지 않고
+   버튼과 여유를 두고 가운데 정렬한다. */
+.auth-card .muted {
+  margin: 20px 0 0;
+  text-align: center;
+}
 .field-error {
   color: var(--danger);
   font-size: 0.8rem;
