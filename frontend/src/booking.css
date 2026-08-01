@@ -870,3 +870,184 @@
   .booking-modal { max-width: none; max-height: 92vh; border-radius: 18px 18px 0 0; animation: sheet-in .26s ease; }
 }
 @keyframes sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ---- 프로모션 / 패키지 ------------------------------------------------ */
+.promo-error { max-width: 1120px; margin: 24px auto 0; padding: 0 24px; }
+.promo-grid {
+  max-width: 1120px; margin: 56px auto 0; padding: 0 24px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.promo-card {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.promo-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.promo-card.featured { border-color: var(--accent); box-shadow: var(--shadow); }
+.promo-photo {
+  position: relative; aspect-ratio: 3 / 2;
+  background-size: cover; background-position: center; background-color: var(--accent-soft);
+}
+.promo-tag {
+  position: absolute; top: 14px; left: 14px;
+  background: rgba(23, 20, 15, 0.82); color: #fff;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+  padding: 5px 11px; border-radius: 999px;
+}
+.promo-card.featured .promo-tag { background: var(--accent-dark); }
+.promo-body { display: flex; flex-direction: column; gap: 8px; padding: 20px; flex: 1; }
+.promo-title { font-family: var(--serif); font-weight: 700; font-size: 1.28rem; color: var(--ink); }
+.promo-room {
+  font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-dark);
+}
+.promo-desc { color: var(--body); font-size: 0.92rem; line-height: 1.65; }
+.promo-perks {
+  list-style: none; padding: 0; margin: 4px 0; display: flex; flex-wrap: wrap; gap: 6px;
+}
+.promo-perks li {
+  font-size: 0.78rem; color: var(--body); background: var(--accent-soft);
+  border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px;
+}
+.promo-foot {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+  margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.promo-price { display: flex; align-items: baseline; gap: 4px; }
+.promo-amount { font-size: 1.3rem; font-weight: 700; color: var(--ink); }
+.promo-per { font-size: 0.8rem; color: var(--muted); }
+.promo-flags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.promo-flag {
+  font-size: 0.72rem; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+}
+.promo-flag.ok { color: var(--ok); background: var(--ok-soft); }
+.promo-flag.warn { color: var(--danger); background: var(--danger-soft); }
+.promo-cta {
+  margin-top: 14px; width: 100%; border: none; cursor: pointer;
+  background: var(--ink); color: #fff; padding: 12px; border-radius: 999px;
+  font-size: 0.92rem; font-weight: 600; transition: background .16s ease;
+}
+.promo-cta:hover { background: #000; }
+.promo-cta:disabled { background: var(--muted); cursor: default; }
+.promo-note {
+  max-width: 1120px; margin: 28px auto 8px; padding: 0 24px;
+  color: var(--muted); font-size: 0.82rem; text-align: center;
+}
+@media (max-width: 860px) {
+  .promo-grid { grid-template-columns: 1fr; max-width: 440px; }
+}
+
+/* ---- 이용안내 / FAQ --------------------------------------------------- */
+.guide-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+}
+.guide-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm);
+}
+.guide-icon { font-size: 1.5rem; line-height: 1; }
+.guide-label { font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-dark); }
+.guide-value { font-weight: 600; color: var(--ink); font-size: 0.96rem; margin-top: 2px; }
+
+.faq-section { max-width: 760px; }
+.faq-list { display: flex; flex-direction: column; gap: 10px; }
+.faq-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.faq-item[open] { border-color: var(--accent); }
+.faq-q {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 18px; cursor: pointer; list-style: none;
+  font-weight: 600; color: var(--ink); font-size: 0.98rem;
+}
+.faq-q::-webkit-details-marker { display: none; }
+.faq-mark {
+  flex: none; font-size: 1.3rem; color: var(--accent-dark); line-height: 1;
+  transition: transform .18s ease;
+}
+.faq-item[open] .faq-mark { transform: rotate(45deg); }
+.faq-a {
+  margin: 0; padding: 0 18px 18px; color: var(--body);
+  font-size: 0.92rem; line-height: 1.7;
+}
+.faq-more { margin-top: 22px; color: var(--muted); font-size: 0.9rem; text-align: center; }
+.faq-more a { color: var(--accent-dark); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .guide-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- 홈 프로모션 티저 ------------------------------------------------- */
+.promo-teaser {
+  display: block; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--accent-soft); border: 1px solid var(--border);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.promo-teaser:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.promo-teaser-body { padding: clamp(28px, 4vw, 48px); max-width: 620px; }
+.promo-teaser-title {
+  font-family: var(--serif); font-weight: 700; color: var(--ink);
+  font-size: clamp(1.5rem, 3vw, 2.1rem); margin: 6px 0 8px;
+}
+.promo-teaser-sub { color: var(--body); font-size: 1rem; margin: 0 0 14px; }
+
+/* ---- 갤러리 ----------------------------------------------------------- */
+.gallery-section { max-width: 1120px; }
+.gallery-filters {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 28px;
+}
+.gallery-filter {
+  border: 1px solid var(--border); background: var(--surface); color: var(--body);
+  padding: 8px 16px; border-radius: 999px; font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; transition: all .16s ease;
+}
+.gallery-filter:hover { border-color: var(--accent); color: var(--ink); }
+.gallery-filter.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.gallery-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 200px; gap: 12px;
+}
+.gallery-tile {
+  position: relative; border: none; padding: 0; cursor: pointer;
+  border-radius: var(--radius); overflow: hidden;
+  background-size: cover; background-position: center; background-color: var(--accent-soft);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.gallery-tile.wide { grid-column: span 2; }
+.gallery-tile:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.gallery-cap {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 22px 14px 12px; text-align: left;
+  color: #fff; font-size: 0.86rem; font-weight: 600;
+  background: linear-gradient(180deg, transparent, rgba(16,18,24,.72));
+  opacity: 0; transition: opacity .18s ease;
+}
+.gallery-tile:hover .gallery-cap, .gallery-tile:focus-visible .gallery-cap { opacity: 1; }
+
+.lightbox-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(12, 10, 8, 0.9); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: fade-in .18s ease;
+}
+.lightbox-close {
+  position: absolute; top: 20px; right: 24px;
+  border: none; background: none; color: #fff; font-size: 1.6rem; cursor: pointer; line-height: 1;
+}
+.lightbox-figure { margin: 0; max-width: 92vw; max-height: 88vh; text-align: center; }
+.lightbox-img {
+  max-width: 92vw; max-height: 80vh; border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); object-fit: contain;
+}
+.lightbox-cap { margin-top: 14px; color: #f3ede2; font-size: 0.95rem; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 760px) {
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 150px; }
+}
+@media (max-width: 460px) {
+  .gallery-grid { grid-template-columns: 1fr; }
+  .gallery-tile.wide { grid-column: span 1; }
+}

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import BookingForm from './BookingForm.jsx'
 
 // 예약 패널 — 데스크톱은 중앙 모달, 모바일은 하단 바텀시트(CSS로 분기).
-export default function BookingModal({ open, initialRoomTypeId, onClose }) {
+export default function BookingModal({ open, initialRoomTypeId, initialRatePlanId, onClose }) {
   // 열려 있는 동안 배경 스크롤을 막고, ESC 로 닫는다.
   useEffect(() => {
     if (!open) return
@@ -25,7 +25,7 @@ export default function BookingModal({ open, initialRoomTypeId, onClose }) {
           <button type="button" className="modal-close" onClick={onClose} aria-label="닫기">✕</button>
         </div>
         <p className="modal-hint">객실과 날짜를 고르고 잔여 객실을 확인하세요.</p>
-        <BookingForm variant="modal" initialRoomTypeId={initialRoomTypeId} onDone={onClose} />
+        <BookingForm variant="modal" initialRoomTypeId={initialRoomTypeId} initialRatePlanId={initialRatePlanId} onDone={onClose} />
       </div>
     </div>
   )

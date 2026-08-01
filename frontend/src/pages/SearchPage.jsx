@@ -120,6 +120,18 @@ export default function SearchPage() {
         </section>
       )}
 
+      {/* 프로모션 티저 */}
+      <section className="home-band">
+        <Link to="/packages" className="promo-teaser">
+          <div className="promo-teaser-body">
+            <div className="showcase-eyebrow" style={{ color: 'var(--accent-dark)' }}>PACKAGES · 프로모션 &amp; 패키지</div>
+            <h2 className="promo-teaser-title">머무는 이유를 더하다</h2>
+            <p className="promo-teaser-sub">조식·스파·특가까지 — 목적에 맞춘 큐레이션 패키지로 바로 예약하세요.</p>
+            <span className="band-link">패키지 전체 보기 →</span>
+          </div>
+        </Link>
+      </section>
+
       {/* 편의시설 티저 */}
       <section className="home-band">
         <div className="band-head">

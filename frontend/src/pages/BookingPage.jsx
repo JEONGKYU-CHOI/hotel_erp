@@ -44,7 +44,11 @@ export default function BookingPage() {
     api.ratePlans(state.roomTypeId)
       .then((plans) => {
         setRatePlans(plans)
-        if (plans.length > 0) setRatePlanId(String(plans[0].id))
+        // 프로모션/패키지에서 넘어오면 그 요금제를 선택, 아니면 첫 요금제.
+        const preset = state?.ratePlanId && plans.some((p) => String(p.id) === String(state.ratePlanId))
+          ? String(state.ratePlanId)
+          : plans[0] ? String(plans[0].id) : ''
+        setRatePlanId(preset)
       })
       .catch((e) => setError(e.message))
   }, [state])

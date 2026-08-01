@@ -10,7 +10,7 @@ function isoDate(offsetDays) {
 
 // 예약 검색 폼 — 홈 히어로 바(variant="bar")와 예약 모달(variant="modal")이 공유한다.
 // 어디서 열든 같은 흐름: 객실·날짜·인원 → 검색 → 이 조건으로 예약(/book).
-export default function BookingForm({ initialRoomTypeId = '', variant = 'bar', onDone }) {
+export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId = '', variant = 'bar', onDone }) {
   const [roomTypes, setRoomTypes] = useState([])
   const [roomTypeId, setRoomTypeId] = useState(initialRoomTypeId ? String(initialRoomTypeId) : '')
   const [checkIn, setCheckIn] = useState(isoDate(1))
@@ -117,7 +117,7 @@ export default function BookingForm({ initialRoomTypeId = '', variant = 'bar', o
                   className="cta"
                   onClick={() => {
                     navigate('/book', {
-                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults },
+                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults, ratePlanId: initialRatePlanId || undefined },
                     })
                     onDone?.()
                   }}

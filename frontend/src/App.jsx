@@ -1,9 +1,12 @@
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import SearchPage from './pages/SearchPage.jsx'
 import RoomsPage from './pages/RoomsPage.jsx'
+import PromotionsPage from './pages/PromotionsPage.jsx'
 import DiningPage from './pages/DiningPage.jsx'
 import FacilitiesPage from './pages/FacilitiesPage.jsx'
 import LocationPage from './pages/LocationPage.jsx'
+import FaqPage from './pages/FaqPage.jsx'
+import GalleryPage from './pages/GalleryPage.jsx'
 import BookingPage from './pages/BookingPage.jsx'
 import PaymentSuccessPage from './pages/PaymentSuccessPage.jsx'
 import PaymentFailPage from './pages/PaymentFailPage.jsx'
@@ -75,11 +78,14 @@ function App() {
           <Link to="/" className="brand">더 스테이</Link>
           <nav className="topnav topnav-main">
             <Link to="/rooms">객실</Link>
+            <Link to="/packages">프로모션</Link>
             <Link to="/dining">다이닝</Link>
             <Link to="/facilities">편의시설</Link>
             <Link to="/location">위치</Link>
+            <Link to="/gallery">갤러리</Link>
           </nav>
           <nav className="topnav topnav-util">
+            <Link to="/faq">이용안내</Link>
             <Link to="/lookup">예약 조회</Link>
             <AuthNav />
             <ReserveCTA />
@@ -89,9 +95,12 @@ function App() {
           <Routes>
             <Route path="/" element={<SearchPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
+            <Route path="/packages" element={<PromotionsPage />} />
             <Route path="/dining" element={<DiningPage />} />
             <Route path="/facilities" element={<FacilitiesPage />} />
             <Route path="/location" element={<LocationPage />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/book" element={<BookingPage />} />
             <Route path="/payment/success" element={<PaymentSuccessPage />} />
             <Route path="/payment/fail" element={<PaymentFailPage />} />
@@ -110,14 +119,17 @@ function App() {
             <div className="foot-col">
               <h4>둘러보기</h4>
               <Link to="/rooms">객실</Link>
+              <Link to="/packages">프로모션</Link>
               <Link to="/dining">다이닝</Link>
               <Link to="/facilities">편의시설</Link>
               <Link to="/location">위치</Link>
+              <Link to="/gallery">갤러리</Link>
             </div>
             <div className="foot-col">
               <h4>예약</h4>
               <FooterReserve />
               <Link to="/lookup">예약 조회</Link>
+              <Link to="/faq">이용안내 · FAQ</Link>
             </div>
             <div className="foot-col">
               <h4>문의</h4>
