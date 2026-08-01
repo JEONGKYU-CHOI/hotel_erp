@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
+import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import FolioPanel from './FolioPanel.jsx'
 
@@ -23,6 +24,21 @@ export default function MyReservationsPage() {
   const [list, setList] = useState(null)
   const [error, setError] = useState(null)
   const [openNo, setOpenNo] = useState(null) // 청구서를 펼친 예약번호
+  const [payError, setPayError] = useState(null)
+
+  // 결제 대기(HOLD) 예약을 나중에 결제한다. 성공하면 토스가 /payment/success 로 넘긴다.
+  async function pay(r) {
+    setPayError(null)
+    try {
+      await startPayment({
+        reservationNo: r.reservationNo,
+        amount: r.totalAmount,
+        orderName: `${r.roomTypeName} ${r.nights}박`,
+      })
+    } catch (e) {
+      setPayError(e.message || '결제를 시작할 수 없습니다.')
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return
@@ -59,10 +75,18 @@ export default function MyReservationsPage() {
                 {r.checkInDate} ~ {r.checkOutDate} ({r.nights}박) ·
                 {' '}{Number(r.totalAmount).toLocaleString()}원
               </div>
-              <button type="button" className="linkbtn folio-toggle"
-                      onClick={() => setOpenNo(openNo === r.reservationNo ? null : r.reservationNo)}>
-                {openNo === r.reservationNo ? '청구서 닫기' : '청구서 보기'}
-              </button>
+              <div className="res-actions">
+                <button type="button" className="linkbtn folio-toggle"
+                        onClick={() => setOpenNo(openNo === r.reservationNo ? null : r.reservationNo)}>
+                  {openNo === r.reservationNo ? '청구서 닫기' : '청구서 보기'}
+                </button>
+                {r.status === 'HOLD' && (
+                  <button type="button" className="cta cta-sm" onClick={() => pay(r)}>
+                    결제하기
+                  </button>
+                )}
+              </div>
+              {r.status === 'HOLD' && payError && <p className="error">⚠ {payError}</p>}
               {openNo === r.reservationNo && <FolioPanel reservationNo={r.reservationNo} />}
             </li>
         ))}

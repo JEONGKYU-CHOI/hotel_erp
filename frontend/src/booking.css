@@ -121,7 +121,8 @@
 .hero-inner {
   position: relative;
   z-index: 1;
-  max-width: 760px;
+  /* 데스크톱에서 타이틀 한 줄이 다 들어오는 폭. 좁은 화면은 패딩으로 자연히 줄어든다. */
+  max-width: 840px;
 }
 /* 히어로 인디케이터 닷 */
 .hero-dots {
@@ -151,6 +152,10 @@
   font-weight: 600;
   line-height: 1.08;
   text-shadow: 0 2px 30px rgba(0, 0, 0, 0.35);
+  /* 한글은 단어 안에서 끊지 않는다(한 글자만 다음 줄로 떨어지는 것 방지).
+     줄바꿈이 필요할 땐 줄들을 균형 있게 나눈다. */
+  word-break: keep-all;
+  text-wrap: balance;
 }
 .hero-sub {
   margin: 20px auto 0;
@@ -474,6 +479,22 @@
 .folio-toggle {
   margin-top: 12px;
   font-size: 0.85rem;
+}
+/* 예약 카드 하단 액션 줄(청구서 토글 + 결제하기). */
+.res-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+.res-actions .folio-toggle { margin-top: 0; }
+/* 목록 안에서 쓰는 작은 CTA — 전체폭 .cta 를 인라인 버튼으로 좁힌다. */
+.cta-sm {
+  width: auto;
+  margin-top: 0;
+  padding: 9px 20px;
+  font-size: 0.9rem;
+  border-radius: 999px;
 }
 
 /* ---- 청구서(폴리오) --------------------------------------------------- */

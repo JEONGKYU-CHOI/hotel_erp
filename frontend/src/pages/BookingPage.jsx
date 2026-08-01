@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ANONYMOUS, loadTossPayments } from '@tosspayments/tosspayments-sdk'
 import { api } from '../api/client.js'
+import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 
 // 검색 화면에서 넘어온 조건(state)으로 HOLD 를 만든다.
@@ -90,16 +90,10 @@ export default function BookingPage() {
   async function pay() {
     setError(null)
     try {
-      const { clientKey } = await api.paymentConfig()
-      const tossPayments = await loadTossPayments(clientKey)
-      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
-      await payment.requestPayment({
-        method: 'CARD',
-        amount: { currency: 'KRW', value: Number(hold.totalAmount) },
-        orderId: hold.reservationNo, // 우리 예약번호 = 토스 orderId
+      await startPayment({
+        reservationNo: hold.reservationNo,
+        amount: hold.totalAmount,
         orderName: `${state.roomTypeName} ${hold.nightCount}박`,
-        successUrl: window.location.origin + '/payment/success',
-        failUrl: window.location.origin + '/payment/fail',
       })
     } catch (err) {
       // 사용자가 결제창을 닫으면 에러가 온다 — 조용히 메시지만 표시한다.

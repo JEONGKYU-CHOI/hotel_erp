@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client.js'
+import { startPayment } from '../payments.js'
 
 // 예약번호 → 한국어 상태 라벨.
 const STATUS_LABEL = {
@@ -22,6 +23,21 @@ export default function LookupPage() {
   const [detail, setDetail] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [payError, setPayError] = useState(null)
+
+  // 결제 대기(HOLD) 예약을 결제한다. 성공하면 토스가 /payment/success 로 넘긴다.
+  async function pay() {
+    setPayError(null)
+    try {
+      await startPayment({
+        reservationNo: detail.reservationNo,
+        amount: detail.totalAmount,
+        orderName: `${detail.roomTypeName} ${detail.nights}박`,
+      })
+    } catch (e) {
+      setPayError(e.message || '결제를 시작할 수 없습니다.')
+    }
+  }
 
   async function search(e) {
     e.preventDefault()
@@ -85,6 +101,13 @@ export default function LookupPage() {
               <div><dt>결제 만료</dt><dd>{new Date(detail.holdExpiresAt).toLocaleString()}</dd></div>
             )}
           </dl>
+          {detail.status === 'HOLD' && (
+            <>
+              <p className="muted">아직 결제 전입니다. 만료 시각까지 결제하면 예약이 확정됩니다.</p>
+              <button type="button" className="cta" onClick={pay}>결제하기</button>
+              {payError && <p className="error">⚠ {payError}</p>}
+            </>
+          )}
         </div>
       )}
 
