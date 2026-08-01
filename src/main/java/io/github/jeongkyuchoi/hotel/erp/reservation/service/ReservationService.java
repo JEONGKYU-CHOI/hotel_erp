@@ -20,6 +20,7 @@ import io.github.jeongkyuchoi.hotel.erp.notification.event.ReservationHeldEvent;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationHoldCommand;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -72,6 +73,7 @@ public class ReservationService {
 	private final ReservationNoGenerator reservationNoGenerator;
 	private final EntityManager entityManager;
 	private final ApplicationEventPublisher eventPublisher;
+	private final Clock clock;
 
 	/**
 	 * HOLD 예약을 만든다. 재고의 {@code heldQty} 를 야간마다 1씩 올린다.
@@ -104,8 +106,8 @@ public class ReservationService {
 		LocalTime cutoff = bookingPolicyRepository.findByTenantId(TENANT_ID)
 				.map(p -> p.getSameDayCutoffTime())
 				.orElse(DEFAULT_SAME_DAY_CUTOFF);
-		if (cmd.checkInDate().isEqual(LocalDate.now())
-				&& LocalTime.now().isAfter(cutoff)) {
+		if (cmd.checkInDate().isEqual(LocalDate.now(clock))
+				&& LocalTime.now(clock).isAfter(cutoff)) {
 			throw new IllegalArgumentException(
 					"당일 예약은 " + cutoff.truncatedTo(java.time.temporal.ChronoUnit.MINUTES)
 							+ " 까지 가능합니다. 내일 이후 날짜를 선택해 주세요.");
@@ -176,7 +178,7 @@ public class ReservationService {
 				.children(cmd.children())
 				.status(ReservationStatus.HOLD)
 				.totalAmount(BigDecimal.ZERO) // 아래에서 합산 후 확정
-				.holdExpiresAt(LocalDateTime.now().plus(HOLD_TTL))
+				.holdExpiresAt(LocalDateTime.now(clock).plus(HOLD_TTL))
 				.idempotencyKey(cmd.idempotencyKey())
 				.build();
 

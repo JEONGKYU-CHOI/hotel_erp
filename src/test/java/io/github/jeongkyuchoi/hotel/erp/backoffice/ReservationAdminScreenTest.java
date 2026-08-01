@@ -71,7 +71,7 @@ class ReservationAdminScreenTest {
 	void seed() {
 		RoomType roomType = roomTypeRepository.save(RoomType.builder()
 				.tenantId(1L).code("SCR").name("스크린 테스트 타입")
-				.standardOccupancy(2).maxOccupancy(2).displayOrder(1).active(true)
+				.standardOccupancy(2).maxOccupancy(3).displayOrder(1).active(true)
 				.build());
 		roomTypeId = roomType.getId();
 		Long ratePlanId = ratePlanRepository.save(RatePlan.builder()
