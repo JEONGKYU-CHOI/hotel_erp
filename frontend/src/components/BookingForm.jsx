@@ -36,6 +36,19 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
     if (initialRoomTypeId) setRoomTypeId(String(initialRoomTypeId))
   }, [initialRoomTypeId])
 
+  // 선택 객실의 최대 수용인원. 백엔드가 최종 방어하지만(초과 시 400), 여기서 애초에
+  // 초과 조합을 못 고르게 옵션을 제한한다.
+  const selectedRoom = roomTypes.find((t) => String(t.id) === String(roomTypeId))
+  const maxOcc = selectedRoom?.maxOccupancy || 4
+
+  // 객실을 바꿔 정원이 줄면 현재 성인+아동이 넘칠 수 있다 — 넘치면 정원 안으로 되당긴다.
+  useEffect(() => {
+    if (Number(adults) > maxOcc) setAdults(maxOcc)
+    if (Number(adults) + Number(children) > maxOcc) {
+      setChildren(Math.max(0, maxOcc - Number(adults)))
+    }
+  }, [maxOcc]) // eslint-disable-line react-hooks/exhaustive-deps
+
   async function search(e) {
     e.preventDefault()
     setError(null)
@@ -78,16 +91,16 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
         </label>
         <label className="bb-field">
           <span>성인</span>
-          <select value={adults} onChange={(e) => setAdults(e.target.value)}>
-            {[1, 2, 3, 4].map((n) => (
+          <select value={adults} onChange={(e) => setAdults(Number(e.target.value))}>
+            {Array.from({ length: maxOcc }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>성인 {n}명</option>
             ))}
           </select>
         </label>
         <label className="bb-field">
           <span>아동</span>
-          <select value={children} onChange={(e) => setChildren(e.target.value)}>
-            {[0, 1, 2, 3].map((n) => (
+          <select value={children} onChange={(e) => setChildren(Number(e.target.value))}>
+            {Array.from({ length: Math.max(1, maxOcc - Number(adults) + 1) }, (_, i) => i).map((n) => (
               <option key={n} value={n}>아동 {n}명</option>
             ))}
           </select>
@@ -126,7 +139,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
                   className="cta"
                   onClick={() => {
                     navigate('/book', {
-                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults, children, ratePlanId: initialRatePlanId || undefined },
+                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults, children, maxOccupancy: maxOcc, ratePlanId: initialRatePlanId || undefined },
                     })
                     onDone?.()
                   }}

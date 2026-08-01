@@ -23,6 +23,8 @@ export default function BookingPage() {
   const [guestEmail, setGuestEmail] = useState('')
   const [adults, setAdults] = useState(state?.adults ? Number(state.adults) : 2)
   const [children, setChildren] = useState(state?.children ? Number(state.children) : 0)
+  // 검색 화면에서 넘어온 객실 최대 수용인원. 인원 입력 상한으로 쓴다(백엔드가 최종 방어).
+  const maxOccupancy = state?.maxOccupancy ? Number(state.maxOccupancy) : 9
 
   const [hold, setHold] = useState(null)
   const [error, setError] = useState(null)
@@ -56,6 +58,11 @@ export default function BookingPage() {
   async function submit(e) {
     e.preventDefault()
     setError(null)
+    // 정원 초과는 미리 막는다 — 백엔드도 400 으로 방어하지만 즉시 안내가 낫다.
+    if (Number(adults) + Number(children) > maxOccupancy) {
+      setError(`최대 수용 인원(${maxOccupancy}인)을 초과했습니다. 성인·아동 수를 줄여 주세요.`)
+      return
+    }
     setSubmitting(true)
     try {
       const res = await api.hold({
@@ -163,12 +170,14 @@ export default function BookingPage() {
         <div className="pax">
           <label>
             성인
-            <input type="number" min="1" value={adults}
+            <input type="number" min="1" max={maxOccupancy}
+                   value={adults}
                    onChange={(e) => setAdults(e.target.value)} />
           </label>
           <label>
             아동
-            <input type="number" min="0" value={children}
+            <input type="number" min="0" max={Math.max(0, maxOccupancy - Number(adults))}
+                   value={children}
                    onChange={(e) => setChildren(e.target.value)} />
           </label>
         </div>

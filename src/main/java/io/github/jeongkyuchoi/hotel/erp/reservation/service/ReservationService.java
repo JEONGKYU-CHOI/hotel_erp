@@ -108,6 +108,17 @@ public class ReservationService {
 			throw new NotEnoughInventoryException("판매 중지된 객실타입/요금정책입니다.");
 		}
 
+		// 3-1) 정원 검증 — 성인+아동이 객실 최대 수용인원을 넘으면 예약을 막는다.
+		//      웹 DTO 의 @Min 은 하한(성인 1↑·아동 0↑)만 본다. 상한은 객실타입마다 다르므로
+		//      기준정보를 로드한 여기서 검증하는 것이 맞다(백오피스·API 어느 입구든 동일 방어).
+		int guests = cmd.adults() + cmd.children();
+		if (guests > roomType.getMaxOccupancy()) {
+			throw new IllegalArgumentException(
+					"최대 수용 인원을 초과했습니다. 최대 " + roomType.getMaxOccupancy()
+							+ "인 · 요청 " + guests + "인(성인 " + cmd.adults()
+							+ " 아동 " + cmd.children() + ")");
+		}
+
 		// 4) ★ 재고 락 — 이 트랜잭션에서 재고를 처음 만나는 쿼리다(D-018).
 		//    stay_date 오름차순으로 잠근다. 순서를 보장하는 것은 ORDER BY 가 아니라
 		//    (room_type_id, stay_date) 선두 인덱스다(D-015). 연박 간 데드락을 막는다.
