@@ -407,6 +407,44 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- 로딩 스켈레톤 ---------------------------------------------------- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--border) 37%,
+    var(--surface-2) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
+/* ---- 빈/에러 상태 블록 ------------------------------------------------ */
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 40px 16px;
+}
+.state-block .cta {
+  display: inline-block;
+  width: auto;
+  text-decoration: none;
+}
+.state-emoji {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
 /* ---- HOLD 결제 만료 카운트다운 --------------------------------------- */
 .hold-countdown {
   font-variant-numeric: tabular-nums;

@@ -5,6 +5,7 @@ import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import FolioPanel from './FolioPanel.jsx'
 import HoldCountdown from '../components/HoldCountdown.jsx'
+import { SkeletonResList } from '../components/Skeleton.jsx'
 
 // 상태별 표시 라벨. 색은 기존 .status-badge.s-<STATUS> 컨벤션을 그대로 재사용한다(booking.css).
 const LABEL = {
@@ -64,26 +65,64 @@ export default function MyReservationsPage() {
     }
   }
 
+  // 목록 로드 — 에러 재시도에서도 다시 부를 수 있게 함수로 뺀다.
+  function load() {
+    setError(null)
+    setList(null)
+    api.myReservations()
+      .then(setList)
+      .catch((e) => setError(e.message))
+  }
+
   useEffect(() => {
     if (authLoading) return
     if (!member) {
       navigate('/member-login', { replace: true, state: { from: '/my-reservations' } })
       return
     }
-    api.myReservations()
-      .then(setList)
-      .catch((e) => setError(e.message))
+    load()
   }, [member, authLoading, navigate])
 
-  if (authLoading || (!list && !error)) return <p className="muted">불러오는 중…</p>
+  // 로딩 — 목록 자리에 스켈레톤을 깔아 화면이 비지 않게 한다.
+  if (authLoading || (!list && !error)) {
+    return (
+      <div className="card">
+        <h1>내 예약</h1>
+        <SkeletonResList count={3} />
+      </div>
+    )
+  }
+
+  // 에러 — 사람이 읽을 메시지 + 다시 시도.
+  if (error) {
+    return (
+      <div className="card">
+        <h1>내 예약</h1>
+        <div className="state-block">
+          <p className="error">⚠ 예약을 불러오지 못했습니다. {error}</p>
+          <button type="button" className="cta" onClick={load}>다시 시도</button>
+        </div>
+      </div>
+    )
+  }
+
+  // 빈 상태 — 안내 + 다음 행동 유도.
+  if (list.length === 0) {
+    return (
+      <div className="card">
+        <h1>내 예약</h1>
+        <div className="state-block">
+          <div className="state-emoji" aria-hidden="true">🗓️</div>
+          <p className="muted">아직 예약 내역이 없습니다.</p>
+          <Link to="/" className="cta">객실 검색하기</Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="card">
       <h1>내 예약</h1>
-      {error && <p className="error">⚠ {error}</p>}
-      {list && list.length === 0 && (
-        <p className="muted">아직 예약이 없습니다. <Link to="/">객실을 검색해 보세요.</Link></p>
-      )}
       <ul className="res-list">
         {list?.map((r) => (
             <li key={r.reservationNo} className="res-item">
