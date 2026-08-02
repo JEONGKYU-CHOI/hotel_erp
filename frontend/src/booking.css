@@ -719,6 +719,30 @@
   background-size: cover; background-position: center;
   box-shadow: var(--shadow); background-color: var(--accent-soft);
 }
+/* 객실별 상세 갤러리 — 대표 사진 + 썸네일 스트립. */
+.detail-gallery { display: flex; flex-direction: column; gap: 10px; }
+.detail-main {
+  position: relative; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: none; cursor: pointer;
+  border-radius: var(--radius-lg); background-size: cover; background-position: center;
+  box-shadow: var(--shadow); background-color: var(--accent-soft);
+}
+.detail-zoom {
+  position: absolute; right: 12px; bottom: 12px; width: 34px; height: 34px;
+  display: grid; place-items: center; border-radius: 999px;
+  background: rgba(16, 18, 24, .55); color: #fff; font-size: 1rem;
+  opacity: 0; transition: opacity .16s ease;
+}
+.detail-main:hover .detail-zoom, .detail-main:focus-visible .detail-zoom { opacity: 1; }
+.detail-thumbs { display: flex; gap: 8px; }
+.detail-thumb {
+  flex: 1; aspect-ratio: 4 / 3; padding: 0; cursor: pointer;
+  border: 2px solid transparent; border-radius: 10px;
+  background-size: cover; background-position: center; background-color: var(--accent-soft);
+  opacity: .72; transition: opacity .16s ease, border-color .16s ease;
+}
+.detail-thumb:hover { opacity: 1; }
+.detail-thumb.active { opacity: 1; border-color: var(--accent-dark); }
+
 .detail-body { display: flex; flex-direction: column; gap: 12px; }
 .detail-eyebrow {
   font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-dark);

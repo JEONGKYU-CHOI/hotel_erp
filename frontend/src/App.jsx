@@ -103,7 +103,8 @@ function AppShell() {
             <Link to="/location">{t('nav.location')}</Link>
             <Link to="/gallery">{t('nav.gallery')}</Link>
             <Link to="/about">{t('nav.about')}</Link>
-            <Link to="/reviews">{t('nav.reviews')}</Link>
+            {/* 후기 페이지 당분간 숨김 — 라우트·페이지는 유지, 링크만 감춤(복구 시 주석 해제) */}
+            {/* <Link to="/reviews">{t('nav.reviews')}</Link> */}
           </nav>
           <nav className="topnav topnav-util" aria-label={t('a11y.utilMenu')}>
             <Link to="/faq">{t('nav.faq')}</Link>
@@ -149,7 +150,8 @@ function AppShell() {
               <Link to="/location">{t('nav.location')}</Link>
               <Link to="/gallery">{t('nav.gallery')}</Link>
               <Link to="/about">{t('nav.about')}</Link>
-              <Link to="/reviews">{t('nav.reviews')}</Link>
+              {/* 후기 페이지 당분간 숨김 — 링크만 감춤(복구 시 주석 해제) */}
+              {/* <Link to="/reviews">{t('nav.reviews')}</Link> */}
             </div>
             <div className="foot-col">
               <h4>{t('footer.booking')}</h4>
