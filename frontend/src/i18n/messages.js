@@ -1,11 +1,13 @@
 // 다국어 사전(한/영). 점(.) 표기 키로 찾는다 — t('nav.rooms').
 // 지금은 셸(내비·푸터·언어토글)과 홈(히어로·티저)을 덮는다. 페이지 본문은 후속 확장.
 
-// 객실타입 코드로 표시명을 다국어화한다. 코드가 없거나(예약 조회 응답 등) 미등록이면
-// API 가 준 원문(rt.name)을 그대로 쓴다. RoomsPage 의 코드별 영문명과 일치시킨다.
-const ROOM_NAME_CODES = new Set(['STDT', 'DLXD', 'EXSU'])
-export function roomName(t, rt) {
-  return rt?.code && ROOM_NAME_CODES.has(rt.code) ? t(`room.name.${rt.code}`) : rt?.name
+// 이름 다국어화(D-051). 영어 모드이고 영문명이 있으면 그걸, 아니면 한글 원문으로 폴백한다.
+// 영문명은 PMS(요금제·객실타입 등록)에서 입력해 DB(name_en)에 저장되고 API 로 함께 내려온다.
+export function pickName(lang, ko, en) {
+  return lang === 'en' && en ? en : ko
+}
+export function roomName(lang, rt) {
+  return pickName(lang, rt?.name, rt?.nameEn)
 }
 
 export const MESSAGES = {
@@ -68,9 +70,6 @@ export const MESSAGES = {
     'home.dining.cafe.name': '그린하우스',
     'home.dining.cafe.kind': '올데이 카페',
     'home.heroSlide': '히어로 슬라이드 {n}',
-    'room.name.STDT': '스탠다드 트윈',
-    'room.name.DLXD': '디럭스 더블',
-    'room.name.EXSU': '이그제큐티브 스위트',
 
     'footer.tagline': '고요한 하룻밤, 정성스러운 아침.\n서울 강남의 도심 속 휴식.',
     'footer.explore': '둘러보기',
@@ -278,9 +277,6 @@ export const MESSAGES = {
     'home.dining.cafe.name': 'Greenhouse',
     'home.dining.cafe.kind': 'All-day café',
     'home.heroSlide': 'Hero slide {n}',
-    'room.name.STDT': 'Standard Twin',
-    'room.name.DLXD': 'Deluxe Double',
-    'room.name.EXSU': 'Executive Suite',
 
     'footer.tagline': 'A quiet night, a thoughtful morning.\nCalm in the heart of Gangnam, Seoul.',
     'footer.explore': 'Explore',

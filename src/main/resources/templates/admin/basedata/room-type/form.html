@@ -43,6 +43,14 @@
                                placeholder="디럭스 더블">
                         <div class="invalid-feedback" th:errors="*{name}">오류</div>
                     </div>
+                    <div class="col-md-8">
+                        <label for="nameEn" class="form-label">영문 표시명 <span class="text-muted small">(선택)</span></label>
+                        <input type="text" id="nameEn" class="form-control" th:field="*{nameEn}"
+                               th:classappend="${#fields.hasErrors('nameEn')} ? 'is-invalid'"
+                               placeholder="Deluxe Double">
+                        <div class="form-text">비우면 부킹엔진 영어 모드에서 한글 표시명으로 노출됩니다.</div>
+                        <div class="invalid-feedback" th:errors="*{nameEn}">오류</div>
+                    </div>
 
                     <div class="col-12">
                         <label for="description" class="form-label">설명</label>

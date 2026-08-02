@@ -45,6 +45,10 @@ public class RatePlan extends BaseEntity {
 	@Column(name = "name", nullable = false, length = 100)
 	private String name;
 
+	/** 영문 정책명 (Breakfast Included). 부킹엔진 영어 모드에서 쓴다. 비면 {@code name} 으로 폴백(D-051). */
+	@Column(name = "name_en", length = 100)
+	private String nameEn;
+
 	/** 기본 요금. 해당 일자에 {@link RateCalendar} 행이 없을 때의 폴백이다. */
 	@Column(name = "base_amount", nullable = false, precision = 12, scale = 2)
 	private BigDecimal baseAmount;
@@ -67,13 +71,14 @@ public class RatePlan extends BaseEntity {
 	private boolean active;
 
 	@Builder
-	private RatePlan(Long tenantId, RoomType roomType, String code, String name,
+	private RatePlan(Long tenantId, RoomType roomType, String code, String name, String nameEn,
 			BigDecimal baseAmount, boolean breakfastIncluded, boolean refundable,
 			short cancelDeadlineDays, BigDecimal penaltyRate, boolean active) {
 		this.tenantId = tenantId;
 		this.roomType = roomType;
 		this.code = code;
 		this.name = name;
+		this.nameEn = nameEn;
 		this.baseAmount = baseAmount;
 		this.breakfastIncluded = breakfastIncluded;
 		this.refundable = refundable;
@@ -92,11 +97,12 @@ public class RatePlan extends BaseEntity {
 	 * 예약 시점 금액은 {@code reservation_night} 에 스냅샷으로 복사돼 있다.
 	 * 그것이 이 설계의 의도다.
 	 */
-	public void update(RoomType roomType, String name, BigDecimal baseAmount,
+	public void update(RoomType roomType, String name, String nameEn, BigDecimal baseAmount,
 			boolean breakfastIncluded, boolean refundable,
 			short cancelDeadlineDays, BigDecimal penaltyRate) {
 		this.roomType = roomType;
 		this.name = name;
+		this.nameEn = nameEn;
 		this.baseAmount = baseAmount;
 		this.breakfastIncluded = breakfastIncluded;
 		this.refundable = refundable;

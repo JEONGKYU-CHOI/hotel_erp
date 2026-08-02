@@ -39,6 +39,10 @@ public class RoomTypeForm {
 	@Size(max = 100, message = "표시명은 100자 이내여야 합니다.")
 	private String name;
 
+	/** 영문 표시명(선택). 비우면 부킹엔진 영어 모드에서 한글 표시명으로 폴백한다(D-051). */
+	@Size(max = 100, message = "영문 표시명은 100자 이내여야 합니다.")
+	private String nameEn;
+
 	private String description;
 
 	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
@@ -78,6 +82,7 @@ public class RoomTypeForm {
 		RoomTypeForm form = new RoomTypeForm();
 		form.code = roomType.getCode();
 		form.name = roomType.getName();
+		form.nameEn = roomType.getNameEn();
 		form.description = roomType.getDescription();
 		form.imageUrl = roomType.getImageUrl();
 		form.standardOccupancy = roomType.getStandardOccupancy();

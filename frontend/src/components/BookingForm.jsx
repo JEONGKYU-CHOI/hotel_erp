@@ -23,7 +23,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   useEffect(() => {
     api.roomTypes()
@@ -71,7 +71,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
   }
 
   const selectedRt = roomTypes.find((rt) => String(rt.id) === String(roomTypeId))
-  const selectedName = selectedRt ? roomName(t, selectedRt) : undefined
+  const selectedName = selectedRt ? roomName(lang, selectedRt) : undefined
 
   return (
     <div className={`bookingform bookingform-${variant}`}>
@@ -81,7 +81,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
           <select value={roomTypeId} onChange={(e) => setRoomTypeId(e.target.value)}>
             {roomTypes.length === 0 && <option value="">{t('book.loading')}</option>}
             {roomTypes.map((rt) => (
-              <option key={rt.id} value={rt.id}>{roomName(t, rt)}</option>
+              <option key={rt.id} value={rt.id}>{roomName(lang, rt)}</option>
             ))}
           </select>
         </label>

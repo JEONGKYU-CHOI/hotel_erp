@@ -7,6 +7,7 @@ import FolioPanel from './FolioPanel.jsx'
 import HoldCountdown from '../components/HoldCountdown.jsx'
 import { SkeletonResList } from '../components/Skeleton.jsx'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { pickName } from '../i18n/messages.js'
 
 // 백엔드 상태코드 → i18n 키. 색은 .status-badge.s-<STATUS> 컨벤션 그대로(booking.css).
 const STATUS_KEY = {
@@ -23,7 +24,7 @@ const STATUS_KEY = {
 export default function MyReservationsPage() {
   const { member, loading: authLoading } = useAuth()
   const navigate = useNavigate()
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const money = (v) => t('fmt.currency', { amount: Number(v).toLocaleString() })
   const statusLabel = (s) => (STATUS_KEY[s] ? t(STATUS_KEY[s]) : s)
 
@@ -134,8 +135,8 @@ export default function MyReservationsPage() {
                 <span className={`status-badge s-${r.status}`}>{statusLabel(r.status)}</span>
               </div>
               <div className="res-body">
-                <strong>{r.roomTypeName}</strong>
-                <span className="muted"> · {r.ratePlanName}</span>
+                <strong>{pickName(lang, r.roomTypeName, r.roomTypeNameEn)}</strong>
+                <span className="muted"> · {pickName(lang, r.ratePlanName, r.ratePlanNameEn)}</span>
               </div>
               <div className="res-meta muted">
                 {r.checkInDate} ~ {r.checkOutDate} ({t('fmt.nights', { n: r.nights })}) ·

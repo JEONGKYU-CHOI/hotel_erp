@@ -11,6 +11,7 @@ import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomType;
  * @param id                타입 식별자. 가용 조회·HOLD 요청에 싣는다
  * @param code              타입 코드
  * @param name              고객 노출 이름
+ * @param nameEn            영문 노출 이름(없으면 null → 프론트가 name 으로 폴백, D-051)
  * @param standardOccupancy 기준 인원
  * @param maxOccupancy      최대 인원
  */
@@ -18,12 +19,13 @@ public record RoomTypeSummary(
 		Long id,
 		String code,
 		String name,
+		String nameEn,
 		int standardOccupancy,
 		int maxOccupancy) {
 
 	public static RoomTypeSummary from(RoomType t) {
 		return new RoomTypeSummary(
-				t.getId(), t.getCode(), t.getName(),
+				t.getId(), t.getCode(), t.getName(), t.getNameEn(),
 				t.getStandardOccupancy(), t.getMaxOccupancy());
 	}
 }

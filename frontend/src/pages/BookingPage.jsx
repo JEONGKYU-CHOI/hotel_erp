@@ -5,6 +5,7 @@ import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import HoldCountdown from '../components/HoldCountdown.jsx'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { pickName } from '../i18n/messages.js'
 
 // 백엔드 상태코드 → i18n 키. 여러 화면이 공유하는 매핑.
 const STATUS_KEY = {
@@ -23,7 +24,7 @@ export default function BookingPage() {
   const { state } = useLocation()
   const navigate = useNavigate()
   const { member } = useAuth()
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const money = (v) => t('fmt.currency', { amount: Number(v).toLocaleString() })
   const statusLabel = (s) => (STATUS_KEY[s] ? t(STATUS_KEY[s]) : s)
 
@@ -164,7 +165,7 @@ export default function BookingPage() {
             {ratePlans.length === 0 && <option value="">{t('book.loading')}</option>}
             {ratePlans.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} · {t('fmt.perNight', { amount: Number(p.baseAmount).toLocaleString() })}
+                {pickName(lang, p.name, p.nameEn)} · {t('fmt.perNight', { amount: Number(p.baseAmount).toLocaleString() })}
                 {p.breakfastIncluded ? t('book.rate.breakfast') : ''}
                 {p.refundable ? t('book.rate.refundable') : t('book.rate.nonRefundable')}
               </option>

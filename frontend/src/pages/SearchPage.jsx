@@ -40,7 +40,7 @@ export default function SearchPage() {
   const [roomTypes, setRoomTypes] = useState([])
   const [heroIdx, setHeroIdx] = useState(0)
   const { openBooking } = useBooking()
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
 
   useEffect(() => {
     api.roomTypes().then(setRoomTypes).catch(() => {})
@@ -104,7 +104,7 @@ export default function SearchPage() {
                 <article key={rt.id} className="room-card">
                   <div className="room-photo" style={{ backgroundImage: `url(${img})` }} />
                   <div className="room-body">
-                    <h3 className="room-name">{roomName(t, rt)}</h3>
+                    <h3 className="room-name">{roomName(lang, rt)}</h3>
                     <p className="room-desc">{desc}</p>
                     <div className="room-foot">
                       <span className="room-occ">{t('home.occ', { std: rt.standardOccupancy, max: rt.maxOccupancy })}</span>

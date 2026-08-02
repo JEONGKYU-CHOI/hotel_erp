@@ -46,6 +46,7 @@ public class RoomTypeService {
 				.tenantId(TENANT_ID)
 				.code(form.getCode())
 				.name(form.getName())
+				.nameEn(form.getNameEn())
 				.description(form.getDescription())
 				.imageUrl(form.getImageUrl())
 				.standardOccupancy(form.getStandardOccupancy())
@@ -69,6 +70,7 @@ public class RoomTypeService {
 		RoomType roomType = get(id);
 		roomType.update(
 				form.getName(),
+				form.getNameEn(),
 				form.getDescription(),
 				form.getImageUrl(),
 				form.getStandardOccupancy(),

@@ -50,6 +50,10 @@ public class RoomType extends BaseEntity {
 	@Column(name = "name", nullable = false, length = 100)
 	private String name;
 
+	/** 영문 표시명 (Deluxe Double). 부킹엔진 영어 모드에서 쓴다. 비면 {@code name} 으로 폴백(D-051). */
+	@Column(name = "name_en", length = 100)
+	private String nameEn;
+
 	/** 부킹엔진에 노출되는 상세 설명 */
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
@@ -92,12 +96,13 @@ public class RoomType extends BaseEntity {
 	private boolean active;
 
 	@Builder
-	private RoomType(Long tenantId, String code, String name, String description,
+	private RoomType(Long tenantId, String code, String name, String nameEn, String description,
 			String imageUrl, int standardOccupancy, int maxOccupancy,
 			String bedType, int displayOrder, boolean active) {
 		this.tenantId = tenantId;
 		this.code = code;
 		this.name = name;
+		this.nameEn = nameEn;
 		this.description = description;
 		this.imageUrl = imageUrl;
 		this.standardOccupancy = standardOccupancy;
@@ -117,9 +122,10 @@ public class RoomType extends BaseEntity {
 	 * <p>{@code code} 는 여기 없다. 코드는 다른 데이터가 참조하는 식별자라
 	 * 발급 후 바꾸지 않는다.
 	 */
-	public void update(String name, String description, String imageUrl,
+	public void update(String name, String nameEn, String description, String imageUrl,
 			int standardOccupancy, int maxOccupancy, String bedType, int displayOrder) {
 		this.name = name;
+		this.nameEn = nameEn;
 		this.description = description;
 		this.imageUrl = imageUrl;
 		this.standardOccupancy = standardOccupancy;

@@ -9,18 +9,18 @@
 --   데모 데이터가 아직 없을 때만(멱등) 이 스크립트를 돌린다.
 -- =============================================================================
 
-INSERT INTO room_type (tenant_id, code, name, description, bed_type, standard_occupancy, max_occupancy, display_order, active, created_at, updated_at, created_by) VALUES
- (1,'STDT','스탠다드 트윈','도심 전망의 아늑한 기본 객실. 트윈 베드로 편안한 하룻밤.','트윈',2,2,10,1,NOW(),NOW(),'SEED'),
- (1,'DLXD','디럭스 더블','넓은 창과 킹 사이즈 더블 베드를 갖춘 디럭스 객실.','더블',2,3,20,1,NOW(),NOW(),'SEED'),
- (1,'EXSU','이그제큐티브 스위트','거실이 분리된 최상층 스위트. 파노라마 시티뷰.','킹',2,4,30,1,NOW(),NOW(),'SEED');
+INSERT INTO room_type (tenant_id, code, name, name_en, description, bed_type, standard_occupancy, max_occupancy, display_order, active, created_at, updated_at, created_by) VALUES
+ (1,'STDT','스탠다드 트윈','Standard Twin','도심 전망의 아늑한 기본 객실. 트윈 베드로 편안한 하룻밤.','트윈',2,2,10,1,NOW(),NOW(),'SEED'),
+ (1,'DLXD','디럭스 더블','Deluxe Double','넓은 창과 킹 사이즈 더블 베드를 갖춘 디럭스 객실.','더블',2,3,20,1,NOW(),NOW(),'SEED'),
+ (1,'EXSU','이그제큐티브 스위트','Executive Suite','거실이 분리된 최상층 스위트. 파노라마 시티뷰.','킹',2,4,30,1,NOW(),NOW(),'SEED');
 
-INSERT INTO rate_plan (tenant_id, room_type_id, code, name, base_amount, breakfast_included, refundable, cancel_deadline_days, penalty_rate, active, created_at, updated_at, created_by)
-SELECT 1, id, 'STDT-BAR','기본요금',150000,0,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='STDT'
-UNION ALL SELECT 1, id, 'STDT-BF','조식 포함',175000,1,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='STDT'
-UNION ALL SELECT 1, id, 'DLXD-BAR','기본요금',220000,0,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='DLXD'
-UNION ALL SELECT 1, id, 'DLXD-BF','조식 포함',250000,1,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='DLXD'
-UNION ALL SELECT 1, id, 'EXSU-BAR','기본요금',420000,1,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='EXSU'
-UNION ALL SELECT 1, id, 'EXSU-NRF','논리펀더블 특가',360000,1,0,1,100,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='EXSU';
+INSERT INTO rate_plan (tenant_id, room_type_id, code, name, name_en, base_amount, breakfast_included, refundable, cancel_deadline_days, penalty_rate, active, created_at, updated_at, created_by)
+SELECT 1, id, 'STDT-BAR','기본요금','Standard Rate',150000,0,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='STDT'
+UNION ALL SELECT 1, id, 'STDT-BF','조식 포함','Breakfast Included',175000,1,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='STDT'
+UNION ALL SELECT 1, id, 'DLXD-BAR','기본요금','Standard Rate',220000,0,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='DLXD'
+UNION ALL SELECT 1, id, 'DLXD-BF','조식 포함','Breakfast Included',250000,1,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='DLXD'
+UNION ALL SELECT 1, id, 'EXSU-BAR','기본요금','Standard Rate',420000,1,1,1,0,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='EXSU'
+UNION ALL SELECT 1, id, 'EXSU-NRF','논리펀더블 특가','Non-Refundable Saver',360000,1,0,1,100,1,NOW(),NOW(),'SEED' FROM room_type WHERE code='EXSU';
 
 INSERT INTO room (tenant_id, room_type_id, room_no, floor, occupancy_status, clean_status, active, created_at, updated_at, created_by)
 SELECT 1, id, '301',3,'VACANT','CLEAN',1,NOW(),NOW(),'SEED' FROM room_type WHERE code='STDT'

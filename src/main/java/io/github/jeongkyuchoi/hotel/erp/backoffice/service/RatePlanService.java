@@ -42,6 +42,7 @@ public class RatePlanService {
 				.roomType(findRoomType(form.getRoomTypeId()))
 				.code(form.getCode())
 				.name(form.getName())
+				.nameEn(form.getNameEn())
 				.baseAmount(form.getBaseAmount())
 				.breakfastIncluded(form.isBreakfastIncluded())
 				.refundable(form.isRefundable())
@@ -58,6 +59,7 @@ public class RatePlanService {
 		ratePlan.update(
 				findRoomType(form.getRoomTypeId()),
 				form.getName(),
+				form.getNameEn(),
 				form.getBaseAmount(),
 				form.isBreakfastIncluded(),
 				form.isRefundable(),

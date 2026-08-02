@@ -12,6 +12,7 @@ import java.math.BigDecimal;
  * @param id                요금정책 식별자. HOLD 요청에 싣는다
  * @param code              정책 코드
  * @param name              고객 노출 이름
+ * @param nameEn            영문 노출 이름(없으면 null → 프론트가 name 으로 폴백, D-051)
  * @param baseAmount        1박 기본요금(표시용)
  * @param breakfastIncluded 조식 포함 여부
  * @param refundable        환불 가능 여부
@@ -21,6 +22,7 @@ public record RatePlanSummary(
 		Long id,
 		String code,
 		String name,
+		String nameEn,
 		BigDecimal baseAmount,
 		boolean breakfastIncluded,
 		boolean refundable,
@@ -28,7 +30,7 @@ public record RatePlanSummary(
 
 	public static RatePlanSummary from(RatePlan rp) {
 		return new RatePlanSummary(
-				rp.getId(), rp.getCode(), rp.getName(), rp.getBaseAmount(),
+				rp.getId(), rp.getCode(), rp.getName(), rp.getNameEn(), rp.getBaseAmount(),
 				rp.isBreakfastIncluded(), rp.isRefundable(), rp.getCancelDeadlineDays());
 	}
 }

@@ -38,6 +38,10 @@ public class RatePlanForm {
 	@Size(max = 100, message = "정책명은 100자 이내여야 합니다.")
 	private String name;
 
+	/** 영문 정책명(선택). 비우면 부킹엔진 영어 모드에서 한글 정책명으로 폴백한다(D-051). */
+	@Size(max = 100, message = "영문 정책명은 100자 이내여야 합니다.")
+	private String nameEn;
+
 	/**
 	 * 기본 요금. 해당 일자에 요금 캘린더 행이 없을 때 쓰인다.
 	 *
@@ -71,6 +75,7 @@ public class RatePlanForm {
 		form.roomTypeId = ratePlan.getRoomType().getId();
 		form.code = ratePlan.getCode();
 		form.name = ratePlan.getName();
+		form.nameEn = ratePlan.getNameEn();
 		form.baseAmount = ratePlan.getBaseAmount();
 		form.breakfastIncluded = ratePlan.isBreakfastIncluded();
 		form.refundable = ratePlan.isRefundable();

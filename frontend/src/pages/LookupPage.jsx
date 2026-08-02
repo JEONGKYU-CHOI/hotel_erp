@@ -4,6 +4,7 @@ import { api } from '../api/client.js'
 import { startPayment } from '../payments.js'
 import HoldCountdown from '../components/HoldCountdown.jsx'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { pickName } from '../i18n/messages.js'
 
 // 백엔드 상태코드 → i18n 키.
 const STATUS_KEY = {
@@ -28,7 +29,7 @@ export default function LookupPage() {
   const [payError, setPayError] = useState(null)
   const [cancelMsg, setCancelMsg] = useState(null)
   const [cancelling, setCancelling] = useState(false)
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const money = (v) => t('fmt.currency', { amount: Number(v).toLocaleString() })
   const statusLabel = (s) => (STATUS_KEY[s] ? t(STATUS_KEY[s]) : s)
 
@@ -114,7 +115,7 @@ export default function LookupPage() {
           <dl className="hold-summary">
             <div><dt>{t('book.field.resNo')}</dt><dd>{detail.reservationNo}</dd></div>
             <div><dt>{t('lookup.field.guest')}</dt><dd>{detail.guestName}</dd></div>
-            <div><dt>{t('lookup.field.room')}</dt><dd>{detail.roomTypeName} · {detail.ratePlanName}</dd></div>
+            <div><dt>{t('lookup.field.room')}</dt><dd>{pickName(lang, detail.roomTypeName, detail.roomTypeNameEn)} · {pickName(lang, detail.ratePlanName, detail.ratePlanNameEn)}</dd></div>
             <div><dt>{t('book.field.period')}</dt><dd>{detail.checkInDate} ~ {detail.checkOutDate} ({t('fmt.nights', { n: detail.nights })})</dd></div>
             <div><dt>{t('lookup.field.pax')}</dt><dd>{t('lookup.pax.adults', { n: detail.adults })}{detail.children > 0 ? t('lookup.pax.children', { n: detail.children }) : ''}</dd></div>
             <div><dt>{t('book.field.amount')}</dt><dd>{money(detail.totalAmount)}</dd></div>
