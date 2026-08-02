@@ -104,7 +104,7 @@ public class SecurityConfig {
 						.requestMatchers("/book", "/payment/**", "/lookup",
 								"/member-login", "/signup", "/my-reservations",
 								"/rooms", "/dining", "/facilities", "/location",
-								"/packages", "/faq", "/gallery").permitAll()
+								"/packages", "/faq", "/gallery", "/about", "/reviews").permitAll()
 						// 기동 확인용. 상세 정보는 인증된 사용자에게만 보인다(application.yml).
 						.requestMatchers("/actuator/health").permitAll()
 						// /error 를 열어두지 않으면 모든 404 가 로그인 페이지로 튕긴다.
