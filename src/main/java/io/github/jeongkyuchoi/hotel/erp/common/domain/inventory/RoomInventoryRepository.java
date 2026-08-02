@@ -70,4 +70,15 @@ public interface RoomInventoryRepository extends JpaRepository<RoomInventory, Lo
 	 */
 	List<RoomInventory> findByTenantIdAndRoomTypeIdAndStayDateBetweenOrderByStayDate(
 			Long tenantId, Long roomTypeId, LocalDate from, LocalDate to);
+
+	/**
+	 * 특정 날짜의 <b>판매 가능한 총 객실 수</b> 합 — 대시보드 가동률(OCC)의 분모.
+	 * 재고 행이 없는 날은 0. 판매 중지(closed)는 요금 캘린더의 개념이라 여기선 반영하지 않는다.
+	 */
+	@Query("""
+			select coalesce(sum(i.totalQty), 0)
+			from RoomInventory i
+			where i.tenantId = :tenantId and i.stayDate = :date
+			""")
+	long sumTotalQtyOn(@Param("tenantId") Long tenantId, @Param("date") LocalDate date);
 }

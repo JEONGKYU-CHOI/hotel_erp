@@ -17,6 +17,40 @@
         </a>
     </div>
 
+    <!-- 오늘의 실적 (매출·가동률·ADR) -->
+    <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+            <div class="stat-card h-100">
+                <span class="stat-ico tint-green mb-2"><i class="bi bi-cash-stack"></i></span>
+                <div class="stat-val"
+                     th:text="'₩' + ${#numbers.formatInteger(dash.roomRevenueToday, 0, 'COMMA')}">₩0</div>
+                <div class="stat-lbl">오늘 객실 매출</div>
+                <div class="stat-sub text-secondary small">그날 묵는 확정·투숙 숙박분 기준</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="stat-card h-100">
+                <span class="stat-ico tint-indigo mb-2"><i class="bi bi-pie-chart"></i></span>
+                <div class="stat-val">
+                    <span th:text="${#numbers.formatDecimal(dash.occupancyPct, 1, 1)}">0.0</span><span class="fs-6 fw-normal text-secondary">%</span>
+                </div>
+                <div class="stat-lbl">가동률 (OCC)</div>
+                <div class="stat-sub text-secondary small">
+                    <span th:text="${dash.soldRoomsToday}">0</span> / <span th:text="${dash.totalRoomsToday}">0</span>실 판매
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="stat-card h-100">
+                <span class="stat-ico tint-amber mb-2"><i class="bi bi-tag"></i></span>
+                <div class="stat-val"
+                     th:text="'₩' + ${#numbers.formatInteger(dash.adrToday, 0, 'COMMA')}">₩0</div>
+                <div class="stat-lbl">ADR (평균 객실 단가)</div>
+                <div class="stat-sub text-secondary small">객실 매출 ÷ 판매 객실 수</div>
+            </div>
+        </div>
+    </div>
+
     <!-- KPI 타일 -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-2">

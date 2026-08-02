@@ -4,9 +4,14 @@ import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.DashboardView;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.ReservationListRow;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.Room;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.inventory.RoomInventoryRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.Reservation;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationNightRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationRepository;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.ReservationStatus;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.reservation.RoomRevenueStat;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -29,8 +34,14 @@ public class DashboardService {
 	private static final Long TENANT_ID = 1L;
 	private static final int RECENT_LIMIT = 6;
 
+	/** 그날 밤 실제로 묵는(매출·점유로 잡는) 예약 상태 — 야간마감 게시 대상과 같은 규율(D-026). */
+	private static final List<ReservationStatus> OCCUPIED_STATUSES =
+			List.of(ReservationStatus.CONFIRMED, ReservationStatus.CHECKED_IN);
+
 	private final ReservationRepository reservationRepository;
 	private final RoomRepository roomRepository;
+	private final ReservationNightRepository reservationNightRepository;
+	private final RoomInventoryRepository roomInventoryRepository;
 
 	@Transactional(readOnly = true)
 	public DashboardView load() {
@@ -68,7 +79,24 @@ public class DashboardService {
 
 		List<Room> housekeeping = roomRepository.findForHousekeeping(TENANT_ID);
 
+		// 오늘의 실적 KPI — 매출·판매객실은 숙박분에서, 총객실은 재고에서. 세 지표가
+		// 같은 판매객실 수를 공유해 서로 어긋나지 않는다(OCC 분자 = ADR 분모).
+		RoomRevenueStat stat = reservationNightRepository
+				.aggregateRoomRevenue(TENANT_ID, today, OCCUPIED_STATUSES);
+		BigDecimal roomRevenue = stat.revenue();
+		long soldRooms = stat.rooms();
+		long totalRooms = roomInventoryRepository.sumTotalQtyOn(TENANT_ID, today);
+
+		double occupancyPct = totalRooms == 0
+				? 0.0
+				: BigDecimal.valueOf(soldRooms * 100.0 / totalRooms)
+						.setScale(1, RoundingMode.HALF_UP).doubleValue();
+		BigDecimal adr = soldRooms == 0
+				? BigDecimal.ZERO
+				: roomRevenue.divide(BigDecimal.valueOf(soldRooms), 0, RoundingMode.HALF_UP);
+
 		return new DashboardView(arrivals, departures, inHouse, newToday, active,
-				housekeeping.size(), recent, housekeeping);
+				housekeeping.size(), roomRevenue, occupancyPct, adr, soldRooms, totalRooms,
+				recent, housekeeping);
 	}
 }
