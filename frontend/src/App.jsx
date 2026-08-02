@@ -76,9 +76,10 @@ function App() {
   return (
     <BookingProvider>
       <div className="booking-shell">
+        <a href="#main" className="skip-link">본문 바로가기</a>
         <header className="topbar">
           <Link to="/" className="brand">더 스테이</Link>
-          <nav className="topnav topnav-main">
+          <nav className="topnav topnav-main" aria-label="주 메뉴">
             <Link to="/rooms">객실</Link>
             <Link to="/packages">프로모션</Link>
             <Link to="/dining">다이닝</Link>
@@ -88,14 +89,14 @@ function App() {
             <Link to="/about">소개</Link>
             <Link to="/reviews">후기</Link>
           </nav>
-          <nav className="topnav topnav-util">
+          <nav className="topnav topnav-util" aria-label="예약 및 계정">
             <Link to="/faq">이용안내</Link>
             <Link to="/lookup">예약 조회</Link>
             <AuthNav />
             <ReserveCTA />
           </nav>
         </header>
-        <main className="content">
+        <main className="content" id="main">
           <Routes>
             <Route path="/" element={<SearchPage />} />
             <Route path="/rooms" element={<RoomsPage />} />
@@ -116,7 +117,7 @@ function App() {
             <Route path="/my-reservations" element={<MyReservationsPage />} />
           </Routes>
         </main>
-        <footer className="site-footer">
+        <footer className="site-footer" aria-label="사이트 정보">
           <div className="foot-grid">
             <div className="foot-col foot-about">
               <div className="foot-brand">더 스테이</div>

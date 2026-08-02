@@ -1231,3 +1231,30 @@
 @media (max-width: 780px) {
   .review-grid { grid-template-columns: 1fr; }
 }
+
+/* ==== 접근성 ========================================================== */
+/* 키보드 사용자용 본문 바로가기 — 평소엔 화면 밖, 포커스되면 나타난다. */
+.skip-link {
+  position: absolute; left: 12px; top: -48px; z-index: 100;
+  background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px;
+  font-size: .88rem; text-decoration: none; transition: top .18s ease;
+}
+.skip-link:focus { top: 12px; }
+
+/* 키보드 포커스는 또렷하게, 마우스 클릭은 방해 않게(:focus-visible). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* 어두운 히어로/딥컬러 위 요소는 밝은 링으로 대비 확보. */
+.hero .hero-dot:focus-visible,
+.bb-go:focus-visible,
+.cta-dark:focus-visible {
+  outline-color: #fff;
+}
