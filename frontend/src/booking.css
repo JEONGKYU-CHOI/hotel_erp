@@ -1258,3 +1258,13 @@ summary:focus-visible,
 .cta-dark:focus-visible {
   outline-color: #fff;
 }
+
+/* ==== 언어 토글 · i18n ================================================= */
+.lang-toggle {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 4px 12px; font-size: .78rem; font-weight: 600;
+  letter-spacing: .04em; cursor: pointer; transition: all .15s ease;
+}
+.lang-toggle:hover { border-color: var(--accent); color: var(--accent-dark); }
+/* 사전 문자열의 줄바꿈(\n)을 그대로 렌더 — 푸터 태그라인·주소. */
+.foot-tagline { white-space: pre-line; }

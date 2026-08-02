@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useBooking } from '../components/BookingContext.jsx'
+import { useI18n } from '../i18n/I18nContext.jsx'
 import BookingForm from '../components/BookingForm.jsx'
 import hero1 from '../assets/hero.jpg'
 import hero2 from '../assets/hero-2.jpg'
@@ -42,6 +43,7 @@ export default function SearchPage() {
   const [roomTypes, setRoomTypes] = useState([])
   const [heroIdx, setHeroIdx] = useState(0)
   const { openBooking } = useBooking()
+  const { t } = useI18n()
 
   useEffect(() => {
     api.roomTypes().then(setRoomTypes).catch(() => {})
@@ -68,11 +70,9 @@ export default function SearchPage() {
           <div className="hero-scrim" aria-hidden="true" />
         </div>
         <div className="hero-inner">
-          <div className="hero-eyebrow">THE STAY · 도심 속 휴식</div>
-          <h1 className="hero-title">머무는 순간, 여행이 됩니다</h1>
-          <p className="hero-sub">
-            날짜만 고르면 됩니다. 남은 객실을 실시간으로 확인하고 바로 예약하세요.
-          </p>
+          <div className="hero-eyebrow">{t('hero.eyebrow')}</div>
+          <h1 className="hero-title">{t('hero.title')}</h1>
+          <p className="hero-sub">{t('hero.sub')}</p>
         </div>
         <div className="hero-dots">
           {HERO_IMAGES.map((_, i) => (
@@ -93,23 +93,23 @@ export default function SearchPage() {
       {roomTypes.length > 0 && (
         <section className="showcase">
           <div className="showcase-head">
-            <div className="showcase-eyebrow">ROOMS · 객실 안내</div>
-            <h2 className="showcase-title">세 가지 결의 휴식</h2>
-            <p className="showcase-sub">도심의 하룻밤부터 최상층 스위트까지, 머무는 목적에 맞춰 고르세요.</p>
+            <div className="showcase-eyebrow">{t('home.rooms.eyebrow')}</div>
+            <h2 className="showcase-title">{t('home.rooms.title')}</h2>
+            <p className="showcase-sub">{t('home.rooms.sub')}</p>
           </div>
           <div className="room-cards">
-            {roomTypes.map((t) => {
-              const meta = ROOM_META[t.code] || FALLBACK_META
+            {roomTypes.map((rt) => {
+              const meta = ROOM_META[rt.code] || FALLBACK_META
               return (
-                <article key={t.id} className="room-card">
+                <article key={rt.id} className="room-card">
                   <div className="room-photo" style={{ backgroundImage: `url(${meta.img})` }} />
                   <div className="room-body">
-                    <h3 className="room-name">{t.name}</h3>
+                    <h3 className="room-name">{rt.name}</h3>
                     <p className="room-desc">{meta.desc}</p>
                     <div className="room-foot">
-                      <span className="room-occ">기준 {t.standardOccupancy}인 · 최대 {t.maxOccupancy}인</span>
-                      <button type="button" className="room-cta" onClick={() => openBooking(t.id)}>
-                        예약하기 →
+                      <span className="room-occ">{t('home.occ', { std: rt.standardOccupancy, max: rt.maxOccupancy })}</span>
+                      <button type="button" className="room-cta" onClick={() => openBooking(rt.id)}>
+                        {t('home.roomCta')}
                       </button>
                     </div>
                   </div>
@@ -124,10 +124,10 @@ export default function SearchPage() {
       <section className="home-band">
         <Link to="/packages" className="promo-teaser">
           <div className="promo-teaser-body">
-            <div className="showcase-eyebrow" style={{ color: 'var(--accent-dark)' }}>PACKAGES · 프로모션 &amp; 패키지</div>
-            <h2 className="promo-teaser-title">머무는 이유를 더하다</h2>
-            <p className="promo-teaser-sub">조식·스파·특가까지 — 목적에 맞춘 큐레이션 패키지로 바로 예약하세요.</p>
-            <span className="band-link">패키지 전체 보기 →</span>
+            <div className="showcase-eyebrow" style={{ color: 'var(--accent-dark)' }}>{t('home.packages.eyebrow')}</div>
+            <h2 className="promo-teaser-title">{t('home.packages.title')}</h2>
+            <p className="promo-teaser-sub">{t('home.packages.sub')}</p>
+            <span className="band-link">{t('home.packages.link')}</span>
           </div>
         </Link>
       </section>
@@ -136,10 +136,10 @@ export default function SearchPage() {
       <section className="home-band">
         <div className="band-head">
           <div>
-            <div className="showcase-eyebrow">FACILITIES · 편의시설</div>
-            <h2 className="block-title left">머무는 순간을 완성하는 것들</h2>
+            <div className="showcase-eyebrow">{t('home.facilities.eyebrow')}</div>
+            <h2 className="block-title left">{t('home.facilities.title')}</h2>
           </div>
-          <Link to="/facilities" className="band-link">전체 보기 →</Link>
+          <Link to="/facilities" className="band-link">{t('home.viewAll')}</Link>
         </div>
         <div className="facility-strip">
           {HOME_FACILITIES.map((f) => (
@@ -155,10 +155,10 @@ export default function SearchPage() {
       <section className="home-band alt">
         <div className="band-head">
           <div>
-            <div className="showcase-eyebrow">DINING · 다이닝</div>
-            <h2 className="block-title left">하루를 여는 커피, 하루를 닫는 한 잔</h2>
+            <div className="showcase-eyebrow">{t('home.dining.eyebrow')}</div>
+            <h2 className="block-title left">{t('home.dining.title')}</h2>
           </div>
-          <Link to="/dining" className="band-link">전체 보기 →</Link>
+          <Link to="/dining" className="band-link">{t('home.viewAll')}</Link>
         </div>
         <div className="dining-teaser">
           {DINING_TEASER.map((o) => (
@@ -177,10 +177,10 @@ export default function SearchPage() {
       <section className="home-band">
         <Link to="/location" className="location-teaser" style={{ backgroundImage: `linear-gradient(90deg, rgba(16,18,24,.72), rgba(16,18,24,.35)), url(${locationCity})` }}>
           <div className="loc-teaser-inner">
-            <div className="showcase-eyebrow" style={{ color: '#f0e4cf' }}>LOCATION · 오시는 길</div>
-            <h2 className="loc-teaser-title">서울의 중심, 강남</h2>
-            <p className="loc-teaser-sub">2호선 강남역 도보 5분 · 인천공항 리무진 70분</p>
-            <span className="band-link light">오시는 길 보기 →</span>
+            <div className="showcase-eyebrow" style={{ color: '#f0e4cf' }}>{t('home.location.eyebrow')}</div>
+            <h2 className="loc-teaser-title">{t('home.location.title')}</h2>
+            <p className="loc-teaser-sub">{t('home.location.sub')}</p>
+            <span className="band-link light">{t('home.location.link')}</span>
           </div>
         </Link>
       </section>

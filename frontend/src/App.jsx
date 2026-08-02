@@ -18,33 +18,46 @@ import SignupPage from './pages/SignupPage.jsx'
 import MyReservationsPage from './pages/MyReservationsPage.jsx'
 import { useAuth } from './auth/AuthContext.jsx'
 import { BookingProvider, useBooking } from './components/BookingContext.jsx'
+import { useI18n } from './i18n/I18nContext.jsx'
 import './booking.css'
 
 // 상단바 우측 — 로그인 상태에 따라 "내 예약 + 이름/로그아웃" 또는 "로그인" 을 보인다.
 function AuthNav() {
   const { member, logout } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
 
   if (member) {
     return (
       <>
-        <Link to="/my-reservations">내 예약</Link>
-        <span className="who">{member.name}님</span>
+        <Link to="/my-reservations">{t('nav.myReservations')}</Link>
+        <span className="who">{member.name}{t('nav.honorific')}</span>
         <button type="button" className="linkbtn" onClick={() => { logout(); navigate('/') }}>
-          로그아웃
+          {t('nav.logout')}
         </button>
       </>
     )
   }
-  return <Link to="/member-login">로그인</Link>
+  return <Link to="/member-login">{t('nav.login')}</Link>
+}
+
+// 언어 토글(한/EN). 상단바 유틸에 둔다.
+function LangToggle() {
+  const { toggle, t } = useI18n()
+  return (
+    <button type="button" className="lang-toggle" onClick={toggle} aria-label={t('lang.label')}>
+      {t('lang.toggle')}
+    </button>
+  )
 }
 
 // 상시 "예약하기" — 데스크톱 상단바 CTA.
 function ReserveCTA() {
   const { openBooking } = useBooking()
+  const { t } = useI18n()
   return (
     <button type="button" className="reserve-cta" onClick={() => openBooking()}>
-      예약하기
+      {t('cta.reserve')}
     </button>
   )
 }
@@ -52,10 +65,11 @@ function ReserveCTA() {
 // 모바일 전용 하단 고정 예약 바(엄지로 닿는 위치).
 function MobileReserveBar() {
   const { openBooking } = useBooking()
+  const { t } = useI18n()
   return (
     <div className="mobile-reserve">
       <button type="button" className="mobile-reserve-btn" onClick={() => openBooking()}>
-        예약하기
+        {t('cta.reserve')}
       </button>
     </div>
   )
@@ -64,35 +78,38 @@ function MobileReserveBar() {
 // 푸터 "예약하기" — 모달을 연다.
 function FooterReserve() {
   const { openBooking } = useBooking()
+  const { t } = useI18n()
   return (
     <button type="button" className="foot-linkbtn" onClick={() => openBooking()}>
-      예약하기
+      {t('cta.reserve')}
     </button>
   )
 }
 
 // 부킹엔진 셸 — 상단 바 + 라우트. 예약은 어디서든 BookingProvider 의 모달로 통일한다.
-function App() {
+function AppShell() {
+  const { t } = useI18n()
   return (
     <BookingProvider>
       <div className="booking-shell">
-        <a href="#main" className="skip-link">본문 바로가기</a>
+        <a href="#main" className="skip-link">{t('a11y.skip')}</a>
         <header className="topbar">
           <Link to="/" className="brand">더 스테이</Link>
-          <nav className="topnav topnav-main" aria-label="주 메뉴">
-            <Link to="/rooms">객실</Link>
-            <Link to="/packages">프로모션</Link>
-            <Link to="/dining">다이닝</Link>
-            <Link to="/facilities">편의시설</Link>
-            <Link to="/location">위치</Link>
-            <Link to="/gallery">갤러리</Link>
-            <Link to="/about">소개</Link>
-            <Link to="/reviews">후기</Link>
+          <nav className="topnav topnav-main" aria-label={t('a11y.mainMenu')}>
+            <Link to="/rooms">{t('nav.rooms')}</Link>
+            <Link to="/packages">{t('nav.packages')}</Link>
+            <Link to="/dining">{t('nav.dining')}</Link>
+            <Link to="/facilities">{t('nav.facilities')}</Link>
+            <Link to="/location">{t('nav.location')}</Link>
+            <Link to="/gallery">{t('nav.gallery')}</Link>
+            <Link to="/about">{t('nav.about')}</Link>
+            <Link to="/reviews">{t('nav.reviews')}</Link>
           </nav>
-          <nav className="topnav topnav-util" aria-label="예약 및 계정">
-            <Link to="/faq">이용안내</Link>
-            <Link to="/lookup">예약 조회</Link>
+          <nav className="topnav topnav-util" aria-label={t('a11y.utilMenu')}>
+            <Link to="/faq">{t('nav.faq')}</Link>
+            <Link to="/lookup">{t('nav.lookup')}</Link>
             <AuthNav />
+            <LangToggle />
             <ReserveCTA />
           </nav>
         </header>
@@ -117,35 +134,35 @@ function App() {
             <Route path="/my-reservations" element={<MyReservationsPage />} />
           </Routes>
         </main>
-        <footer className="site-footer" aria-label="사이트 정보">
+        <footer className="site-footer" aria-label={t('a11y.siteInfo')}>
           <div className="foot-grid">
             <div className="foot-col foot-about">
               <div className="foot-brand">더 스테이</div>
-              <p>고요한 하룻밤, 정성스러운 아침.<br />서울 강남의 도심 속 휴식.</p>
+              <p className="foot-tagline">{t('footer.tagline')}</p>
             </div>
             <div className="foot-col">
-              <h4>둘러보기</h4>
-              <Link to="/rooms">객실</Link>
-              <Link to="/packages">프로모션</Link>
-              <Link to="/dining">다이닝</Link>
-              <Link to="/facilities">편의시설</Link>
-              <Link to="/location">위치</Link>
-              <Link to="/gallery">갤러리</Link>
-              <Link to="/about">소개</Link>
-              <Link to="/reviews">후기</Link>
+              <h4>{t('footer.explore')}</h4>
+              <Link to="/rooms">{t('nav.rooms')}</Link>
+              <Link to="/packages">{t('nav.packages')}</Link>
+              <Link to="/dining">{t('nav.dining')}</Link>
+              <Link to="/facilities">{t('nav.facilities')}</Link>
+              <Link to="/location">{t('nav.location')}</Link>
+              <Link to="/gallery">{t('nav.gallery')}</Link>
+              <Link to="/about">{t('nav.about')}</Link>
+              <Link to="/reviews">{t('nav.reviews')}</Link>
             </div>
             <div className="foot-col">
-              <h4>예약</h4>
+              <h4>{t('footer.booking')}</h4>
               <FooterReserve />
-              <Link to="/lookup">예약 조회</Link>
-              <Link to="/faq">이용안내 · FAQ</Link>
+              <Link to="/lookup">{t('nav.lookup')}</Link>
+              <Link to="/faq">{t('footer.faqLink')}</Link>
             </div>
             <div className="foot-col">
-              <h4>문의</h4>
-              <p>프론트데스크 02-0000-0000<br />연중무휴 24시간<br />서울 강남구 테헤란로 000</p>
+              <h4>{t('footer.contact')}</h4>
+              <p className="foot-tagline">{t('footer.contactBody')}</p>
             </div>
           </div>
-          <div className="foot-base">© 2026 THE STAY · 데모 포트폴리오 사이트</div>
+          <div className="foot-base">{t('footer.copyright')}</div>
         </footer>
         <MobileReserveBar />
       </div>
@@ -153,4 +170,4 @@ function App() {
   )
 }
 
-export default App
+export default AppShell
