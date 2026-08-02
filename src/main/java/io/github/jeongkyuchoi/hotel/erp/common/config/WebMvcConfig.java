@@ -55,5 +55,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 		registry.addViewController("/packages").setViewName("forward:/index.html");
 		registry.addViewController("/faq").setViewName("forward:/index.html");
 		registry.addViewController("/gallery").setViewName("forward:/index.html");
+		registry.addViewController("/about").setViewName("forward:/index.html");
+		registry.addViewController("/reviews").setViewName("forward:/index.html");
 	}
 }

@@ -7,6 +7,8 @@ import FacilitiesPage from './pages/FacilitiesPage.jsx'
 import LocationPage from './pages/LocationPage.jsx'
 import FaqPage from './pages/FaqPage.jsx'
 import GalleryPage from './pages/GalleryPage.jsx'
+import AboutPage from './pages/AboutPage.jsx'
+import ReviewsPage from './pages/ReviewsPage.jsx'
 import BookingPage from './pages/BookingPage.jsx'
 import PaymentSuccessPage from './pages/PaymentSuccessPage.jsx'
 import PaymentFailPage from './pages/PaymentFailPage.jsx'
@@ -83,6 +85,8 @@ function App() {
             <Link to="/facilities">편의시설</Link>
             <Link to="/location">위치</Link>
             <Link to="/gallery">갤러리</Link>
+            <Link to="/about">소개</Link>
+            <Link to="/reviews">후기</Link>
           </nav>
           <nav className="topnav topnav-util">
             <Link to="/faq">이용안내</Link>
@@ -101,6 +105,8 @@ function App() {
             <Route path="/location" element={<LocationPage />} />
             <Route path="/faq" element={<FaqPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/book" element={<BookingPage />} />
             <Route path="/payment/success" element={<PaymentSuccessPage />} />
             <Route path="/payment/fail" element={<PaymentFailPage />} />
@@ -124,6 +130,8 @@ function App() {
               <Link to="/facilities">편의시설</Link>
               <Link to="/location">위치</Link>
               <Link to="/gallery">갤러리</Link>
+              <Link to="/about">소개</Link>
+              <Link to="/reviews">후기</Link>
             </div>
             <div className="foot-col">
               <h4>예약</h4>

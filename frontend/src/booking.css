@@ -1136,3 +1136,98 @@
   .gallery-grid { grid-template-columns: 1fr; }
   .gallery-tile.wide { grid-column: span 1; }
 }
+
+/* ==== About · 브랜드 스토리 ============================================ */
+.block-eyebrow {
+  text-transform: uppercase; letter-spacing: .18em; font-size: .72rem;
+  font-weight: 700; color: var(--accent-dark); margin-bottom: 8px;
+}
+.about-intro { max-width: 760px; }
+.about-lede {
+  font-family: var(--serif); font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  line-height: 1.6; color: var(--ink); text-align: center; margin: 0;
+}
+.about-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+}
+.about-photo {
+  background-size: cover; background-position: center; border-radius: 16px;
+  min-height: 340px; box-shadow: 0 10px 34px rgba(23,20,15,.12);
+}
+.about-copy p { color: var(--body); margin: 0 0 14px; }
+.values-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.value-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 26px 24px;
+}
+.value-title {
+  font-family: var(--serif); font-size: 1.12rem; color: var(--ink); margin: 0 0 10px;
+}
+.value-body { color: var(--body); font-size: .95rem; margin: 0; line-height: 1.7; }
+
+.about-facts { background: var(--surface-2); border-radius: 18px; padding: 34px 24px; }
+.facts-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin: 0;
+}
+.fact { text-align: center; }
+.fact-n {
+  font-family: var(--serif); font-weight: 700; color: var(--accent-dark);
+  font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1;
+}
+.fact-label {
+  margin: 8px 0 0; color: var(--ink); font-weight: 600; font-size: .95rem;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.fact-sub { color: var(--muted); font-weight: 400; font-size: .8rem; }
+
+.about-cta { text-align: center; }
+.about-cta-sub { color: var(--muted); margin: -12px 0 22px; }
+.about-cta-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.cta-ghost {
+  display: inline-block; text-decoration: none; border: 1px solid var(--ink);
+  color: var(--ink); padding: 11px 20px; border-radius: 999px;
+  font-size: .9rem; font-weight: 600; transition: background .16s ease;
+}
+.cta-ghost:hover { background: var(--ink); color: #fff; }
+
+@media (max-width: 780px) {
+  .about-split { grid-template-columns: 1fr; gap: 22px; }
+  .values-grid { grid-template-columns: 1fr; }
+  .facts-grid { grid-template-columns: repeat(2, 1fr); row-gap: 24px; }
+}
+
+/* ==== 후기 · 리뷰 ====================================================== */
+.review-summary { display: flex; justify-content: center; }
+.review-score { text-align: center; }
+.review-avg {
+  font-family: var(--serif); font-weight: 700; color: var(--ink);
+  font-size: 3.2rem; line-height: 1;
+}
+.stars { color: var(--accent); letter-spacing: 2px; font-size: 1.05rem; }
+.stars-off { color: var(--border); }
+.review-count { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+
+.review-filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 28px; }
+.review-chip {
+  border: 1px solid var(--border); background: var(--surface); color: var(--body);
+  border-radius: 999px; padding: 7px 16px; font-size: .88rem; cursor: pointer;
+  transition: all .15s ease;
+}
+.review-chip:hover { border-color: var(--accent); }
+.review-chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.review-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 22px 22px; display: flex; flex-direction: column; gap: 12px;
+}
+.review-text { color: var(--body); font-size: .95rem; line-height: 1.72; margin: 0; flex: 1; }
+.review-meta { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--border); padding-top: 12px; }
+.review-name { color: var(--ink); font-weight: 600; font-size: .9rem; }
+.review-when { color: var(--muted); font-size: .78rem; }
+
+@media (max-width: 780px) {
+  .review-grid { grid-template-columns: 1fr; }
+}
