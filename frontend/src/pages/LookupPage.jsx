@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { startPayment } from '../payments.js'
+import HoldCountdown from '../components/HoldCountdown.jsx'
 
 // 예약번호 → 한국어 상태 라벨.
 const STATUS_LABEL = {
@@ -121,12 +122,15 @@ export default function LookupPage() {
               <div><dt>취소 사유</dt><dd>{detail.cancelReason}</dd></div>
             )}
             {detail.status === 'HOLD' && detail.holdExpiresAt && (
-              <div><dt>결제 만료</dt><dd>{new Date(detail.holdExpiresAt).toLocaleString()}</dd></div>
+              <div>
+                <dt>결제 마감까지</dt>
+                <dd><HoldCountdown expiresAt={detail.holdExpiresAt} /></dd>
+              </div>
             )}
           </dl>
           {detail.status === 'HOLD' && (
             <>
-              <p className="muted">아직 결제 전입니다. 만료 시각까지 결제하면 예약이 확정됩니다.</p>
+              <p className="muted">아직 결제 전입니다. 남은 시간 안에 결제하면 예약이 확정됩니다.</p>
               <button type="button" className="cta" onClick={pay}>결제하기</button>
               {payError && <p className="error">⚠ {payError}</p>}
             </>

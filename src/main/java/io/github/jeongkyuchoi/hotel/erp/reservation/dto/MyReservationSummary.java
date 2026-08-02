@@ -21,7 +21,8 @@ public record MyReservationSummary(
 		LocalDate checkInDate,
 		LocalDate checkOutDate,
 		int nights,
-		BigDecimal totalAmount) {
+		BigDecimal totalAmount,
+		LocalDateTime holdExpiresAt) {
 
 	public static MyReservationSummary from(Reservation r, LocalDateTime now) {
 		return new MyReservationSummary(
@@ -32,6 +33,7 @@ public record MyReservationSummary(
 				r.getCheckInDate(),
 				r.getCheckOutDate(),
 				r.nights(),
-				r.getTotalAmount());
+				r.getTotalAmount(),
+				r.getHoldExpiresAt()); // 목록에서도 HOLD 결제 마감 카운트다운을 띄운다
 	}
 }

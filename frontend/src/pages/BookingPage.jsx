@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
+import HoldCountdown from '../components/HoldCountdown.jsx'
 
 // 검색 화면에서 넘어온 조건(state)으로 HOLD 를 만든다.
 // 흐름: 요금정책 로드 → 예약자 정보 입력 → HOLD 생성 → 예약번호·만료·총액 표시 → (다음) 결제.
@@ -27,6 +28,7 @@ export default function BookingPage() {
   const maxOccupancy = state?.maxOccupancy ? Number(state.maxOccupancy) : 9
 
   const [hold, setHold] = useState(null)
+  const [expired, setExpired] = useState(false)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -108,16 +110,26 @@ export default function BookingPage() {
     return (
       <div className="card">
         <h1>임시 예약 완료</h1>
-        <p className="muted">아래 시각까지 결제하지 않으면 자동 취소됩니다.</p>
+        <p className="muted">남은 시간 안에 결제하지 않으면 자동 취소됩니다.</p>
         <dl className="hold-summary">
           <div><dt>예약번호</dt><dd>{hold.reservationNo}</dd></div>
           <div><dt>상태</dt><dd>{hold.status}</dd></div>
           <div><dt>기간</dt><dd>{hold.checkInDate} ~ {hold.checkOutDate} ({hold.nightCount}박)</dd></div>
           <div><dt>결제 금액</dt><dd>{Number(hold.totalAmount).toLocaleString()}원</dd></div>
-          <div><dt>점유 만료</dt><dd>{new Date(hold.holdExpiresAt).toLocaleString()}</dd></div>
+          <div>
+            <dt>결제 마감까지</dt>
+            <dd><HoldCountdown expiresAt={hold.holdExpiresAt} onExpire={() => setExpired(true)} /></dd>
+          </div>
         </dl>
         {error && <p className="error">⚠ {error}</p>}
-        <button type="button" className="cta" onClick={pay}>결제하기</button>
+        {expired ? (
+          <>
+            <p className="error">⚠ 결제 시간이 만료되어 임시 예약이 취소되었습니다.</p>
+            <button type="button" className="cta" onClick={() => navigate('/')}>다시 검색하기</button>
+          </>
+        ) : (
+          <button type="button" className="cta" onClick={pay}>결제하기</button>
+        )}
         <p><Link to="/">← 다른 날짜로 다시 검색</Link></p>
       </div>
     )

@@ -4,6 +4,7 @@ import { api } from '../api/client.js'
 import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import FolioPanel from './FolioPanel.jsx'
+import HoldCountdown from '../components/HoldCountdown.jsx'
 
 // 상태별 표시 라벨. 색은 기존 .status-badge.s-<STATUS> 컨벤션을 그대로 재사용한다(booking.css).
 const LABEL = {
@@ -98,6 +99,11 @@ export default function MyReservationsPage() {
                 {r.checkInDate} ~ {r.checkOutDate} ({r.nights}박) ·
                 {' '}{Number(r.totalAmount).toLocaleString()}원
               </div>
+              {r.status === 'HOLD' && r.holdExpiresAt && (
+                <div className="res-meta">
+                  결제 마감까지 <HoldCountdown expiresAt={r.holdExpiresAt} />
+                </div>
+              )}
               <div className="res-actions">
                 <button type="button" className="linkbtn folio-toggle"
                         onClick={() => setOpenNo(openNo === r.reservationNo ? null : r.reservationNo)}>

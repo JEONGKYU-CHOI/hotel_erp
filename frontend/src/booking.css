@@ -407,6 +407,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- HOLD 결제 만료 카운트다운 --------------------------------------- */
+.hold-countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.hold-countdown.warn {
+  color: var(--danger);
+}
+.hold-countdown.expired {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 /* ---- 상태 배지 -------------------------------------------------------- */
 .status-badge {
   display: inline-block;
