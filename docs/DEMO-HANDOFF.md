@@ -89,6 +89,20 @@
   `holdExpiresAt` 포함도 API 확인. (실시간 틱은 숨김 pane setInterval 스로틀로 정지 — 실 앱 정상)
 - `Skeleton` 컴포넌트는 재사용 가능 — 다른 목록/검색 페이지 로딩에도 쓸 수 있다.
 
+## 4-4. 이 세션 추가분 (PMS 대시보드 KPI · 세션 4)
+
+`origin/demo` push 완료. 결정은 decisions.md **D-049** 참조.
+
+- **대시보드 실적 지표**(§6 [A] ✅): 백오피스 `/admin` 대시보드에 **오늘 매출·가동률(OCC)·ADR**
+  3타일 추가. 집계는 게시대상 상태(CONFIRMED·CHECKED_IN, D-026)만 실적으로 인정 — HOLD·취소·
+  노쇼 제외. 세 지표가 같은 판매객실 수를 공유(OCC 분자 = ADR 분모).
+  - 매출=ReservationNight 요금 합 · OCC=판매/총객실(RoomInventory) · ADR=매출/판매객실.
+  - `RoomRevenueStat` 생성자 프로젝션(Object[]+coalesce 는 방언별 타입 문제로 폐기).
+  - 커밋 `551aa09`. 파일: `DashboardService`·`DashboardView`·`ReservationNightRepository`·
+    `RoomInventoryRepository`·`RoomRevenueStat`·`admin/index.html`·`DashboardKpiTest`.
+- **검증**: DashboardKpiTest 3케이스(확정 집계·HOLD 제외·화면 렌더). 전체 **118 tests 그린**.
+  PMS 육안 확인은 관리자 비번(.env 시크릿)이 필요해 생략 — 렌더는 MockMvc 로 검증.
+
 ## 5. 다음 후보 (사용자와 논의된 것)
 
 - 프로모션/FAQ/갤러리 ✅(§4-1). About/브랜드 스토리 · 후기 · 다국어(한/영) 미완 → §6.
@@ -98,6 +112,6 @@
 - **[D 운영]** ✅ 테스트 스위트 회귀 확인(세션3) · ⭐ `demo`→`main` 머지 결정 · 고정 URL(named tunnel, ⚠️OG 절대URL 선행조건) · 실주소/전화/토스 실키
 - **[C 완성도]** ✅ SEO/OG/파비콘 · ✅ 결제 만료 카운트다운 · ✅ 로딩 스켈레톤·빈/에러 상태 (전부 세션3) · ⭐ 접근성
 - **[B 콘텐츠]** 후기(리뷰) · About/브랜드 스토리 · 다국어(한/영) · 객실별 상세 갤러리
-- **[A 기능]** PMS 대시보드 지표(매출·OCC·ADR)
+- **[A 기능]** ✅ PMS 대시보드 지표(매출·OCC·ADR, 세션4)
 
-추천 순서: **고정 URL+OG 절대화 → 후기/About → PMS 대시보드 → 접근성**.
+추천 순서: **고정 URL+OG 절대화 → 후기/About → 다국어 → 접근성**.
