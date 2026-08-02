@@ -719,13 +719,31 @@
   background-size: cover; background-position: center;
   box-shadow: var(--shadow); background-color: var(--accent-soft);
 }
-/* 객실별 상세 갤러리 — 대표 사진 + 썸네일 스트립. */
+/* 객실별 상세 갤러리 — 대표 사진 캐러셀(좌우 버튼) + 썸네일 스트립. */
 .detail-gallery { display: flex; flex-direction: column; gap: 10px; }
+.detail-main-wrap { position: relative; }
 .detail-main {
-  position: relative; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: none; cursor: pointer;
+  position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: none; cursor: pointer;
   border-radius: var(--radius-lg); background-size: cover; background-position: center;
   box-shadow: var(--shadow); background-color: var(--accent-soft);
 }
+/* 좌우 넘김 버튼 — 대표 사진 위에 겹쳐 둔다. */
+.detail-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border: none; border-radius: 999px; cursor: pointer;
+  background: rgba(16, 18, 24, .5); color: #fff; font-size: 1.5rem; line-height: 1;
+  transition: background .16s ease;
+}
+.detail-nav:hover { background: rgba(16, 18, 24, .78); }
+.detail-nav.prev { left: 12px; }
+.detail-nav.next { right: 12px; }
+.detail-dots {
+  position: absolute; left: 0; right: 0; bottom: 12px;
+  display: flex; justify-content: center; gap: 7px;
+}
+.detail-dot { width: 7px; height: 7px; border-radius: 999px; background: rgba(255, 255, 255, .55); }
+.detail-dot.active { background: #fff; }
 .detail-zoom {
   position: absolute; right: 12px; bottom: 12px; width: 34px; height: 34px;
   display: grid; place-items: center; border-radius: 999px;

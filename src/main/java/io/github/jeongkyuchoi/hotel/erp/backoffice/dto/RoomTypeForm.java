@@ -48,6 +48,13 @@ public class RoomTypeForm {
 	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
 	private String imageUrl;
 
+	/** 추가 이미지 2·3번(선택). 부킹엔진 객실 갤러리에서 좌우로 넘겨 본다(최대 3장). */
+	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
+	private String imageUrl2;
+
+	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
+	private String imageUrl3;
+
 	@Min(value = 1, message = "기준 인원은 1명 이상이어야 합니다.")
 	@Max(value = 99, message = "기준 인원이 너무 큽니다.")
 	private int standardOccupancy = 2;
@@ -85,6 +92,8 @@ public class RoomTypeForm {
 		form.nameEn = roomType.getNameEn();
 		form.description = roomType.getDescription();
 		form.imageUrl = roomType.getImageUrl();
+		form.imageUrl2 = roomType.getImageUrl2();
+		form.imageUrl3 = roomType.getImageUrl3();
 		form.standardOccupancy = roomType.getStandardOccupancy();
 		form.maxOccupancy = roomType.getMaxOccupancy();
 		form.bedType = roomType.getBedType();

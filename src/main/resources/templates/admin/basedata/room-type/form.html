@@ -60,10 +60,23 @@
                     </div>
 
                     <div class="col-12">
-                        <label for="imageUrl" class="form-label">대표 이미지 URL</label>
+                        <label for="imageUrl" class="form-label">이미지 1 URL <span class="text-muted small">(대표)</span></label>
                         <input type="text" id="imageUrl" class="form-control" th:field="*{imageUrl}"
                                th:classappend="${#fields.hasErrors('imageUrl')} ? 'is-invalid'">
+                        <div class="form-text">부킹엔진 객실 갤러리에서 좌우 버튼으로 넘겨 봅니다. 최대 3장까지 등록할 수 있으며, 첫 장이 대표 이미지입니다.</div>
                         <div class="invalid-feedback" th:errors="*{imageUrl}">오류</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="imageUrl2" class="form-label">이미지 2 URL <span class="text-muted small">(선택)</span></label>
+                        <input type="text" id="imageUrl2" class="form-control" th:field="*{imageUrl2}"
+                               th:classappend="${#fields.hasErrors('imageUrl2')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{imageUrl2}">오류</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="imageUrl3" class="form-label">이미지 3 URL <span class="text-muted small">(선택)</span></label>
+                        <input type="text" id="imageUrl3" class="form-control" th:field="*{imageUrl3}"
+                               th:classappend="${#fields.hasErrors('imageUrl3')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{imageUrl3}">오류</div>
                     </div>
                 </div>
             </div>

@@ -49,6 +49,8 @@ public class RoomTypeService {
 				.nameEn(form.getNameEn())
 				.description(form.getDescription())
 				.imageUrl(form.getImageUrl())
+				.imageUrl2(form.getImageUrl2())
+				.imageUrl3(form.getImageUrl3())
 				.standardOccupancy(form.getStandardOccupancy())
 				.maxOccupancy(form.getMaxOccupancy())
 				.bedType(form.getBedType())
@@ -73,6 +75,8 @@ public class RoomTypeService {
 				form.getNameEn(),
 				form.getDescription(),
 				form.getImageUrl(),
+				form.getImageUrl2(),
+				form.getImageUrl3(),
 				form.getStandardOccupancy(),
 				form.getMaxOccupancy(),
 				form.getBedType(),

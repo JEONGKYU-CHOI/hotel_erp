@@ -41,7 +41,7 @@ const CONTENT = {
     eyebrow: 'ACCOMMODATION', title: '객실 안내', sub: '세 가지 결의 공간. 머무는 목적에 맞춰 고르세요.',
     specArea: '면적', specBed: '베드', specView: '전망', specOcc: '정원',
     occValue: (s, m) => `기준 ${s}인 · 최대 ${m}인`, priceUnit: '1박', priceSuffix: '원~', cta: '예약하기 →',
-    closeLabel: '닫기', galleryLabel: '객실 사진',
+    closeLabel: '닫기', galleryLabel: '객실 사진', prevLabel: '이전 사진', nextLabel: '다음 사진',
     gcap: { room: '객실 전경', view: '도심 전망', fitness: '피트니스 센터', cafe: '올데이 카페', spa: '스파 & 사우나', lounge: '이그제큐티브 라운지', pool: '루프탑 풀', dining: '파인 다이닝' },
     rooms: {
       STDT: { name: '스탠다드 트윈', tagline: '도심 전망의 아늑한 트윈', size: '26㎡', bed: '트윈 베드', view: '시티뷰',
@@ -59,7 +59,7 @@ const CONTENT = {
     eyebrow: 'ACCOMMODATION', title: 'Rooms', sub: 'Three kinds of space — choose by the reason you travel.',
     specArea: 'Size', specBed: 'Bed', specView: 'View', specOcc: 'Occupancy',
     occValue: (s, m) => `Standard ${s} · Max ${m}`, priceUnit: 'Per night', priceSuffix: '~', cta: 'Book →',
-    closeLabel: 'Close', galleryLabel: 'Room photos',
+    closeLabel: 'Close', galleryLabel: 'Room photos', prevLabel: 'Previous photo', nextLabel: 'Next photo',
     gcap: { room: 'Room', view: 'City view', fitness: 'Fitness center', cafe: 'All-day café', spa: 'Spa & sauna', lounge: 'Executive lounge', pool: 'Rooftop pool', dining: 'Fine dining' },
     rooms: {
       STDT: { name: 'Standard Twin', tagline: 'A cozy twin with a city view', size: '26㎡', bed: 'Twin beds', view: 'City view',
@@ -75,25 +75,43 @@ const CONTENT = {
   },
 }
 
-// 객실 한 건의 상세 갤러리 — 대표 사진 + 썸네일. 대표 클릭 시 라이트박스로 확대.
-function RoomGallery({ images, galleryLabel, onOpen }) {
+// 객실 한 건의 상세 갤러리 — 대표 사진을 좌우(‹ ›) 버튼으로 넘긴다. 대표 클릭 시 라이트박스 확대.
+// 여러 장일 때만 좌우 버튼·닷·썸네일이 뜬다(1장이면 단일 사진).
+function RoomGallery({ images, galleryLabel, prevLabel, nextLabel, onOpen }) {
   const [i, setI] = useState(0)
-  const active = images[i] ?? images[0]
+  const n = images.length
+  const idx = i % n // images 가 언어전환 등으로 바뀌어도 범위를 벗어나지 않게
+  const active = images[idx]
+  const go = (d) => setI((p) => (((p + d) % n) + n) % n) // 순환(끝에서 처음으로)
+
   return (
     <div className="detail-gallery">
-      <button type="button" className="detail-main" style={{ backgroundImage: `url(${active.src})` }}
-              onClick={() => onOpen(active)} aria-label={active.caption}>
-        <span className="detail-zoom" aria-hidden="true">⤢</span>
-      </button>
-      <div className="detail-thumbs" role="group" aria-label={galleryLabel}>
-        {images.map((im, idx) => (
-          <button type="button" key={`${im.src}-${idx}`}
-                  className={`detail-thumb${idx === i ? ' active' : ''}`}
-                  style={{ backgroundImage: `url(${im.src})` }}
-                  aria-label={im.caption} aria-pressed={idx === i}
-                  onClick={() => setI(idx)} />
-        ))}
+      <div className="detail-main-wrap">
+        <button type="button" className="detail-main" style={{ backgroundImage: `url(${active.src})` }}
+                onClick={() => onOpen(active)} aria-label={active.caption}>
+          <span className="detail-zoom" aria-hidden="true">⤢</span>
+        </button>
+        {n > 1 && (
+          <>
+            <button type="button" className="detail-nav prev" aria-label={prevLabel} onClick={() => go(-1)}>‹</button>
+            <button type="button" className="detail-nav next" aria-label={nextLabel} onClick={() => go(1)}>›</button>
+            <div className="detail-dots" aria-hidden="true">
+              {images.map((im, k) => <span key={`${im.src}-${k}`} className={`detail-dot${k === idx ? ' active' : ''}`} />)}
+            </div>
+          </>
+        )}
       </div>
+      {n > 1 && (
+        <div className="detail-thumbs" role="group" aria-label={galleryLabel}>
+          {images.map((im, k) => (
+            <button type="button" key={`${im.src}-${k}`}
+                    className={`detail-thumb${k === idx ? ' active' : ''}`}
+                    style={{ backgroundImage: `url(${im.src})` }}
+                    aria-label={im.caption} aria-pressed={k === idx}
+                    onClick={() => setI(k)} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -141,11 +159,14 @@ export default function RoomsPage() {
         {ORDER.map((code, i) => {
           const d = c.rooms[code]
           const rt = byCode[code]
-          const images = galleryFor(code)
+          // PMS 에 등록한 이미지(최대 3장)를 우선, 없으면 큐레이션 폴백(D-052).
+          const dbImages = (rt?.imageUrls ?? []).map((url) => ({ src: url, caption: d.name }))
+          const images = dbImages.length > 0 ? dbImages : galleryFor(code)
           return (
             <article key={code} className={`detail-row ${i % 2 ? 'reverse' : ''}`}>
               {images.length > 0
-                ? <RoomGallery images={images} galleryLabel={c.galleryLabel} onOpen={setLightbox} />
+                ? <RoomGallery images={images} galleryLabel={c.galleryLabel}
+                               prevLabel={c.prevLabel} nextLabel={c.nextLabel} onOpen={setLightbox} />
                 : <div className="detail-photo" style={{ backgroundImage: `url(${IMAGES[code]})` }} />}
               <div className="detail-body">
                 <div className="detail-eyebrow">{d.tagline}</div>

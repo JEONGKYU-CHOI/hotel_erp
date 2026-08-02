@@ -58,8 +58,16 @@ public class RoomType extends BaseEntity {
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
 
+	/** 대표 이미지(1번). 부킹엔진 갤러리 첫 장. */
 	@Column(name = "image_url", length = 500)
 	private String imageUrl;
+
+	/** 추가 이미지 2·3번(선택). 셋 다 비면 부킹엔진이 큐레이션 폴백을 쓴다(D-052). */
+	@Column(name = "image_url2", length = 500)
+	private String imageUrl2;
+
+	@Column(name = "image_url3", length = 500)
+	private String imageUrl3;
 
 	/**
 	 * 기준 인원.
@@ -97,7 +105,7 @@ public class RoomType extends BaseEntity {
 
 	@Builder
 	private RoomType(Long tenantId, String code, String name, String nameEn, String description,
-			String imageUrl, int standardOccupancy, int maxOccupancy,
+			String imageUrl, String imageUrl2, String imageUrl3, int standardOccupancy, int maxOccupancy,
 			String bedType, int displayOrder, boolean active) {
 		this.tenantId = tenantId;
 		this.code = code;
@@ -105,6 +113,8 @@ public class RoomType extends BaseEntity {
 		this.nameEn = nameEn;
 		this.description = description;
 		this.imageUrl = imageUrl;
+		this.imageUrl2 = imageUrl2;
+		this.imageUrl3 = imageUrl3;
 		this.standardOccupancy = standardOccupancy;
 		this.maxOccupancy = maxOccupancy;
 		this.bedType = bedType;
@@ -122,12 +132,15 @@ public class RoomType extends BaseEntity {
 	 * <p>{@code code} 는 여기 없다. 코드는 다른 데이터가 참조하는 식별자라
 	 * 발급 후 바꾸지 않는다.
 	 */
-	public void update(String name, String nameEn, String description, String imageUrl,
+	public void update(String name, String nameEn, String description,
+			String imageUrl, String imageUrl2, String imageUrl3,
 			int standardOccupancy, int maxOccupancy, String bedType, int displayOrder) {
 		this.name = name;
 		this.nameEn = nameEn;
 		this.description = description;
 		this.imageUrl = imageUrl;
+		this.imageUrl2 = imageUrl2;
+		this.imageUrl3 = imageUrl3;
 		this.standardOccupancy = standardOccupancy;
 		this.maxOccupancy = maxOccupancy;
 		this.bedType = bedType;
