@@ -1449,3 +1449,16 @@ INSPECTED. `Room.inspect()`(CLEAN → INSPECTED, 가드)와 현황판 "점검 �
 
 **검증** HOLD 생성→홀딩메일, 실결제→확정메일, 확정취소→취소/환불메일(위약금·환불액은 판정값 동봉,
 HOLD 는 환불0). 메일실패 0, 기동에러 0.
+
+## D-048. 시각 의존 로직 테스트 가능화 — Clock 빈 주입 (D-045 후속)
+
+**맥락** 당일 예약 마감(D-045)이 `LocalDate.now()`/`LocalTime.now()` 벽시계를 코드에 직접
+박아, "지금"에 의존하는 경계(마감 직전 허용 / 직후 차단)를 결정론적으로 테스트할 수 없었다.
+CI 가 도는 시각에 따라 결과가 흔들리는 잠재적 flaky 원인이기도 했다.
+
+**결정** `Clock` 을 빈(`ClockConfig#clock`, 기본 `systemDefaultZone`)으로 두고 `ReservationService`
+가 주입받아 `now(clock)` 로 읽는다(hold 만료시각 포함 3곳). 테스트는 고정/가변 Clock 을
+`@Primary` 로 갈아끼워 경계를 재현한다. 시각 의존 신규 로직은 앞으로 이 패턴을 따른다.
+
+**검증** `SameDayCutoffTest`(신규): 고정 Clock 으로 마감(20:00) 전 허용 · 후 차단 · 후라도
+미래일 허용. 전체 스위트 그린(115 tests). 회귀였던 maxOccupancy 픽스처 2건도 함께 수정.

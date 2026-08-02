@@ -57,15 +57,43 @@
 - **시연 검증**: 실 토스 테스트결제로 확정→확정메일→취소+실환불(220,000)→취소메일까지 end-to-end 확인.
 - 커밋: `66e865d`~`d9e9407` (전부 push됨).
 
+## 4-3. 이 세션 추가분 (품질 · 완성도 · 세션 3)
+
+전부 `origin/demo` push 완료(`79a0ff9`~`276daa6`). 결정은 decisions.md D-048 참조.
+
+- **테스트 회귀 확인 + 수정**: 최대인원 초과 차단 로직에 걸려 깨진 기존 픽스처 2건
+  (`ReservationQueryTest`·`ReservationAdminScreenTest`, maxOccupancy 2→3). 전체 115 tests 그린.
+- **당일마감 Clock 주입**(**D-048**): 시각 의존 로직을 `Clock` 빈 주입으로 결정론화,
+  `SameDayCutoffTest` 경계 3케이스 신설. 커밋 `79a0ff9`.
+- **UI 버그**: 로그인/회원가입 카드에서 `.muted` 음수 마진이 회원가입 문구를 버튼과
+  겹치게 하던 것 해소(`.auth-card` 스코프 재정의). 커밋 `56afd86`.
+- **SEO/OG/파비콘**(§6 [C] ✅): description·canonical·Open Graph·Twitter Card 메타,
+  1200×630 OG 이미지(`public/og-image.jpg`), Claude 템플릿 로고 → 브랜드 모노그램 favicon,
+  theme-color `#17140f`. 커밋 `a34ba10`.
+- **HOLD 결제 만료 카운트다운**(§6 [C] ✅): `HoldCountdown` 컴포넌트(mm:ss, 2분 이하 경고색,
+  만료 시 onExpire), Booking·Lookup·MyReservations 3곳 적용. `MyReservationSummary` DTO 에
+  `holdExpiresAt` 필드 추가(백엔드). 커밋 `018e23b`.
+- **로딩 스켈레톤·빈/에러 상태**(§6 [C] ✅): 재사용 `Skeleton` 컴포넌트(`SkeletonLine`·
+  `SkeletonResList`, reduced-motion 존중), 내 예약 3상태 분리(로딩→스켈레톤/에러→재시도/
+  빈→CTA). 커밋 `276daa6`.
+
+⚠️ **미완/주의**:
+- **OG 절대 URL**: 데모가 동적 Cloudflare 터널이라 `og:url`·`og:image` 를 상대경로로 뒀다.
+  카카오톡은 절대경로만 읽으니 **고정 URL(named tunnel) 확보 후 절대 URL 로 교체**해야 카톡
+  썸네일이 뜬다(index.html 에 주석). favicon "S" 육안 확인은 스크린샷 얼어 미확인.
+- **MyReservations 스켈레톤/목록**은 데모 회원 계정 시딩이 없어 육안 검증 못 함(CSS·컴포넌트·
+  빌드는 실측). 회원 카운트다운 확인도 동일 사유로 미확인 — LookupPage 로는 실측 완료.
+- `Skeleton` 컴포넌트는 재사용 가능 — 다른 목록/검색 페이지 로딩에도 쓸 수 있다.
+
 ## 5. 다음 후보 (사용자와 논의된 것)
 
 - 프로모션/FAQ/갤러리 ✅(§4-1). About/브랜드 스토리 · 후기 · 다국어(한/영) 미완 → §6.
 
 ## 6. 남은 백로그 (다음 세션)
 
-- **[D 운영]** ⭐ 테스트 스위트 회귀 확인(이번에 예약·취소·환불·이벤트 다수 변경) · `demo`→`main` 머지 결정 · 고정 URL(named tunnel) · 실주소/전화/토스 실키
-- **[C 완성도]** ⭐ SEO/OG/파비콘(공유 미리보기 즉효) · 결제 만료 카운트다운 · 로딩 스켈레톤·빈/에러 상태 · 접근성
+- **[D 운영]** ✅ 테스트 스위트 회귀 확인(세션3) · ⭐ `demo`→`main` 머지 결정 · 고정 URL(named tunnel, ⚠️OG 절대URL 선행조건) · 실주소/전화/토스 실키
+- **[C 완성도]** ✅ SEO/OG/파비콘 · ✅ 결제 만료 카운트다운 · ✅ 로딩 스켈레톤·빈/에러 상태 (전부 세션3) · ⭐ 접근성
 - **[B 콘텐츠]** 후기(리뷰) · About/브랜드 스토리 · 다국어(한/영) · 객실별 상세 갤러리
 - **[A 기능]** PMS 대시보드 지표(매출·OCC·ADR)
 
-추천 순서: **테스트 회귀 → SEO/OG → 후기/About → PMS 대시보드**.
+추천 순서: **고정 URL+OG 절대화 → 후기/About → PMS 대시보드 → 접근성**.
