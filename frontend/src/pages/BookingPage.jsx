@@ -111,7 +111,7 @@ export default function BookingPage() {
       await startPayment({
         reservationNo: hold.reservationNo,
         amount: hold.totalAmount,
-        orderName: `${state.roomTypeName} ${t('fmt.nights', { n: hold.nightCount })}`,
+        orderName: `${pickName(lang, state.roomTypeName, state.roomTypeNameEn)} ${t('fmt.nights', { n: hold.nightCount })}`,
       })
     } catch (err) {
       // 사용자가 결제창을 닫으면 에러가 온다 — 조용히 메시지만 표시한다.
@@ -155,7 +155,7 @@ export default function BookingPage() {
     <div className="card">
       <h1>{t('book.guest.title')}</h1>
       <p className="muted">
-        {state.roomTypeName} · {state.checkIn} ~ {state.checkOut}
+        {pickName(lang, state.roomTypeName, state.roomTypeNameEn)} · {state.checkIn} ~ {state.checkOut}
       </p>
 
       <form className="book-form" onSubmit={submit}>

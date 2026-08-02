@@ -149,7 +149,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
                   className="cta"
                   onClick={() => {
                     navigate('/book', {
-                      state: { roomTypeId, roomTypeName: selectedName, checkIn, checkOut, adults, children, maxOccupancy: maxOcc, ratePlanId: initialRatePlanId || undefined },
+                      state: { roomTypeId, roomTypeName: selectedRt?.name, roomTypeNameEn: selectedRt?.nameEn, checkIn, checkOut, adults, children, maxOccupancy: maxOcc, ratePlanId: initialRatePlanId || undefined },
                     })
                     onDone?.()
                   }}
