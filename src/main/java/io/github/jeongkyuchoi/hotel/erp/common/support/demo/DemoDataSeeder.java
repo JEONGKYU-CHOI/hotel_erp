@@ -4,6 +4,9 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import io.github.jeongkyuchoi.hotel.erp.common.domain.member.Member;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.member.MemberRepository;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.member.MemberStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -12,6 +15,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -38,11 +42,23 @@ public class DemoDataSeeder implements ApplicationRunner {
 
 	private static final String SEED_SCRIPT = "db/demo/demo-seed.sql";
 
+	/** 시연용 회원 계정. 로그인 화면에서 바로 써 볼 수 있게 고정한다. */
+	private static final Long TENANT_ID = 1L;
+	private static final String DEMO_EMAIL = "demo@thestay.example";
+	private static final String DEMO_PASSWORD = "demo1234!";
+
 	private final JdbcTemplate jdbcTemplate;
 	private final DataSource dataSource;
+	private final MemberRepository memberRepository;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public void run(ApplicationArguments args) {
+		seedBaseData();
+		seedDemoMember();
+	}
+
+	private void seedBaseData() {
 		Integer existing = jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM room_type WHERE tenant_id = 1 AND code = 'STDT'", Integer.class);
 		if (existing != null && existing > 0) {
@@ -55,5 +71,25 @@ public class DemoDataSeeder implements ApplicationRunner {
 		} catch (SQLException e) {
 			throw new IllegalStateException("데모 데이터 시드 실패: " + SEED_SCRIPT, e);
 		}
+	}
+
+	/**
+	 * 시연용 회원 계정을 심는다 — 비번은 SQL 로 만들 수 없어(bcrypt) 여기서 인코딩한다.
+	 * 이메일로 멱등 확인해 재기동 시 중복 생성을 막는다.
+	 */
+	private void seedDemoMember() {
+		if (memberRepository.existsByTenantIdAndEmail(TENANT_ID, DEMO_EMAIL)) {
+			log.info("[demo] 데모 회원 이미 존재 — 건너뜀");
+			return;
+		}
+		memberRepository.save(Member.builder()
+				.tenantId(TENANT_ID)
+				.email(DEMO_EMAIL)
+				.passwordHash(passwordEncoder.encode(DEMO_PASSWORD))
+				.name("데모회원")
+				.phone("010-1234-5678")
+				.status(MemberStatus.ACTIVE)
+				.build());
+		log.info("[demo] 데모 회원 시드 완료 — {} / {}", DEMO_EMAIL, DEMO_PASSWORD);
 	}
 }

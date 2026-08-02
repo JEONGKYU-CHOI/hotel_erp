@@ -77,12 +77,16 @@
   `SkeletonResList`, reduced-motion 존중), 내 예약 3상태 분리(로딩→스켈레톤/에러→재시도/
   빈→CTA). 커밋 `276daa6`.
 
+- **데모 회원 계정**(`DemoDataSeeder`): `demo@thestay.example` / `demo1234!` — 로그인·내 예약
+  시연용. bcrypt 인코딩 위해 SQL 시드가 아닌 Java 로 심고 이메일 멱등. `@Profile("demo")`.
+
 ⚠️ **미완/주의**:
 - **OG 절대 URL**: 데모가 동적 Cloudflare 터널이라 `og:url`·`og:image` 를 상대경로로 뒀다.
   카카오톡은 절대경로만 읽으니 **고정 URL(named tunnel) 확보 후 절대 URL 로 교체**해야 카톡
   썸네일이 뜬다(index.html 에 주석). favicon "S" 육안 확인은 스크린샷 얼어 미확인.
-- **MyReservations 스켈레톤/목록**은 데모 회원 계정 시딩이 없어 육안 검증 못 함(CSS·컴포넌트·
-  빌드는 실측). 회원 카운트다운 확인도 동일 사유로 미확인 — LookupPage 로는 실측 완료.
+- **MyReservations 목록·HOLD 카운트다운**: 데모 회원 시드 후 실측 완료 — 로그인→내 예약에
+  HOLD 1건·"결제 대기" 배지·카운트다운(role=timer) 렌더 확인. `/me/reservations` 응답에
+  `holdExpiresAt` 포함도 API 확인. (실시간 틱은 숨김 pane setInterval 스로틀로 정지 — 실 앱 정상)
 - `Skeleton` 컴포넌트는 재사용 가능 — 다른 목록/검색 페이지 로딩에도 쓸 수 있다.
 
 ## 5. 다음 후보 (사용자와 논의된 것)
