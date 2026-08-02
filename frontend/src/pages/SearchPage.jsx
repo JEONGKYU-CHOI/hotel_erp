@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useBooking } from '../components/BookingContext.jsx'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { roomName } from '../i18n/messages.js'
 import BookingForm from '../components/BookingForm.jsx'
 import hero1 from '../assets/hero.jpg'
 import hero2 from '../assets/hero-2.jpg'
@@ -18,25 +19,21 @@ import locationCity from '../assets/location-city.jpg'
 // 히어로 슬라이드(자동 전환).
 const HERO_IMAGES = [hero1, hero2, hero3]
 
-// 객실타입 코드 → 소개 이미지·문구.
-const ROOM_META = {
-  STDT: { img: roomStdt, desc: '도심 전망의 아늑한 기본 객실. 트윈 베드로 편안한 하룻밤.' },
-  DLXD: { img: roomDlxd, desc: '넓은 창과 킹 사이즈 더블 베드를 갖춘 디럭스 객실.' },
-  EXSU: { img: roomExsu, desc: '거실이 분리된 최상층 스위트. 파노라마 시티뷰.' },
-}
-const FALLBACK_META = { img: roomStdt, desc: '편안한 휴식을 위한 객실.' }
+// 객실타입 코드 → 소개 이미지. 문구는 i18n(home.roomDesc.*)에서 코드로 찾는다.
+const ROOM_IMG = { STDT: roomStdt, DLXD: roomDlxd, EXSU: roomExsu }
+const FALLBACK_IMG = roomStdt
 
-// 홈 랜딩 티저용 요약 데이터. 상세는 각 페이지(/facilities, /dining, /location)에 있다.
+// 홈 랜딩 티저용 요약 데이터. 표시문구는 i18n 키로, 이미지·아이콘은 여기서. 상세는 각 페이지에.
 const HOME_FACILITIES = [
-  { icon: '🏊', name: '루프탑 인피니티 풀' },
-  { icon: '🧖', name: '스파 & 사우나' },
-  { icon: '💪', name: '24시 피트니스' },
-  { icon: '🍸', name: '이그제큐티브 라운지' },
+  { icon: '🏊', nameKey: 'home.fac.pool' },
+  { icon: '🧖', nameKey: 'home.fac.spa' },
+  { icon: '💪', nameKey: 'home.fac.fitness' },
+  { icon: '🍸', nameKey: 'home.fac.lounge' },
 ]
 const DINING_TEASER = [
-  { img: diningRest, name: '더 테이블', kind: '파인 다이닝' },
-  { img: diningBar, name: '바 소셜', kind: '바 & 라운지' },
-  { img: diningCafe, name: '그린하우스', kind: '올데이 카페' },
+  { img: diningRest, nameKey: 'home.dining.table.name', kindKey: 'home.dining.table.kind' },
+  { img: diningBar, nameKey: 'home.dining.bar.name', kindKey: 'home.dining.bar.kind' },
+  { img: diningCafe, nameKey: 'home.dining.cafe.name', kindKey: 'home.dining.cafe.kind' },
 ]
 
 export default function SearchPage() {
@@ -81,7 +78,7 @@ export default function SearchPage() {
               type="button"
               className={`hero-dot${i === heroIdx ? ' active' : ''}`}
               onClick={() => setHeroIdx(i)}
-              aria-label={`히어로 슬라이드 ${i + 1}`}
+              aria-label={t('home.heroSlide', { n: i + 1 })}
             />
           ))}
         </div>
@@ -99,13 +96,16 @@ export default function SearchPage() {
           </div>
           <div className="room-cards">
             {roomTypes.map((rt) => {
-              const meta = ROOM_META[rt.code] || FALLBACK_META
+              const img = ROOM_IMG[rt.code] || FALLBACK_IMG
+              const desc = rt.code && ROOM_IMG[rt.code]
+                ? t(`home.roomDesc.${rt.code}`)
+                : t('home.roomDesc.fallback')
               return (
                 <article key={rt.id} className="room-card">
-                  <div className="room-photo" style={{ backgroundImage: `url(${meta.img})` }} />
+                  <div className="room-photo" style={{ backgroundImage: `url(${img})` }} />
                   <div className="room-body">
-                    <h3 className="room-name">{rt.name}</h3>
-                    <p className="room-desc">{meta.desc}</p>
+                    <h3 className="room-name">{roomName(t, rt)}</h3>
+                    <p className="room-desc">{desc}</p>
                     <div className="room-foot">
                       <span className="room-occ">{t('home.occ', { std: rt.standardOccupancy, max: rt.maxOccupancy })}</span>
                       <button type="button" className="room-cta" onClick={() => openBooking(rt.id)}>
@@ -143,9 +143,9 @@ export default function SearchPage() {
         </div>
         <div className="facility-strip">
           {HOME_FACILITIES.map((f) => (
-            <div key={f.name} className="facility-item">
+            <div key={f.nameKey} className="facility-item">
               <div className="facility-icon">{f.icon}</div>
-              <div className="facility-name">{f.name}</div>
+              <div className="facility-name">{t(f.nameKey)}</div>
             </div>
           ))}
         </div>
@@ -162,11 +162,11 @@ export default function SearchPage() {
         </div>
         <div className="dining-teaser">
           {DINING_TEASER.map((o) => (
-            <Link key={o.name} to="/dining" className="teaser-card">
+            <Link key={o.nameKey} to="/dining" className="teaser-card">
               <div className="teaser-photo" style={{ backgroundImage: `url(${o.img})` }} />
               <div className="teaser-body">
-                <div className="teaser-kind">{o.kind}</div>
-                <div className="teaser-name">{o.name}</div>
+                <div className="teaser-kind">{t(o.kindKey)}</div>
+                <div className="teaser-name">{t(o.nameKey)}</div>
               </div>
             </Link>
           ))}

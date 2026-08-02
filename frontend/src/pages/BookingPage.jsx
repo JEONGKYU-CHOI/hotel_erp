@@ -4,6 +4,18 @@ import { api } from '../api/client.js'
 import { startPayment } from '../payments.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import HoldCountdown from '../components/HoldCountdown.jsx'
+import { useI18n } from '../i18n/I18nContext.jsx'
+
+// 백엔드 상태코드 → i18n 키. 여러 화면이 공유하는 매핑.
+const STATUS_KEY = {
+  HOLD: 'status.hold',
+  CONFIRMED: 'status.confirmed',
+  CHECKED_IN: 'status.checkedIn',
+  CHECKED_OUT: 'status.checkedOut',
+  CANCELLED: 'status.cancelled',
+  NO_SHOW: 'status.noShow',
+  EXPIRED: 'status.expired',
+}
 
 // 검색 화면에서 넘어온 조건(state)으로 HOLD 를 만든다.
 // 흐름: 요금정책 로드 → 예약자 정보 입력 → HOLD 생성 → 예약번호·만료·총액 표시 → (다음) 결제.
@@ -11,6 +23,9 @@ export default function BookingPage() {
   const { state } = useLocation()
   const navigate = useNavigate()
   const { member } = useAuth()
+  const { t } = useI18n()
+  const money = (v) => t('fmt.currency', { amount: Number(v).toLocaleString() })
+  const statusLabel = (s) => (STATUS_KEY[s] ? t(STATUS_KEY[s]) : s)
 
   // 검색을 거치지 않고 직접 들어오면 검색으로 돌려보낸다.
   useEffect(() => {
@@ -62,7 +77,7 @@ export default function BookingPage() {
     setError(null)
     // 정원 초과는 미리 막는다 — 백엔드도 400 으로 방어하지만 즉시 안내가 낫다.
     if (Number(adults) + Number(children) > maxOccupancy) {
-      setError(`최대 수용 인원(${maxOccupancy}인)을 초과했습니다. 성인·아동 수를 줄여 주세요.`)
+      setError(t('book.err.maxOcc', { max: maxOccupancy }))
       return
     }
     setSubmitting(true)
@@ -95,11 +110,11 @@ export default function BookingPage() {
       await startPayment({
         reservationNo: hold.reservationNo,
         amount: hold.totalAmount,
-        orderName: `${state.roomTypeName} ${hold.nightCount}박`,
+        orderName: `${state.roomTypeName} ${t('fmt.nights', { n: hold.nightCount })}`,
       })
     } catch (err) {
       // 사용자가 결제창을 닫으면 에러가 온다 — 조용히 메시지만 표시한다.
-      setError(err.message || '결제를 시작할 수 없습니다.')
+      setError(err.message || t('book.payErr'))
     }
   }
 
@@ -109,79 +124,79 @@ export default function BookingPage() {
   if (hold) {
     return (
       <div className="card">
-        <h1>임시 예약 완료</h1>
-        <p className="muted">남은 시간 안에 결제하지 않으면 자동 취소됩니다.</p>
+        <h1>{t('book.hold.title')}</h1>
+        <p className="muted">{t('book.hold.expireNote')}</p>
         <dl className="hold-summary">
-          <div><dt>예약번호</dt><dd>{hold.reservationNo}</dd></div>
-          <div><dt>상태</dt><dd>{hold.status}</dd></div>
-          <div><dt>기간</dt><dd>{hold.checkInDate} ~ {hold.checkOutDate} ({hold.nightCount}박)</dd></div>
-          <div><dt>결제 금액</dt><dd>{Number(hold.totalAmount).toLocaleString()}원</dd></div>
+          <div><dt>{t('book.field.resNo')}</dt><dd>{hold.reservationNo}</dd></div>
+          <div><dt>{t('book.field.status')}</dt><dd>{statusLabel(hold.status)}</dd></div>
+          <div><dt>{t('book.field.period')}</dt><dd>{hold.checkInDate} ~ {hold.checkOutDate} ({t('fmt.nights', { n: hold.nightCount })})</dd></div>
+          <div><dt>{t('book.field.amount')}</dt><dd>{money(hold.totalAmount)}</dd></div>
           <div>
-            <dt>결제 마감까지</dt>
+            <dt>{t('book.field.payDeadline')}</dt>
             <dd><HoldCountdown expiresAt={hold.holdExpiresAt} onExpire={() => setExpired(true)} /></dd>
           </div>
         </dl>
         {error && <p className="error">⚠ {error}</p>}
         {expired ? (
           <>
-            <p className="error">⚠ 결제 시간이 만료되어 임시 예약이 취소되었습니다.</p>
-            <button type="button" className="cta" onClick={() => navigate('/')}>다시 검색하기</button>
+            <p className="error">⚠ {t('book.hold.expiredMsg')}</p>
+            <button type="button" className="cta" onClick={() => navigate('/')}>{t('book.researchDates')}</button>
           </>
         ) : (
-          <button type="button" className="cta" onClick={pay}>결제하기</button>
+          <button type="button" className="cta" onClick={pay}>{t('book.pay')}</button>
         )}
-        <p><Link to="/">← 다른 날짜로 다시 검색</Link></p>
+        <p><Link to="/">{t('book.searchAgain')}</Link></p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h1>예약자 정보</h1>
+      <h1>{t('book.guest.title')}</h1>
       <p className="muted">
         {state.roomTypeName} · {state.checkIn} ~ {state.checkOut}
       </p>
 
       <form className="book-form" onSubmit={submit}>
         <label>
-          요금 정책
+          {t('book.field.ratePlan')}
           <select value={ratePlanId} onChange={(e) => setRatePlanId(e.target.value)}>
-            {ratePlans.length === 0 && <option value="">불러오는 중…</option>}
+            {ratePlans.length === 0 && <option value="">{t('book.loading')}</option>}
             {ratePlans.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} · {Number(p.baseAmount).toLocaleString()}원/박
-                {p.breakfastIncluded ? ' · 조식포함' : ''}
-                {p.refundable ? ' · 환불가능' : ' · 환불불가'}
+                {p.name} · {t('fmt.perNight', { amount: Number(p.baseAmount).toLocaleString() })}
+                {p.breakfastIncluded ? t('book.rate.breakfast') : ''}
+                {p.refundable ? t('book.rate.refundable') : t('book.rate.nonRefundable')}
               </option>
             ))}
           </select>
         </label>
 
         <label>
-          예약자 이름
+          {t('book.field.guestName')}
           <input value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
         </label>
 
         <label>
-          연락처
+          {t('book.field.phone')}
           <input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)}
                  placeholder="010-1234-5678" required />
         </label>
 
         <label>
-          이메일 (선택)
+          {t('book.field.email')}
           <input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} />
         </label>
 
         <div className="pax">
           <label>
-            성인
+            {t('book.field.adults')}
             <input type="number" min="1" max={maxOccupancy}
                    value={adults}
                    onChange={(e) => setAdults(e.target.value)} />
           </label>
           <label>
-            아동
+            {t('book.field.children')}
             <input type="number" min="0" max={Math.max(0, maxOccupancy - Number(adults))}
                    value={children}
                    onChange={(e) => setChildren(e.target.value)} />
@@ -191,10 +206,10 @@ export default function BookingPage() {
         {error && <p className="error">⚠ {error}</p>}
 
         <button type="submit" className="cta" disabled={submitting || !ratePlanId}>
-          {submitting ? '처리 중…' : '임시 예약하기'}
+          {submitting ? t('book.submitting') : t('book.holdCta')}
         </button>
       </form>
-      <p><Link to="/">← 검색으로</Link></p>
+      <p><Link to="/">{t('book.backToSearch')}</Link></p>
     </div>
   )
 }

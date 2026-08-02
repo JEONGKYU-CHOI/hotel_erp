@@ -6,22 +6,26 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import FolioPanel from './FolioPanel.jsx'
 import HoldCountdown from '../components/HoldCountdown.jsx'
 import { SkeletonResList } from '../components/Skeleton.jsx'
+import { useI18n } from '../i18n/I18nContext.jsx'
 
-// 상태별 표시 라벨. 색은 기존 .status-badge.s-<STATUS> 컨벤션을 그대로 재사용한다(booking.css).
-const LABEL = {
-  HOLD: '결제 대기',
-  CONFIRMED: '예약 확정',
-  CHECKED_IN: '체크인',
-  CHECKED_OUT: '체크아웃',
-  CANCELLED: '취소됨',
-  EXPIRED: '만료됨',
-  NO_SHOW: '노쇼',
+// 백엔드 상태코드 → i18n 키. 색은 .status-badge.s-<STATUS> 컨벤션 그대로(booking.css).
+const STATUS_KEY = {
+  HOLD: 'status.hold',
+  CONFIRMED: 'status.confirmed',
+  CHECKED_IN: 'status.checkedIn',
+  CHECKED_OUT: 'status.checkedOut',
+  CANCELLED: 'status.cancelled',
+  EXPIRED: 'status.expired',
+  NO_SHOW: 'status.noShow',
 }
 
 // 로그인 회원의 예약 목록(GET /api/me/reservations). 로그인 안 했으면 로그인으로 보낸다.
 export default function MyReservationsPage() {
   const { member, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+  const { t } = useI18n()
+  const money = (v) => t('fmt.currency', { amount: Number(v).toLocaleString() })
+  const statusLabel = (s) => (STATUS_KEY[s] ? t(STATUS_KEY[s]) : s)
 
   const [list, setList] = useState(null)
   const [error, setError] = useState(null)
@@ -37,26 +41,25 @@ export default function MyReservationsPage() {
       await startPayment({
         reservationNo: r.reservationNo,
         amount: r.totalAmount,
-        orderName: `${r.roomTypeName} ${r.nights}박`,
+        orderName: `${r.roomTypeName} ${t('fmt.nights', { n: r.nights })}`,
       })
     } catch (e) {
-      setPayError(e.message || '결제를 시작할 수 없습니다.')
+      setPayError(e.message || t('book.payErr'))
     }
   }
 
   // 예약 취소. 로그인 회원 경로(토큰으로 소유 확인). 결제된 예약은 요금정책에 따라 환불까지 처리.
   async function cancel(r) {
-    if (!window.confirm('예약을 취소하시겠습니까?\n결제된 예약은 요금정책에 따라 환불됩니다.')) return
+    if (!window.confirm(t('lookup.confirmCancel'))) return
     setCancelMsg(null)
     setCancellingNo(r.reservationNo)
     try {
       const res = await api.cancel(r.reservationNo)
-      const won = (v) => Number(v).toLocaleString()
       setCancelMsg(res.refunded
-        ? `${r.reservationNo} 취소 · 위약금 ${won(res.penalty)}원, ${won(res.refund)}원 환불 처리되었습니다.`
+        ? t('mine.cancel.refunded', { no: r.reservationNo, penalty: money(res.penalty), refund: money(res.refund) })
         : res.basis === 'NON_REFUNDABLE'
-          ? `${r.reservationNo} 취소 · 환불 불가 요금제라 환불 금액은 없습니다.`
-          : `${r.reservationNo} 취소되었습니다.`)
+          ? t('mine.cancel.nonRefundable', { no: r.reservationNo })
+          : t('mine.cancel.done', { no: r.reservationNo }))
       setList(await api.myReservations()) // 목록 갱신
     } catch (e) {
       setCancelMsg('⚠ ' + e.message)
@@ -87,7 +90,7 @@ export default function MyReservationsPage() {
   if (authLoading || (!list && !error)) {
     return (
       <div className="card">
-        <h1>내 예약</h1>
+        <h1>{t('mine.title')}</h1>
         <SkeletonResList count={3} />
       </div>
     )
@@ -97,10 +100,10 @@ export default function MyReservationsPage() {
   if (error) {
     return (
       <div className="card">
-        <h1>내 예약</h1>
+        <h1>{t('mine.title')}</h1>
         <div className="state-block">
-          <p className="error">⚠ 예약을 불러오지 못했습니다. {error}</p>
-          <button type="button" className="cta" onClick={load}>다시 시도</button>
+          <p className="error">⚠ {t('mine.loadError', { msg: error })}</p>
+          <button type="button" className="cta" onClick={load}>{t('mine.retry')}</button>
         </div>
       </div>
     )
@@ -110,11 +113,11 @@ export default function MyReservationsPage() {
   if (list.length === 0) {
     return (
       <div className="card">
-        <h1>내 예약</h1>
+        <h1>{t('mine.title')}</h1>
         <div className="state-block">
           <div className="state-emoji" aria-hidden="true">🗓️</div>
-          <p className="muted">아직 예약 내역이 없습니다.</p>
-          <Link to="/" className="cta">객실 검색하기</Link>
+          <p className="muted">{t('mine.empty')}</p>
+          <Link to="/" className="cta">{t('mine.searchRooms')}</Link>
         </div>
       </div>
     )
@@ -128,35 +131,35 @@ export default function MyReservationsPage() {
             <li key={r.reservationNo} className="res-item">
               <div className="res-head">
                 <span className="res-no">{r.reservationNo}</span>
-                <span className={`status-badge s-${r.status}`}>{LABEL[r.status] || r.status}</span>
+                <span className={`status-badge s-${r.status}`}>{statusLabel(r.status)}</span>
               </div>
               <div className="res-body">
                 <strong>{r.roomTypeName}</strong>
                 <span className="muted"> · {r.ratePlanName}</span>
               </div>
               <div className="res-meta muted">
-                {r.checkInDate} ~ {r.checkOutDate} ({r.nights}박) ·
-                {' '}{Number(r.totalAmount).toLocaleString()}원
+                {r.checkInDate} ~ {r.checkOutDate} ({t('fmt.nights', { n: r.nights })}) ·
+                {' '}{money(r.totalAmount)}
               </div>
               {r.status === 'HOLD' && r.holdExpiresAt && (
                 <div className="res-meta">
-                  결제 마감까지 <HoldCountdown expiresAt={r.holdExpiresAt} />
+                  {t('book.field.payDeadline')} <HoldCountdown expiresAt={r.holdExpiresAt} />
                 </div>
               )}
               <div className="res-actions">
                 <button type="button" className="linkbtn folio-toggle"
                         onClick={() => setOpenNo(openNo === r.reservationNo ? null : r.reservationNo)}>
-                  {openNo === r.reservationNo ? '청구서 닫기' : '청구서 보기'}
+                  {openNo === r.reservationNo ? t('mine.folioClose') : t('mine.folioOpen')}
                 </button>
                 {r.status === 'HOLD' && (
                   <button type="button" className="cta cta-sm" onClick={() => pay(r)}>
-                    결제하기
+                    {t('book.pay')}
                   </button>
                 )}
                 {(r.status === 'HOLD' || r.status === 'CONFIRMED') && (
                   <button type="button" className="linkbtn danger" onClick={() => cancel(r)}
                           disabled={cancellingNo === r.reservationNo}>
-                    {cancellingNo === r.reservationNo ? '취소 중…' : '예약 취소'}
+                    {cancellingNo === r.reservationNo ? t('lookup.cancelling') : t('lookup.cancelBtn')}
                   </button>
                 )}
               </div>

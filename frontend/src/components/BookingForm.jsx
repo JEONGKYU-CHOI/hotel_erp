@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
+import { useI18n } from '../i18n/I18nContext.jsx'
+import { roomName } from '../i18n/messages.js'
 
 function isoDate(offsetDays) {
   const d = new Date()
@@ -21,6 +23,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { t } = useI18n()
 
   useEffect(() => {
     api.roomTypes()
@@ -54,7 +57,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
     setError(null)
     setResult(null)
     if (checkOut <= checkIn) {
-      setError('체크아웃은 체크인 다음날 이후여야 합니다.')
+      setError(t('book.err.checkoutAfter'))
       return
     }
     setLoading(true)
@@ -67,48 +70,49 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
     }
   }
 
-  const selectedName = roomTypes.find((t) => String(t.id) === String(roomTypeId))?.name
+  const selectedRt = roomTypes.find((rt) => String(rt.id) === String(roomTypeId))
+  const selectedName = selectedRt ? roomName(t, selectedRt) : undefined
 
   return (
     <div className={`bookingform bookingform-${variant}`}>
       <form className="booking-bar" onSubmit={search}>
         <label className="bb-field">
-          <span>객실 타입</span>
+          <span>{t('book.field.roomType')}</span>
           <select value={roomTypeId} onChange={(e) => setRoomTypeId(e.target.value)}>
-            {roomTypes.length === 0 && <option value="">불러오는 중…</option>}
-            {roomTypes.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+            {roomTypes.length === 0 && <option value="">{t('book.loading')}</option>}
+            {roomTypes.map((rt) => (
+              <option key={rt.id} value={rt.id}>{roomName(t, rt)}</option>
             ))}
           </select>
         </label>
         <label className="bb-field">
-          <span>체크인</span>
+          <span>{t('book.field.checkIn')}</span>
           {/* 오늘부터 선택 가능(당일 예약). 지난 날짜는 막는다. */}
           <input type="date" min={isoDate(0)} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
         </label>
         <label className="bb-field">
-          <span>체크아웃</span>
+          <span>{t('book.field.checkOut')}</span>
           {/* 최소 1박 — 체크인 다음날부터. */}
           <input type="date" min={isoDate(0)} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
         </label>
         <label className="bb-field">
-          <span>성인</span>
+          <span>{t('book.field.adults')}</span>
           <select value={adults} onChange={(e) => setAdults(Number(e.target.value))}>
             {Array.from({ length: maxOcc }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>성인 {n}명</option>
+              <option key={n} value={n}>{t('book.adultsN', { n })}</option>
             ))}
           </select>
         </label>
         <label className="bb-field">
-          <span>아동</span>
+          <span>{t('book.field.children')}</span>
           <select value={children} onChange={(e) => setChildren(Number(e.target.value))}>
             {Array.from({ length: Math.max(1, maxOcc - Number(adults) + 1) }, (_, i) => i).map((n) => (
-              <option key={n} value={n}>아동 {n}명</option>
+              <option key={n} value={n}>{t('book.childrenN', { n })}</option>
             ))}
           </select>
         </label>
         <button type="submit" className="bb-go" disabled={loading || !roomTypeId}>
-          {loading ? '조회 중…' : '객실 찾기'}
+          {loading ? t('book.searching') : t('book.search')}
         </button>
       </form>
 
@@ -119,12 +123,16 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
             <div className="result">
               <div className={`summary ${result.bookableQty > 0 ? 'ok' : 'soldout'}`}>
                 {result.bookableQty > 0
-                  ? `${selectedName || '선택 객실'} · 예약 가능 — ${result.nightCount}박, 남은 객실 ${result.bookableQty}개`
-                  : '이 기간은 예약 마감입니다.'}
+                  ? t('book.result.available', {
+                      room: selectedName || t('book.result.selectedRoom'),
+                      nights: result.nightCount,
+                      qty: result.bookableQty,
+                    })
+                  : t('book.result.soldout')}
               </div>
               <table className="nights">
                 <thead>
-                  <tr><th>숙박일</th><th>가용 객실</th></tr>
+                  <tr><th>{t('book.th.date')}</th><th>{t('book.th.avail')}</th></tr>
                 </thead>
                 <tbody>
                   {result.nights.map((n) => (
@@ -146,7 +154,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
                     onDone?.()
                   }}
                 >
-                  이 조건으로 예약하기 →
+                  {t('book.reserveThis')}
                 </button>
               )}
             </div>

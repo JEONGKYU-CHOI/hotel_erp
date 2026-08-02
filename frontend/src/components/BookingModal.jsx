@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
 import BookingForm from './BookingForm.jsx'
+import { useI18n } from '../i18n/I18nContext.jsx'
 
 // 예약 패널 — 데스크톱은 중앙 모달, 모바일은 하단 바텀시트(CSS로 분기).
 export default function BookingModal({ open, initialRoomTypeId, initialRatePlanId, onClose }) {
   const closeRef = useRef(null)
+  const { t } = useI18n()
 
   // 열려 있는 동안 배경 스크롤을 막고, ESC 로 닫는다. 열 때 포커스를 모달 안으로
   // 옮기고, 닫을 때 직전에 포커스돼 있던 요소(예약하기 버튼 등)로 되돌린다 —
@@ -28,10 +30,10 @@ export default function BookingModal({ open, initialRoomTypeId, initialRatePlanI
     <div className="modal-overlay" onClick={onClose}>
       <div className="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h3 className="modal-title" id="booking-modal-title">예약하기</h3>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="닫기" ref={closeRef}>✕</button>
+          <h3 className="modal-title" id="booking-modal-title">{t('modal.title')}</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label={t('modal.close')} ref={closeRef}>✕</button>
         </div>
-        <p className="modal-hint">객실과 날짜를 고르고 잔여 객실을 확인하세요.</p>
+        <p className="modal-hint">{t('modal.hint')}</p>
         <BookingForm variant="modal" initialRoomTypeId={initialRoomTypeId} initialRatePlanId={initialRatePlanId} onDone={onClose} />
       </div>
     </div>

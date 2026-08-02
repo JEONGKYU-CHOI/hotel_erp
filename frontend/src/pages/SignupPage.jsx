@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useAuth } from '../auth/AuthContext.jsx'
+import { useI18n } from '../i18n/I18nContext.jsx'
 
 // 회원가입. 백엔드는 가입만 하고 로그인시키지 않으므로(D-009), 성공 후 곧바로 로그인까지
 // 이어 붙여 사용자를 원래 흐름(from)으로 돌려보낸다.
@@ -10,6 +11,7 @@ export default function SignupPage() {
   const navigate = useNavigate()
   const { state } = useLocation()
   const from = state?.from || '/'
+  const { t } = useI18n()
 
   const [form, setForm] = useState({ email: '', password: '', name: '', phone: '' })
   const [error, setError] = useState(null)
@@ -37,38 +39,38 @@ export default function SignupPage() {
 
   return (
     <div className="card auth-card">
-      <h1>회원가입</h1>
+      <h1>{t('auth.signup.title')}</h1>
       <form className="book-form" onSubmit={submit}>
         <label>
-          이메일
+          {t('auth.field.email')}
           <input type="email" value={form.email} onChange={set('email')}
                  autoComplete="email" required />
           {fields?.email && <span className="field-error">{fields.email}</span>}
         </label>
         <label>
-          비밀번호 <span className="muted">(8자 이상)</span>
+          {t('auth.field.password')} <span className="muted">{t('auth.password.hint')}</span>
           <input type="password" value={form.password} onChange={set('password')}
                  autoComplete="new-password" minLength={8} required />
           {fields?.password && <span className="field-error">{fields.password}</span>}
         </label>
         <label>
-          이름
+          {t('auth.field.name')}
           <input value={form.name} onChange={set('name')} required />
           {fields?.name && <span className="field-error">{fields.name}</span>}
         </label>
         <label>
-          연락처
+          {t('auth.field.phone')}
           <input value={form.phone} onChange={set('phone')}
                  placeholder="010-1234-5678" required />
           {fields?.phone && <span className="field-error">{fields.phone}</span>}
         </label>
         {error && <p className="error">⚠ {error}</p>}
         <button type="submit" className="cta" disabled={submitting}>
-          {submitting ? '가입 중…' : '가입하고 로그인'}
+          {submitting ? t('auth.signingUp') : t('auth.signup.submit')}
         </button>
       </form>
       <p className="muted">
-        이미 계정이 있으신가요? <Link to="/member-login" state={{ from }}>로그인</Link>
+        {t('auth.haveAccount')} <Link to="/member-login" state={{ from }}>{t('auth.loginLink')}</Link>
       </p>
     </div>
   )
