@@ -109,6 +109,12 @@ app:
 
 server:
   port: 8080
+  # 요청 본문을 UTF-8 로 강제한다. force=true 여야 멀티파트(파일 업로드) 폼의 한글
+  # 텍스트 필드까지 UTF-8 로 디코딩된다 — 없으면 객실명 등 한글이 깨져 저장될 수 있다.
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
   error:
     include-message: always
     include-binding-errors: always
