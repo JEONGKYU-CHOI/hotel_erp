@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 객실타입 등록/수정 폼.
@@ -45,15 +46,26 @@ public class RoomTypeForm {
 
 	private String description;
 
-	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
+	// 이미지는 파일 업로드로 받는다(D-053). 아래 imageUrlN 은 사용자 입력이 아니라 저장된
+	// 공개 경로(/uploads/…)를 담는 값이다 — 수정 화면에서 hidden 으로 실려 와, 새 파일을 안
+	// 올리면 그대로 유지된다. imageNFile 이 있으면 컨트롤러가 저장 후 imageUrlN 을 덮고,
+	// removeImageN 이면 비운다. 최대 3장.
+	@Size(max = 500)
 	private String imageUrl;
-
-	/** 추가 이미지 2·3번(선택). 부킹엔진 객실 갤러리에서 좌우로 넘겨 본다(최대 3장). */
-	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
+	@Size(max = 500)
 	private String imageUrl2;
-
-	@Size(max = 500, message = "이미지 URL은 500자 이내여야 합니다.")
+	@Size(max = 500)
 	private String imageUrl3;
+
+	/** 새로 업로드하는 이미지 파일(선택). 비었으면 기존 이미지를 유지한다. */
+	private MultipartFile image1File;
+	private MultipartFile image2File;
+	private MultipartFile image3File;
+
+	/** 수정 화면에서 기존 이미지를 지울지 여부(체크 시 해당 슬롯을 비운다). */
+	private boolean removeImage1;
+	private boolean removeImage2;
+	private boolean removeImage3;
 
 	@Min(value = 1, message = "기준 인원은 1명 이상이어야 합니다.")
 	@Max(value = 99, message = "기준 인원이 너무 큽니다.")

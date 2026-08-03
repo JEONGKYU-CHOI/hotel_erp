@@ -78,3 +78,6 @@ logs/
 ### MySQL dump (실수로 데이터 커밋 방지) ###
 *.sql.bak
 dump.sql
+
+# 업로드된 객실 이미지(로컬 dev). 배포는 docker 볼륨(D-053).
+uploads/

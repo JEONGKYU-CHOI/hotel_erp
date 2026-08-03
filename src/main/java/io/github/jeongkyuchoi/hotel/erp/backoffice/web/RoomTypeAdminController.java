@@ -3,12 +3,15 @@ package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.dto.RoomTypeForm;
 import io.github.jeongkyuchoi.hotel.erp.backoffice.service.RoomTypeService;
 import io.github.jeongkyuchoi.hotel.erp.common.domain.basedata.RoomType;
+import io.github.jeongkyuchoi.hotel.erp.common.exception.BadRequestException;
+import io.github.jeongkyuchoi.hotel.erp.common.support.storage.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +35,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class RoomTypeAdminController {
 
 	private final RoomTypeService roomTypeService;
+	private final FileStorageService fileStorageService;
 
 	@GetMapping
 	public String list(Model model) {
@@ -56,6 +60,13 @@ public class RoomTypeAdminController {
 			binding.addError(new FieldError("form", "code", form.getCode(), false, null, null,
 					"이미 사용 중인 코드입니다."));
 		}
+		if (binding.hasErrors()) {
+			model.addAttribute("editing", false);
+			return "admin/basedata/room-type/form";
+		}
+
+		// 폼 검증 통과 후에만 파일을 저장한다(검증 실패 시 고아 파일이 생기지 않게).
+		applyImages(form, binding);
 		if (binding.hasErrors()) {
 			model.addAttribute("editing", false);
 			return "admin/basedata/room-type/form";
@@ -87,6 +98,13 @@ public class RoomTypeAdminController {
 			return "admin/basedata/room-type/form";
 		}
 
+		applyImages(form, binding);
+		if (binding.hasErrors()) {
+			model.addAttribute("roomTypeId", id);
+			model.addAttribute("editing", true);
+			return "admin/basedata/room-type/form";
+		}
+
 		roomTypeService.update(id, form);
 		redirect.addFlashAttribute("flashSuccess",
 				"객실타입 '" + form.getName() + "' 을(를) 수정했습니다.");
@@ -105,5 +123,41 @@ public class RoomTypeAdminController {
 		redirect.addFlashAttribute("flashSuccess",
 				active ? "판매를 재개했습니다." : "판매를 중단했습니다.");
 		return "redirect:/admin/basedata/room-types";
+	}
+
+	/**
+	 * 업로드된 이미지 파일을 저장해 폼의 image 슬롯 3개를 확정한다(D-053).
+	 *
+	 * <p>슬롯별로 — 새 파일이 있으면 저장 후 기존 파일을 지우고 그 경로로 교체, '삭제' 체크면
+	 * 기존을 비우고, 둘 다 없으면 기존 값을 그대로 둔다(수정 화면의 hidden 값이 유지된다).
+	 * 저장 실패(형식 오류 등)는 해당 파일 필드의 검증 오류로 바꿔 폼에 돌려준다.
+	 */
+	private void applyImages(RoomTypeForm form, BindingResult binding) {
+		form.setImageUrl(resolveSlot(form.getImage1File(), form.isRemoveImage1(), form.getImageUrl(), binding, "image1File"));
+		form.setImageUrl2(resolveSlot(form.getImage2File(), form.isRemoveImage2(), form.getImageUrl2(), binding, "image2File"));
+		form.setImageUrl3(resolveSlot(form.getImage3File(), form.isRemoveImage3(), form.getImageUrl3(), binding, "image3File"));
+	}
+
+	private String resolveSlot(MultipartFile file, boolean remove, String current,
+			BindingResult binding, String field) {
+		if (file != null && !file.isEmpty()) {
+			try {
+				String path = fileStorageService.store(file);
+				if (current != null) {
+					fileStorageService.deleteByPublicPath(current); // 교체 시 옛 파일 정리
+				}
+				return path;
+			} catch (BadRequestException e) {
+				binding.rejectValue(field, "upload", e.getMessage());
+				return current; // 오류 시 기존 유지
+			}
+		}
+		if (remove) {
+			if (current != null) {
+				fileStorageService.deleteByPublicPath(current);
+			}
+			return null;
+		}
+		return current;
 	}
 }

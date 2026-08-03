@@ -14,7 +14,7 @@
       th:errors 가 해당 필드의 검증 실패 메시지를 자동으로 찾아 준다.
       등록과 수정이 보내는 곳만 다르고 항목은 같아서 화면 하나로 겸한다.
     -->
-    <form th:object="${form}" method="post"
+    <form th:object="${form}" method="post" enctype="multipart/form-data"
           th:action="${editing}
                      ? @{/admin/basedata/room-types/{id}(id=${roomTypeId})}
                      : @{/admin/basedata/room-types}">
@@ -60,23 +60,61 @@
                     </div>
 
                     <div class="col-12">
-                        <label for="imageUrl" class="form-label">이미지 1 URL <span class="text-muted small">(대표)</span></label>
-                        <input type="text" id="imageUrl" class="form-control" th:field="*{imageUrl}"
-                               th:classappend="${#fields.hasErrors('imageUrl')} ? 'is-invalid'">
-                        <div class="form-text">부킹엔진 객실 갤러리에서 좌우 버튼으로 넘겨 봅니다. 최대 3장까지 등록할 수 있으며, 첫 장이 대표 이미지입니다.</div>
-                        <div class="invalid-feedback" th:errors="*{imageUrl}">오류</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="imageUrl2" class="form-label">이미지 2 URL <span class="text-muted small">(선택)</span></label>
-                        <input type="text" id="imageUrl2" class="form-control" th:field="*{imageUrl2}"
-                               th:classappend="${#fields.hasErrors('imageUrl2')} ? 'is-invalid'">
-                        <div class="invalid-feedback" th:errors="*{imageUrl2}">오류</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="imageUrl3" class="form-label">이미지 3 URL <span class="text-muted small">(선택)</span></label>
-                        <input type="text" id="imageUrl3" class="form-control" th:field="*{imageUrl3}"
-                               th:classappend="${#fields.hasErrors('imageUrl3')} ? 'is-invalid'">
-                        <div class="invalid-feedback" th:errors="*{imageUrl3}">오류</div>
+                        <label class="form-label mb-1">객실 이미지 <span class="text-muted small">(최대 3장 · 첫 장이 대표)</span></label>
+                        <div class="form-text mt-0 mb-2">부킹엔진 객실 갤러리에서 좌우 버튼으로 넘겨 봅니다. JPG·PNG·WEBP·GIF, 장당 5MB 이하.</div>
+                        <div class="row g-3">
+                            <!-- 이미지 슬롯 1 -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-2 h-100">
+                                    <div class="small text-muted mb-1">이미지 1 (대표)</div>
+                                    <img th:if="*{imageUrl}" th:src="*{imageUrl}" alt="이미지 1 미리보기"
+                                         class="img-fluid rounded mb-2" style="max-height:120px;object-fit:cover;width:100%">
+                                    <input type="hidden" th:field="*{imageUrl}">
+                                    <input type="file" accept="image/*" class="form-control form-control-sm"
+                                           th:field="*{image1File}"
+                                           th:classappend="${#fields.hasErrors('image1File')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:errors="*{image1File}">오류</div>
+                                    <div class="form-check mt-1" th:if="*{imageUrl}">
+                                        <input class="form-check-input" type="checkbox" id="removeImage1" th:field="*{removeImage1}">
+                                        <label class="form-check-label small" for="removeImage1">이 이미지 삭제</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 이미지 슬롯 2 -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-2 h-100">
+                                    <div class="small text-muted mb-1">이미지 2</div>
+                                    <img th:if="*{imageUrl2}" th:src="*{imageUrl2}" alt="이미지 2 미리보기"
+                                         class="img-fluid rounded mb-2" style="max-height:120px;object-fit:cover;width:100%">
+                                    <input type="hidden" th:field="*{imageUrl2}">
+                                    <input type="file" accept="image/*" class="form-control form-control-sm"
+                                           th:field="*{image2File}"
+                                           th:classappend="${#fields.hasErrors('image2File')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:errors="*{image2File}">오류</div>
+                                    <div class="form-check mt-1" th:if="*{imageUrl2}">
+                                        <input class="form-check-input" type="checkbox" id="removeImage2" th:field="*{removeImage2}">
+                                        <label class="form-check-label small" for="removeImage2">이 이미지 삭제</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 이미지 슬롯 3 -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-2 h-100">
+                                    <div class="small text-muted mb-1">이미지 3</div>
+                                    <img th:if="*{imageUrl3}" th:src="*{imageUrl3}" alt="이미지 3 미리보기"
+                                         class="img-fluid rounded mb-2" style="max-height:120px;object-fit:cover;width:100%">
+                                    <input type="hidden" th:field="*{imageUrl3}">
+                                    <input type="file" accept="image/*" class="form-control form-control-sm"
+                                           th:field="*{image3File}"
+                                           th:classappend="${#fields.hasErrors('image3File')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:errors="*{image3File}">오류</div>
+                                    <div class="form-check mt-1" th:if="*{imageUrl3}">
+                                        <input class="form-check-input" type="checkbox" id="removeImage3" th:field="*{removeImage3}">
+                                        <label class="form-check-label small" for="removeImage3">이 이미지 삭제</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

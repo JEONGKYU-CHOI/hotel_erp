@@ -47,9 +47,14 @@ services:
       TOSS_CLIENT_KEY: ${TOSS_CLIENT_KEY}
       ADMIN_INIT_USERNAME: ${ADMIN_INIT_USERNAME:-admin}
       ADMIN_INIT_PASSWORD: ${ADMIN_INIT_PASSWORD}
+      # 업로드 이미지 저장 경로(볼륨 마운트 지점). 컨테이너 재빌드에도 파일이 유지된다.
+      APP_UPLOAD_DIR: /app/uploads
       TZ: Asia/Seoul
     ports:
       - "8080:8080"
+    volumes:
+      - hotel_uploads:/app/uploads
 
 volumes:
   hotel_mysql:
+  hotel_uploads:

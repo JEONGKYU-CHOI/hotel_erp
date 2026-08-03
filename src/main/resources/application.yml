@@ -2,6 +2,12 @@ spring:
   application:
     name: hotel-erp
 
+  # 파일 업로드(객실 이미지) 용량 제한. 넘치면 413 로 막아 디스크·메모리를 지킨다.
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 20MB
+
   # ---------------------------------------------------------------------------
   # DataSource
   # 비밀번호는 절대 파일에 쓰지 않는다. 환경변수 DB_PASSWORD 로 주입한다.
@@ -89,6 +95,10 @@ spring:
 #   toss.base-url   : 토스 결제 API 베이스. 승인 엔드포인트는 /v1/payments/confirm.
 # -----------------------------------------------------------------------------
 app:
+  # 업로드 파일(객실 이미지) 저장 디렉터리. 로컬은 프로젝트 하위 uploads/, 배포는
+  # 볼륨을 마운트한 절대경로(APP_UPLOAD_DIR=/app/uploads)를 준다. 서빙 경로는 /uploads/**.
+  # 추후 오브젝트 스토리지(R2/S3)로 옮길 땐 이 저장부만 교체한다(D-053).
+  upload-dir: ${APP_UPLOAD_DIR:uploads}
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-change-me-hotel-erp-booking-engine-jwt-hs256-key}
     access-token-validity: PT1H

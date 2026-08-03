@@ -98,6 +98,8 @@ public class SecurityConfig {
 						// 부킹엔진(React) 진입점과 빌드 산출물. 고객은 로그인 없이 들어온다.
 						.requestMatchers("/", "/index.html", "/assets/**",
 								"/favicon.svg", "/icons.svg").permitAll()
+						// 업로드된 객실 이미지(D-053). 부킹엔진이 로그인 없이 표시한다.
+						.requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 						// React SPA 클라이언트 라우트(D-035). WebMvcConfig 가 index.html 로
 						// forward 하는 경로들 — permitAll 이 아니면 anyRequest 에 걸려 로그인으로
 						// 튕긴다. 결제 착지(/payment/success·fail)도 인증 주체 없는 공개 경로다.

@@ -1,6 +1,9 @@
 package io.github.jeongkyuchoi.hotel.erp.common.config;
 
+import io.github.jeongkyuchoi.hotel.erp.common.support.storage.FileStorageService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,7 +15,20 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * {@link WebMvcConfigurer} 구현만으로 필요한 부분만 덧붙이는 것이 맞다.
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
+
+	private final FileStorageService fileStorageService;
+
+	/**
+	 * 업로드 파일 서빙 — {@code /uploads/**} 를 저장 디렉터리(app.upload-dir)로 매핑한다(D-053).
+	 * classpath 정적 리소스가 아니라 실행 중 쌓이는 파일이라 별도 핸들러가 필요하다.
+	 */
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		registry.addResourceHandler("/uploads/**")
+				.addResourceLocations(fileStorageService.getRoot().toUri().toString());
+	}
 
 	/**
 	 * 로직 없이 화면만 반환하는 경로를 등록한다.
