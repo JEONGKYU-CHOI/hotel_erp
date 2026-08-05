@@ -7,6 +7,8 @@ import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldRequest;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.HoldResponse;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.RatePlanSummary;
 import io.github.jeongkyuchoi.hotel.erp.booking.dto.RoomTypeSummary;
+import io.github.jeongkyuchoi.hotel.erp.auth.service.MemberAuthService;
+import io.github.jeongkyuchoi.hotel.erp.common.domain.member.Member;
 import io.github.jeongkyuchoi.hotel.erp.reservation.dto.ReservationDetail;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.AvailabilityService;
 import io.github.jeongkyuchoi.hotel.erp.reservation.service.CustomerCancellationService;
@@ -53,6 +55,7 @@ public class BookingApiController {
 	private final ReservationQueryService reservationQueryService;
 	private final RoomTypeCatalogService roomTypeCatalogService;
 	private final CustomerCancellationService customerCancellationService;
+	private final MemberAuthService memberAuthService;
 
 	/** 판매 중인 객실타입 목록. 고객이 타입을 고르는 첫 화면이 소비한다. */
 	@GetMapping("/room-types")
@@ -85,7 +88,12 @@ public class BookingApiController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public HoldResponse hold(@Valid @RequestBody HoldRequest request,
 			@AuthenticationPrincipal Long memberId) {
-		return HoldResponse.from(reservationService.hold(request.toCommand(memberId)));
+		if (memberId == null) {
+			return HoldResponse.from(reservationService.hold(request.toCommand(null)));
+		}
+		Member member = memberAuthService.getActiveMember(memberId);
+		return HoldResponse.from(reservationService.hold(request.toCommand(
+				memberId, member.getName(), member.getPhone(), member.getEmail())));
 	}
 
 	/** 예약 조회 (예약번호 + 전화, 비회원 경로, D-028). */

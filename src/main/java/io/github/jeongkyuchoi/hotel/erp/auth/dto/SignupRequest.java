@@ -2,6 +2,7 @@ package io.github.jeongkyuchoi.hotel.erp.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -23,5 +24,6 @@ public record SignupRequest(
 		String name,
 
 		@NotBlank(message = "연락처는 필수입니다.")
+		@Pattern(regexp = "^010-?\\d{4}-?\\d{4}$", message = "휴대전화는 010-1234-5678 형식으로 입력하세요.")
 		String phone) {
 }

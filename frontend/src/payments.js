@@ -7,7 +7,8 @@ import { api } from './api/client.js'
 // 승인·확정은 그 결과 화면(/payment/success)이 맡는다 — orderId = 우리 예약번호다.
 //
 // 사용자가 결제창을 닫으면 예외가 던져진다. 호출부에서 잡아 조용히 메시지로 안내한다.
-export async function startPayment({ reservationNo, amount, orderName }) {
+export async function startPayment({ reservationNo, amount, orderName, summary }) {
+  if (summary) sessionStorage.setItem('hotel.paymentSummary', JSON.stringify(summary))
   const { clientKey } = await api.paymentConfig()
   const tossPayments = await loadTossPayments(clientKey)
   const payment = tossPayments.payment({ customerKey: ANONYMOUS })

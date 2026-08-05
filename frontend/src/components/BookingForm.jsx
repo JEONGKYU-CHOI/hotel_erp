@@ -19,9 +19,7 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
   const [checkOut, setCheckOut] = useState(isoDate(2))
   const [adults, setAdults] = useState(2)
   const [children, setChildren] = useState(0)
-  const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { t, lang } = useI18n()
 
@@ -52,27 +50,32 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
     }
   }, [maxOcc]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function search(e) {
+  function search(e) {
     e.preventDefault()
     setError(null)
-    setResult(null)
     if (checkOut <= checkIn) {
       setError(t('book.err.checkoutAfter'))
       return
     }
-    setLoading(true)
-    try {
-      setResult(await api.availability(roomTypeId, checkIn, checkOut))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+    navigate('/book', {
+      state: {
+        roomTypeId,
+        roomTypeName: selectedRt?.name,
+        roomTypeNameEn: selectedRt?.nameEn,
+        roomTypeCode: selectedRt?.code,
+        imageUrls: selectedRt?.imageUrls || [],
+        checkIn,
+        checkOut,
+        adults,
+        children,
+        maxOccupancy: maxOcc,
+        ratePlanId: initialRatePlanId || undefined,
+      },
+    })
+    onDone?.()
   }
 
   const selectedRt = roomTypes.find((rt) => String(rt.id) === String(roomTypeId))
-  const selectedName = selectedRt ? roomName(lang, selectedRt) : undefined
-
   return (
     <div className={`bookingform bookingform-${variant}`}>
       <form className="booking-bar" onSubmit={search}>
@@ -111,54 +114,14 @@ export default function BookingForm({ initialRoomTypeId = '', initialRatePlanId 
             ))}
           </select>
         </label>
-        <button type="submit" className="bb-go" disabled={loading || !roomTypeId}>
-          {loading ? t('book.searching') : t('book.search')}
+        <button type="submit" className="bb-go" disabled={!roomTypeId}>
+          {t('cta.reserve')}
         </button>
       </form>
 
-      {(error || result) && (
+      {error && (
         <div className="bookingform-result">
-          {error && <p className="error">⚠ {error}</p>}
-          {result && (
-            <div className="result">
-              <div className={`summary ${result.bookableQty > 0 ? 'ok' : 'soldout'}`}>
-                {result.bookableQty > 0
-                  ? t('book.result.available', {
-                      room: selectedName || t('book.result.selectedRoom'),
-                      nights: result.nightCount,
-                      qty: result.bookableQty,
-                    })
-                  : t('book.result.soldout')}
-              </div>
-              <table className="nights">
-                <thead>
-                  <tr><th>{t('book.th.date')}</th><th>{t('book.th.avail')}</th></tr>
-                </thead>
-                <tbody>
-                  {result.nights.map((n) => (
-                    <tr key={n.stayDate}>
-                      <td>{n.stayDate}</td>
-                      <td className={n.availableQty > 0 ? '' : 'zero'}>{n.availableQty}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {result.bookableQty > 0 && (
-                <button
-                  type="button"
-                  className="cta"
-                  onClick={() => {
-                    navigate('/book', {
-                      state: { roomTypeId, roomTypeName: selectedRt?.name, roomTypeNameEn: selectedRt?.nameEn, checkIn, checkOut, adults, children, maxOccupancy: maxOcc, ratePlanId: initialRatePlanId || undefined },
-                    })
-                    onDone?.()
-                  }}
-                >
-                  {t('book.reserveThis')}
-                </button>
-              )}
-            </div>
-          )}
+          <p className="error">⚠ {error}</p>
         </div>
       )}
     </div>

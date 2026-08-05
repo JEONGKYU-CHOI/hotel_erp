@@ -1,5 +1,8 @@
 import locationCity from '../assets/location-city.jpg'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/I18nContext.jsx'
+
+const HOTEL = { lat: 37.49794, lng: 127.02761 }
 
 const CONTENT = {
   ko: {
@@ -8,6 +11,7 @@ const CONTENT = {
     contactLabel: '문의', contactValue: '프론트데스크 02-0000-0000 · 연중무휴 24시간',
     cinoutLabel: '체크인 / 체크아웃', cinoutValue: '체크인 15:00 · 체크아웃 11:00',
     pin: '📍 강남', directionsTitle: '오시는 길', nearbyTitle: '주변 명소',
+    mapTitle: '더 스테이 호텔', copy: '주소 복사', copied: '복사됨', openMap: '카카오맵에서 보기', route: '길찾기', mapFallback: '지도를 불러오지 못했습니다. 아래 주소와 외부 지도 링크를 이용해 주세요.',
     transport: [
       { icon: '🚇', label: '지하철', desc: '2호선 강남역 3번 출구에서 도보 5분' },
       { icon: '✈️', label: '공항', desc: '인천국제공항 리무진 약 70분 · 김포공항 약 40분' },
@@ -22,6 +26,7 @@ const CONTENT = {
     contactLabel: 'Contact', contactValue: 'Front desk 02-0000-0000 · Open 24/7',
     cinoutLabel: 'Check-in / Check-out', cinoutValue: 'Check-in 15:00 · Check-out 11:00',
     pin: '📍 Gangnam', directionsTitle: 'Getting here', nearbyTitle: 'Nearby',
+    mapTitle: 'The Stay Hotel', copy: 'Copy address', copied: 'Copied', openMap: 'Open Kakao Map', route: 'Directions', mapFallback: 'The map could not be loaded. Use the address and external map links below.',
     transport: [
       { icon: '🚇', label: 'Subway', desc: '5 min walk from Exit 3, Gangnam Station (Line 2)' },
       { icon: '✈️', label: 'Airport', desc: 'Incheon ~70 min by limousine · Gimpo ~40 min' },
@@ -30,6 +35,48 @@ const CONTENT = {
     ],
     nearby: ['COEX Mall', 'Bongeunsa Temple', 'Garosu-gil', 'Seolleung Royal Tombs', 'Starfield', 'Han River Park'],
   },
+}
+
+function KakaoMap({ c }) {
+  const mapRef = useRef(null)
+  const [loaded, setLoaded] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const key = import.meta.env.VITE_KAKAO_MAP_KEY
+
+  useEffect(() => {
+    if (!key) return
+    const init = () => window.kakao.maps.load(() => {
+      const position = new window.kakao.maps.LatLng(HOTEL.lat, HOTEL.lng)
+      const map = new window.kakao.maps.Map(mapRef.current, { center: position, level: 3 })
+      const marker = new window.kakao.maps.Marker({ position })
+      marker.setMap(map)
+      new window.kakao.maps.InfoWindow({ content: `<div class="kakao-info">${c.mapTitle}</div>` }).open(map, marker)
+      setLoaded(true)
+    })
+    if (window.kakao?.maps) { init(); return }
+    const script = document.createElement('script')
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false`
+    script.async = true
+    script.onload = init
+    document.head.appendChild(script)
+    return () => script.remove()
+  }, [c.mapTitle, key])
+
+  const address = c.addressValue.split('\n')[0]
+  const mapUrl = `https://map.kakao.com/link/map/${encodeURIComponent(c.mapTitle)},${HOTEL.lat},${HOTEL.lng}`
+  const routeUrl = `https://map.kakao.com/link/to/${encodeURIComponent(c.mapTitle)},${HOTEL.lat},${HOTEL.lng}`
+  return (
+    <section className="location-map-wrap" aria-label={c.mapTitle}>
+      <div ref={mapRef} className={`location-map${loaded ? ' loaded' : ''}`}>
+        {!loaded && <div className="map-fallback" style={{ backgroundImage: `linear-gradient(rgba(16,18,24,.55), rgba(16,18,24,.55)), url(${locationCity})` }}><span>{c.mapFallback}</span></div>}
+      </div>
+      <div className="map-actions">
+        <button type="button" onClick={async () => { await navigator.clipboard.writeText(address); setCopied(true) }}>{copied ? c.copied : c.copy}</button>
+        <a href={mapUrl} target="_blank" rel="noreferrer">{c.openMap}</a>
+        <a href={routeUrl} target="_blank" rel="noreferrer">{c.route}</a>
+      </div>
+    </section>
+  )
 }
 
 export default function LocationPage() {
@@ -61,9 +108,7 @@ export default function LocationPage() {
               <div className="loc-value">{c.cinoutValue}</div>
             </div>
           </div>
-          <div className="location-photo" style={{ backgroundImage: `url(${locationCity})` }}>
-            <span className="map-pin">{c.pin}</span>
-          </div>
+          <KakaoMap c={c} />
         </div>
 
         <h3 className="block-title left">{c.directionsTitle}</h3>

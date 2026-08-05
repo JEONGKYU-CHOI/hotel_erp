@@ -85,6 +85,35 @@
 
         .page-title { font-weight: 600; letter-spacing: -.01em; }
         .table > :not(caption) > * > * { padding: .7rem .75rem; }
+
+        .bo-menu-toggle { display: none; }
+        .bo-backdrop { display: none; }
+        @media (max-width: 1199px) and (min-width: 768px) {
+            .bo-sidebar { width: 76px; }
+            .bo-brand { justify-content: center; padding-inline: 10px; font-size: 0; }
+            .bo-brand i { font-size: 1.35rem; }
+            .bo-section { display: none; }
+            .bo-nav { padding-inline: 10px; }
+            .bo-nav a { justify-content: center; font-size: 0; padding: 12px 8px; }
+            .bo-nav a i { width: auto; font-size: 1.2rem; }
+            .bo-content { padding: 22px 20px 42px; }
+        }
+        @media (max-width: 767px) {
+            .bo-sidebar { position: fixed; z-index: 1050; left: 0; top: 0; width: min(280px, 86vw); transform: translateX(-105%); transition: transform .2s ease; }
+            body.bo-nav-open .bo-sidebar { transform: translateX(0); }
+            .bo-backdrop { position: fixed; inset: 0; z-index: 1040; border: 0; background: rgba(15,18,24,.48); }
+            body.bo-nav-open .bo-backdrop { display: block; }
+            .bo-menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
+            .bo-topbar { padding: 10px 14px; }
+            .bo-topbar .who { margin-left: 0; }
+            .bo-content { padding: 18px 12px 36px; overflow-x: hidden; }
+            .bo-content .row { --bs-gutter-x: .75rem; }
+            .bo-content .table-responsive, .bo-content .card { max-width: 100%; }
+            .bo-content table { min-width: 680px; }
+            .bo-content .card-body { padding: 1rem; }
+            .bo-content form .row > [class*="col-"] { width: 100%; }
+            .page-title { font-size: 1.25rem; }
+        }
     </style>
 </head>
 <body>
@@ -108,9 +137,14 @@
             <a th:href="@{/admin/basedata/booking-policy}"><i class="bi bi-clock-history"></i> 예약 정책</a>
         </nav>
     </aside>
+    <button class="bo-backdrop" type="button" aria-label="메뉴 닫기"></button>
 
     <div class="bo-main">
         <header class="bo-topbar">
+            <button class="btn btn-sm btn-outline-secondary bo-menu-toggle" type="button"
+                    aria-label="관리 메뉴 열기" aria-expanded="false" aria-controls="bo-sidebar">
+                <i class="bi bi-list"></i>
+            </button>
             <span class="who"><i class="bi bi-person-circle me-1"></i><span sec:authentication="name">사용자</span></span>
             <form th:action="@{/logout}" method="post" class="m-0">
                 <button class="btn btn-sm btn-outline-secondary" type="submit">로그아웃</button>
@@ -142,12 +176,31 @@
         var links = Array.prototype.slice.call(document.querySelectorAll('.bo-nav a[href]'));
         var best = null;
         links.forEach(function (a) {
+            // 태블릿 아이콘 레일에서는 텍스트가 시각적으로 숨으므로 기본 툴팁을 제공한다.
+            if (!a.title) a.title = a.textContent.trim();
             var href = a.getAttribute('href');
             if (href === '#') return;
             var match = href === '/admin' ? path === '/admin' : path.indexOf(href) === 0;
             if (match && (!best || href.length > best.getAttribute('href').length)) best = a;
         });
         if (best) best.classList.add('active');
+    })();
+
+    // 모바일 PMS 사이드바. 태블릿은 아이콘 레일, 모바일은 오프캔버스로 동작한다.
+    (function () {
+        var toggle = document.querySelector('.bo-menu-toggle');
+        var backdrop = document.querySelector('.bo-backdrop');
+        var sidebar = document.querySelector('.bo-sidebar');
+        if (!toggle || !sidebar) return;
+        sidebar.id = 'bo-sidebar';
+        function setOpen(open) {
+            document.body.classList.toggle('bo-nav-open', open);
+            toggle.setAttribute('aria-expanded', String(open));
+        }
+        toggle.addEventListener('click', function () { setOpen(!document.body.classList.contains('bo-nav-open')); });
+        backdrop.addEventListener('click', function () { setOpen(false); });
+        sidebar.addEventListener('click', function (e) { if (e.target.closest('a')) setOpen(false); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
     })();
 </script>
 </body>

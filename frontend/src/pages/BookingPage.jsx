@@ -6,6 +6,12 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import HoldCountdown from '../components/HoldCountdown.jsx'
 import { useI18n } from '../i18n/I18nContext.jsx'
 import { pickName } from '../i18n/messages.js'
+import { formatKoreanMobile, isValidEmail, isValidKoreanMobile } from '../validation.js'
+import roomStdt from '../assets/room-stdt.jpg'
+import roomDlxd from '../assets/room-dlxd.jpg'
+import roomExsu from '../assets/room-exsu.jpg'
+
+const ROOM_FALLBACK = { STDT: roomStdt, DLXD: roomDlxd, EXSU: roomExsu }
 
 // 백엔드 상태코드 → i18n 키. 여러 화면이 공유하는 매핑.
 const STATUS_KEY = {
@@ -35,6 +41,8 @@ export default function BookingPage() {
 
   const [ratePlans, setRatePlans] = useState([])
   const [ratePlanId, setRatePlanId] = useState('')
+  const [availability, setAvailability] = useState(null)
+  const [loadingQuote, setLoadingQuote] = useState(true)
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
@@ -61,9 +69,14 @@ export default function BookingPage() {
 
   useEffect(() => {
     if (!state?.roomTypeId) return
-    api.ratePlans(state.roomTypeId)
-      .then((plans) => {
+    setLoadingQuote(true)
+    Promise.all([
+      api.ratePlans(state.roomTypeId),
+      api.availability(state.roomTypeId, state.checkIn, state.checkOut),
+    ])
+      .then(([plans, available]) => {
         setRatePlans(plans)
+        setAvailability(available)
         // 프로모션/패키지에서 넘어오면 그 요금제를 선택, 아니면 첫 요금제.
         const preset = state?.ratePlanId && plans.some((p) => String(p.id) === String(state.ratePlanId))
           ? String(state.ratePlanId)
@@ -71,6 +84,7 @@ export default function BookingPage() {
         setRatePlanId(preset)
       })
       .catch((e) => setError(e.message))
+      .finally(() => setLoadingQuote(false))
   }, [state])
 
   async function submit(e) {
@@ -81,12 +95,20 @@ export default function BookingPage() {
       setError(t('book.err.maxOcc', { max: maxOccupancy }))
       return
     }
+    if (!member && (!guestName.trim() || !isValidKoreanMobile(guestPhone) || !isValidEmail(guestEmail))) {
+      setError(t('book.guest.validation'))
+      return
+    }
+    if (!availability || availability.bookableQty < 1) {
+      setError(t('book.result.soldout'))
+      return
+    }
     setSubmitting(true)
     try {
       const res = await api.hold({
-        guestName,
-        guestPhone,
-        guestEmail: guestEmail || null,
+        guestName: member?.name || guestName.trim(),
+        guestPhone: member?.phone || guestPhone,
+        guestEmail: member?.email || guestEmail.trim(),
         roomTypeId: Number(state.roomTypeId),
         ratePlanId: Number(ratePlanId),
         checkInDate: state.checkIn,
@@ -112,6 +134,18 @@ export default function BookingPage() {
         reservationNo: hold.reservationNo,
         amount: hold.totalAmount,
         orderName: `${pickName(lang, state.roomTypeName, state.roomTypeNameEn)} ${t('fmt.nights', { n: hold.nightCount })}`,
+        summary: {
+          reservationNo: hold.reservationNo,
+          roomName: roomDisplayName,
+          imageUrl: roomImage,
+          ratePlanName: selectedPlan ? pickName(lang, selectedPlan.name, selectedPlan.nameEn) : '',
+          checkIn: state.checkIn,
+          checkOut: state.checkOut,
+          nights: hold.nightCount,
+          adults: Number(adults),
+          children: Number(children),
+          amount: hold.totalAmount,
+        },
       })
     } catch (err) {
       // 사용자가 결제창을 닫으면 에러가 온다 — 조용히 메시지만 표시한다.
@@ -121,10 +155,34 @@ export default function BookingPage() {
 
   if (!state?.roomTypeId) return null
 
+  const selectedPlan = ratePlans.find((p) => String(p.id) === String(ratePlanId))
+  const roomDisplayName = pickName(lang, state.roomTypeName, state.roomTypeNameEn)
+  const roomImage = state.imageUrls?.[0] || ROOM_FALLBACK[state.roomTypeCode] || roomStdt
+  const nights = Math.max(1, Math.round((new Date(state.checkOut) - new Date(state.checkIn)) / 86400000))
+  const estimatedTotal = selectedPlan ? Number(selectedPlan.baseAmount) * nights : null
+
+  const bookingSummary = (
+    <aside className="booking-summary-card" aria-label={t('book.summary.title')}>
+      <img src={roomImage} alt="" className="booking-summary-image" />
+      <div className="booking-summary-body">
+        <span className="booking-summary-kicker">{t('book.summary.title')}</span>
+        <h2>{roomDisplayName}</h2>
+        <dl>
+          <div><dt>{t('book.field.period')}</dt><dd>{state.checkIn} ~ {state.checkOut}</dd></div>
+          <div><dt>{t('book.summary.guests')}</dt><dd>{t('book.summary.guestCount', { adults, children })}</dd></div>
+          <div><dt>{t('book.field.ratePlan')}</dt><dd>{selectedPlan ? pickName(lang, selectedPlan.name, selectedPlan.nameEn) : '-'}</dd></div>
+          <div><dt>{t('book.field.amount')}</dt><dd>{estimatedTotal == null ? '-' : `${money(estimatedTotal)} ${t('book.summary.estimate')}`}</dd></div>
+        </dl>
+      </div>
+    </aside>
+  )
+
   // HOLD 성공 — 예약번호·만료·총액을 보여주고 결제로 잇는다.
   if (hold) {
     return (
-      <div className="card">
+      <div className="booking-page-grid">
+        {bookingSummary}
+        <div className="card">
         <h1>{t('book.hold.title')}</h1>
         <p className="muted">{t('book.hold.expireNote')}</p>
         <dl className="hold-summary">
@@ -147,16 +205,24 @@ export default function BookingPage() {
           <button type="button" className="cta" onClick={pay}>{t('book.pay')}</button>
         )}
         <p><Link to="/">{t('book.searchAgain')}</Link></p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="card">
+    <div className="booking-page-grid">
+      {bookingSummary}
+      <div className="card">
       <h1>{t('book.guest.title')}</h1>
-      <p className="muted">
-        {pickName(lang, state.roomTypeName, state.roomTypeNameEn)} · {state.checkIn} ~ {state.checkOut}
-      </p>
+
+      {loadingQuote && <p className="muted">{t('book.loading')}</p>}
+      {!loadingQuote && availability?.bookableQty < 1 && (
+        <div className="booking-unavailable">
+          <p className="error">⚠ {t('book.result.soldout')}</p>
+          <button type="button" className="cta" onClick={() => navigate('/')}>{t('book.researchDates')}</button>
+        </div>
+      )}
 
       <form className="book-form" onSubmit={submit}>
         <label>
@@ -173,21 +239,28 @@ export default function BookingPage() {
           </select>
         </label>
 
-        <label>
-          {t('book.field.guestName')}
-          <input value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
-        </label>
-
-        <label>
-          {t('book.field.phone')}
-          <input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)}
-                 placeholder="010-1234-5678" required />
-        </label>
-
-        <label>
-          {t('book.field.email')}
-          <input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} />
-        </label>
+        {member ? (
+          <div className="member-booking-info">
+            <strong>{t('book.memberInfo.title')}</strong>
+            <span>{member.name} · {member.phone} · {member.email}</span>
+          </div>
+        ) : (
+          <>
+            <label>
+              {t('book.field.guestName')}
+              <input value={guestName} onChange={(e) => setGuestName(e.target.value)} autoComplete="name" required />
+            </label>
+            <label>
+              {t('book.field.phone')}
+              <input value={guestPhone} onChange={(e) => setGuestPhone(formatKoreanMobile(e.target.value))}
+                     placeholder="010-1234-5678" inputMode="tel" autoComplete="tel" maxLength={13} required />
+            </label>
+            <label>
+              {t('book.field.email')}
+              <input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} autoComplete="email" required />
+            </label>
+          </>
+        )}
 
         <div className="pax">
           <label>
@@ -206,11 +279,12 @@ export default function BookingPage() {
 
         {error && <p className="error">⚠ {error}</p>}
 
-        <button type="submit" className="cta" disabled={submitting || !ratePlanId}>
+        <button type="submit" className="cta" disabled={submitting || loadingQuote || !ratePlanId || availability?.bookableQty < 1}>
           {submitting ? t('book.submitting') : t('book.holdCta')}
         </button>
       </form>
       <p><Link to="/">{t('book.backToSearch')}</Link></p>
+      </div>
     </div>
   )
 }

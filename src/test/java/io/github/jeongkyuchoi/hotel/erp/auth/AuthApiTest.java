@@ -82,6 +82,16 @@ class AuthApiTest {
 	}
 
 	@Test
+	@DisplayName("회원가입 잘못된 휴대전화 → 400 VALIDATION")
+	void signup_invalidPhone_validationError() throws Exception {
+		mockMvc.perform(post("/api/auth/signup")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(signupJson(EMAIL, PASSWORD).replace("010-1234-5678", "02-1234-5678")))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.fields.phone").isNotEmpty());
+	}
+
+	@Test
 	@DisplayName("중복 이메일 회원가입 → 409 CONFLICT")
 	void signup_duplicate_conflict() throws Exception {
 		signup(EMAIL, PASSWORD);

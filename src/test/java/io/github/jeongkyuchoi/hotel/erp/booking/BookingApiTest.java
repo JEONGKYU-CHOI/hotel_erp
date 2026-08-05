@@ -138,6 +138,20 @@ class BookingApiTest {
 	}
 
 	@Test
+	@DisplayName("POST 검증 실패(잘못된 이메일·휴대전화) → 400 VALIDATION")
+	void hold_contactValidationError() throws Exception {
+		String invalid = holdJson("홍길동", "api-bad-contact")
+				.replace(PHONE, "02-1234-5678")
+				.replace("gil@example.com", "not-an-email");
+		mockMvc.perform(post("/api/reservations")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(invalid))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.fields.guestPhone").isNotEmpty())
+				.andExpect(jsonPath("$.fields.guestEmail").isNotEmpty());
+	}
+
+	@Test
 	@DisplayName("재고 부족 HOLD → 409 NO_INVENTORY (경합의 정상 결과)")
 	void hold_noInventory_conflict() throws Exception {
 		// 재고 1개를 첫 HOLD 가 가져간다.

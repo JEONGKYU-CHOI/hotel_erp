@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import { useI18n } from '../i18n/I18nContext.jsx'
+import { formatKoreanMobile, isValidEmail, isValidKoreanMobile } from '../validation.js'
 
 // 회원가입. 백엔드는 가입만 하고 로그인시키지 않으므로(D-009), 성공 후 곧바로 로그인까지
 // 이어 붙여 사용자를 원래 흐름(from)으로 돌려보낸다.
@@ -18,12 +19,22 @@ export default function SignupPage() {
   const [fields, setFields] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  const set = (k) => (e) => setForm((f) => ({
+    ...f,
+    [k]: k === 'phone' ? formatKoreanMobile(e.target.value) : e.target.value,
+  }))
 
   async function submit(e) {
     e.preventDefault()
     setError(null)
     setFields(null)
+    const validationFields = {}
+    if (!isValidEmail(form.email)) validationFields.email = '이메일 형식이 올바르지 않습니다.'
+    if (!isValidKoreanMobile(form.phone)) validationFields.phone = '휴대전화는 010-1234-5678 형식으로 입력하세요.'
+    if (Object.keys(validationFields).length) {
+      setFields(validationFields)
+      return
+    }
     setSubmitting(true)
     try {
       await api.signup(form)
@@ -61,7 +72,8 @@ export default function SignupPage() {
         <label>
           {t('auth.field.phone')}
           <input value={form.phone} onChange={set('phone')}
-                 placeholder="010-1234-5678" required />
+                 placeholder="010-1234-5678" inputMode="tel" autoComplete="tel"
+                 maxLength={13} required />
           {fields?.phone && <span className="field-error">{fields.phone}</span>}
         </label>
         {error && <p className="error">⚠ {error}</p>}

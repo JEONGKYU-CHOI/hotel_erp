@@ -7,6 +7,7 @@ import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 /**
@@ -24,8 +25,10 @@ public record HoldRequest(
 		String guestName,
 
 		@NotBlank(message = "연락처는 필수입니다.")
+		@Pattern(regexp = "^010-?\\d{4}-?\\d{4}$", message = "휴대전화는 010-1234-5678 형식으로 입력하세요.")
 		String guestPhone,
 
+		@NotBlank(message = "이메일은 필수입니다.")
 		@Email(message = "이메일 형식이 올바르지 않습니다.")
 		String guestEmail,
 
@@ -62,6 +65,14 @@ public record HoldRequest(
 	public ReservationHoldCommand toCommand(Long memberId) {
 		return new ReservationHoldCommand(
 				memberId, guestName, guestPhone, guestEmail,
+				roomTypeId, ratePlanId, checkInDate, checkOutDate,
+				adults, children, idempotencyKey);
+	}
+
+	/** 로그인 회원의 예약자 정보는 클라이언트 입력이 아니라 서버의 회원 프로필을 신뢰한다. */
+	public ReservationHoldCommand toCommand(Long memberId, String name, String phone, String email) {
+		return new ReservationHoldCommand(
+				memberId, name, phone, email,
 				roomTypeId, ratePlanId, checkInDate, checkOutDate,
 				adults, children, idempotencyKey);
 	}

@@ -35,6 +35,8 @@
 .brand:hover {
   color: var(--accent-dark);
 }
+.nav-drawer { flex: 1; display: flex; align-items: center; min-width: 0; }
+.nav-toggle { display: none; }
 .topnav {
   display: flex;
   align-items: center;
@@ -43,12 +45,6 @@
 /* 주 메뉴: 브랜드에서 한 칸 떨어져 왼쪽에 붙는다. 유틸: 오른쪽으로 밀어낸다. */
 .topnav-main { margin-left: clamp(28px, 5vw, 64px); }
 .topnav-util { margin-left: auto; }
-@media (max-width: 760px) {
-  .topbar { flex-wrap: wrap; gap: 12px 18px; }
-  .topnav-main { margin-left: 0; order: 3; width: 100%; }
-  .topnav-util { gap: 14px; }
-  .topnav a, .topnav .linkbtn { font-size: 0.76rem; }
-}
 .topnav a,
 .topnav .linkbtn {
   position: relative;
@@ -88,9 +84,68 @@
   text-transform: none;
 }
 
+/* 태블릿·모바일 내비게이션: 좁은 폭에서 링크를 억지로 줄이지 않고 드로어로 전환한다. */
+@media (max-width: 1199px) {
+  .topbar { justify-content: space-between; }
+  .nav-toggle {
+    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 13px;
+    font: 600 .8rem var(--sans); cursor: pointer;
+  }
+  .nav-toggle-lines { display: grid; gap: 3px; width: 16px; }
+  .nav-toggle-lines i { display: block; height: 1.5px; background: currentColor; }
+  .nav-drawer {
+    display: none; position: absolute; top: calc(100% + 8px); right: clamp(16px, 5vw, 56px);
+    width: min(420px, calc(100vw - 32px)); padding: 18px; border: 1px solid var(--border);
+    border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg);
+  }
+  .nav-drawer.open { display: grid; gap: 16px; }
+  .topnav { flex-wrap: wrap; gap: 10px 18px; }
+  .topnav-main, .topnav-util { margin-left: 0; }
+  .topnav-main { padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 767px) {
+  .topbar { padding-block: 12px; }
+  .brand { font-size: 1.3rem; }
+  .nav-drawer { position: fixed; top: 65px; left: 12px; right: 12px; width: auto; max-height: calc(100dvh - 86px); overflow-y: auto; }
+  .topnav { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
+  .topnav a, .topnav .linkbtn, .topnav .who { padding: 9px 6px; font-size: .82rem; }
+  .topnav-util .reserve-cta { grid-column: 1 / -1; }
+}
+
 .content {
   flex: 1;
   width: 100%;
+}
+
+/* ---- 예약 검토 2열 --------------------------------------------------- */
+.booking-page-grid {
+  width: min(1080px, calc(100% - 32px)); margin: 48px auto;
+  display: grid; grid-template-columns: minmax(280px, .85fr) minmax(360px, 1.15fr);
+  gap: 24px; align-items: start;
+}
+.booking-page-grid, .booking-page-grid * { box-sizing: border-box; }
+.booking-page-grid > * { min-width: 0; }
+.booking-page-grid > .card { width: 100%; max-width: none; margin: 0; }
+.booking-summary-card { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.booking-summary-image { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; }
+.booking-summary-body { padding: 22px; }
+.booking-summary-kicker { color: var(--accent-dark); font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.booking-summary-body h2 { margin: 6px 0 16px; font-family: var(--serif); }
+.booking-summary-body dl { display: grid; gap: 10px; margin: 0; }
+.booking-summary-body dl div { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid var(--border); padding-top: 10px; }
+.booking-summary-body dt { color: var(--muted); font-size: .8rem; }
+.booking-summary-body dd { margin: 0; text-align: right; color: var(--ink); font-size: .86rem; font-weight: 600; }
+.member-booking-info { display: grid; gap: 5px; padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); color: var(--body); }
+.booking-unavailable { padding: 14px; border: 1px solid var(--border); border-radius: 10px; }
+@media (max-width: 1023px) {
+  .booking-page-grid { grid-template-columns: 1fr; max-width: 720px; }
+  .booking-summary-card { display: grid; grid-template-columns: minmax(220px, .8fr) 1.2fr; }
+}
+@media (max-width: 767px) {
+  .booking-page-grid { width: min(100% - 24px, 560px); margin: 24px auto 88px; gap: 14px; }
+  .booking-summary-card { display: block; }
+  .booking-page-grid > .card, .booking-summary-body { padding: 18px; }
 }
 
 /* ---- 히어로 (랜딩) ----------------------------------------------------- */
@@ -824,6 +879,12 @@
 .location-grid {
   display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; align-items: stretch;
 }
+.location-map-wrap { min-width: 0; }
+.location-map { height: 360px; border-radius: var(--radius-lg); overflow: hidden; background: var(--accent-soft); }
+.map-fallback { width: 100%; height: 100%; display: grid; place-items: center; padding: 28px; background-size: cover; background-position: center; color: #fff; text-align: center; }
+.kakao-info { min-width: 130px; padding: 8px 10px; text-align: center; color: #17140f; font: 600 13px sans-serif; }
+.map-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.map-actions a, .map-actions button { border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--ink); padding: 8px 13px; font: 600 .82rem var(--sans); cursor: pointer; text-decoration: none; }
 .location-info {
   display: flex; flex-direction: column; gap: 22px; justify-content: center;
 }
@@ -943,6 +1004,23 @@
 .foot-linkbtn:hover { color: var(--accent-dark); }
 
 .mobile-reserve { display: none; }
+
+/* 데스크톱 긴 페이지의 맨 위로 이동 버튼. 모바일·태블릿에는 고정 CTA 공간을 양보한다. */
+.scroll-top {
+  display: none; position: fixed; right: 28px; bottom: 28px; z-index: 45;
+  width: 48px; height: 48px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%;
+  background: rgba(23,20,15,.9); color: #fff; box-shadow: var(--shadow-lg);
+  font: 500 1.35rem/1 var(--sans); cursor: pointer; opacity: 0; visibility: hidden;
+  transform: translateY(10px); transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+.scroll-top:hover { background: var(--accent-dark); transform: translateY(-2px); }
+@media (min-width: 1200px) {
+  .scroll-top { display: grid; place-items: center; }
+  .scroll-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-top { transition: none; }
+}
 
 .bookingform-bar .bookingform-result { max-width: 1040px; margin: 22px auto 0; padding: 0 24px; }
 

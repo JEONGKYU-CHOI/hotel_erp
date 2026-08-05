@@ -11,6 +11,10 @@ export default function PaymentSuccessPage() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const { t } = useI18n()
+  const paymentSummary = (() => {
+    try { return JSON.parse(sessionStorage.getItem('hotel.paymentSummary') || 'null') }
+    catch { return null }
+  })()
 
   // StrictMode 는 이펙트를 두 번 부른다 — 승인 호출이 두 번 나가지 않게 막는다
   // (서버도 멱등이지만 불필요한 두 번째 요청을 아낀다).
@@ -56,7 +60,22 @@ export default function PaymentSuccessPage() {
   }
 
   return (
-    <div className="card">
+    <div className="booking-page-grid payment-result-grid">
+      {paymentSummary && paymentSummary.reservationNo === result.orderId && (
+        <aside className="booking-summary-card">
+          {paymentSummary.imageUrl && <img src={paymentSummary.imageUrl} alt="" className="booking-summary-image" />}
+          <div className="booking-summary-body">
+            <span className="booking-summary-kicker">{t('book.summary.title')}</span>
+            <h2>{paymentSummary.roomName}</h2>
+            <dl>
+              <div><dt>{t('book.field.period')}</dt><dd>{paymentSummary.checkIn} ~ {paymentSummary.checkOut}</dd></div>
+              <div><dt>{t('book.field.ratePlan')}</dt><dd>{paymentSummary.ratePlanName}</dd></div>
+              <div><dt>{t('book.summary.guests')}</dt><dd>{t('book.summary.guestCount', { adults: paymentSummary.adults, children: paymentSummary.children })}</dd></div>
+            </dl>
+          </div>
+        </aside>
+      )}
+      <div className="card">
       <h1>{t('pay.success.title')}</h1>
       <dl className="hold-summary">
         <div><dt>{t('book.field.resNo')}</dt><dd>{result.orderId}</dd></div>
@@ -68,6 +87,7 @@ export default function PaymentSuccessPage() {
         {'  ·  '}
         <Link to="/">{t('pay.home')}</Link>
       </p>
+      </div>
     </div>
   )
 }

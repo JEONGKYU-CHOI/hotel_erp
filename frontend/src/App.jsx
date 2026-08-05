@@ -1,4 +1,5 @@
-import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import SearchPage from './pages/SearchPage.jsx'
 import RoomsPage from './pages/RoomsPage.jsx'
 import PromotionsPage from './pages/PromotionsPage.jsx'
@@ -75,6 +76,31 @@ function MobileReserveBar() {
   )
 }
 
+// 데스크톱 전용 맨 위로 버튼. 긴 콘텐츠에서 480px 이상 내려갔을 때만 나타난다.
+function ScrollToTopButton() {
+  const [visible, setVisible] = useState(false)
+  const { t } = useI18n()
+
+  useEffect(() => {
+    const update = () => setVisible(window.scrollY > 480)
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [])
+
+  return (
+    <button
+      type="button"
+      className={`scroll-top${visible ? ' visible' : ''}`}
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      aria-label={t('a11y.scrollTop')}
+      title={t('a11y.scrollTop')}
+    >
+      <span aria-hidden="true">↑</span>
+    </button>
+  )
+}
+
 // 푸터 "예약하기" — 모달을 연다.
 function FooterReserve() {
   const { openBooking } = useBooking()
@@ -89,30 +115,56 @@ function FooterReserve() {
 // 부킹엔진 셸 — 상단 바 + 라우트. 예약은 어디서든 BookingProvider 의 모달로 통일한다.
 function AppShell() {
   const { t } = useI18n()
+  const [navOpen, setNavOpen] = useState(false)
+  const drawerRef = useRef(null)
+  const location = useLocation()
+
+  useEffect(() => setNavOpen(false), [location.pathname])
+  useEffect(() => {
+    if (!navOpen) return
+    const close = (e) => {
+      if (e.key === 'Escape') setNavOpen(false)
+      if (e.type === 'pointerdown'
+          && !drawerRef.current?.contains(e.target)
+          && !e.target.closest?.('.nav-toggle')) setNavOpen(false)
+    }
+    document.addEventListener('keydown', close)
+    document.addEventListener('pointerdown', close)
+    return () => {
+      document.removeEventListener('keydown', close)
+      document.removeEventListener('pointerdown', close)
+    }
+  }, [navOpen])
+
   return (
     <BookingProvider>
       <div className="booking-shell">
         <a href="#main" className="skip-link">{t('a11y.skip')}</a>
         <header className="topbar">
           <Link to="/" className="brand">더 스테이</Link>
-          <nav className="topnav topnav-main" aria-label={t('a11y.mainMenu')}>
-            <Link to="/rooms">{t('nav.rooms')}</Link>
-            <Link to="/packages">{t('nav.packages')}</Link>
-            <Link to="/dining">{t('nav.dining')}</Link>
-            <Link to="/facilities">{t('nav.facilities')}</Link>
-            <Link to="/location">{t('nav.location')}</Link>
-            <Link to="/gallery">{t('nav.gallery')}</Link>
-            <Link to="/about">{t('nav.about')}</Link>
-            {/* 후기 페이지 당분간 숨김 — 라우트·페이지는 유지, 링크만 감춤(복구 시 주석 해제) */}
-            {/* <Link to="/reviews">{t('nav.reviews')}</Link> */}
-          </nav>
-          <nav className="topnav topnav-util" aria-label={t('a11y.utilMenu')}>
-            <Link to="/faq">{t('nav.faq')}</Link>
-            <Link to="/lookup">{t('nav.lookup')}</Link>
-            <AuthNav />
-            <LangToggle />
-            <ReserveCTA />
-          </nav>
+          <button type="button" className="nav-toggle" aria-expanded={navOpen}
+                  aria-controls="booking-navigation" onClick={() => setNavOpen((v) => !v)}>
+            <span className="nav-toggle-lines" aria-hidden="true"><i /><i /><i /></span>
+            <span>{t('nav.menu')}</span>
+          </button>
+          <div id="booking-navigation" ref={drawerRef} className={`nav-drawer${navOpen ? ' open' : ''}`}>
+            <nav className="topnav topnav-main" aria-label={t('a11y.mainMenu')}>
+              <Link to="/rooms">{t('nav.rooms')}</Link>
+              <Link to="/packages">{t('nav.packages')}</Link>
+              <Link to="/dining">{t('nav.dining')}</Link>
+              <Link to="/facilities">{t('nav.facilities')}</Link>
+              <Link to="/location">{t('nav.location')}</Link>
+              <Link to="/gallery">{t('nav.gallery')}</Link>
+              <Link to="/about">{t('nav.about')}</Link>
+            </nav>
+            <nav className="topnav topnav-util" aria-label={t('a11y.utilMenu')}>
+              <Link to="/faq">{t('nav.faq')}</Link>
+              <Link to="/lookup">{t('nav.lookup')}</Link>
+              <AuthNav />
+              <LangToggle />
+              <ReserveCTA />
+            </nav>
+          </div>
         </header>
         <main className="content" id="main">
           <Routes>
@@ -166,6 +218,7 @@ function AppShell() {
           </div>
           <div className="foot-base">{t('footer.copyright')}</div>
         </footer>
+        <ScrollToTopButton />
         <MobileReserveBar />
       </div>
     </BookingProvider>
