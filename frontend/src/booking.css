@@ -1388,3 +1388,44 @@ summary:focus-visible,
 .lang-toggle:hover { border-color: var(--accent); color: var(--accent-dark); }
 /* 사전 문자열의 줄바꿈(\n)을 그대로 렌더 — 푸터 태그라인·주소. */
 .foot-tagline { white-space: pre-line; }
+
+/* 회원가입 수신 동의 체크박스 행 — 라벨을 가로로, 문구는 작게. */
+.checkbox-row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: .5rem;
+  font-size: .82rem;
+  color: var(--muted, #666);
+  cursor: pointer;
+}
+.checkbox-row input[type="checkbox"] { width: auto; margin-top: .15rem; flex: none; }
+
+/* 비밀번호 입력: 오른쪽에 실시간 충족 체크(✓) + 표시/숨김 토글. */
+.password-wrap { position: relative; display: block; }
+.password-wrap input { width: 100%; padding-right: 4.2rem; box-sizing: border-box; }
+.password-check {
+  position: absolute; top: 50%; right: 2.6rem; transform: translateY(-50%);
+  color: #1a9e4b; font-weight: 700; font-size: 1.05rem; line-height: 1;
+  pointer-events: none;
+}
+.password-toggle {
+  position: absolute; top: 50%; right: .6rem; transform: translateY(-50%);
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-size: 1.1rem; line-height: 1; opacity: .75;
+}
+.password-toggle:hover { opacity: 1; }
+
+/* 성별 라디오 그룹 — 초기 미선택, 가로 배치. */
+.radio-group { border: none; padding: 0; margin: 0; }
+.radio-group legend { padding: 0; margin-bottom: .35rem; }
+.radio-options { display: flex; flex-wrap: wrap; gap: 1rem; }
+.radio-option {
+  display: inline-flex; align-items: center; gap: .4rem;
+  cursor: pointer; font-weight: 400;
+}
+.radio-option input[type="radio"] { width: auto; margin: 0; flex: none; }
+
+/* 검증 통과·선택 완료 안내(초록). field-error 와 짝. */
+.field-ok { color: #1a9e4b; font-size: .8rem; margin-top: .25rem; }
+/* 비밀번호 확인칸 체크는 토글이 없으므로 오른쪽 끝에. */
+.confirm-check { right: .7rem; }

@@ -30,7 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class AuthApiTest {
 
 	private static final String EMAIL = "gil@example.com";
-	private static final String PASSWORD = "password123";
+	private static final String PASSWORD = "password123!";
 
 	@Autowired private MockMvc mockMvc;
 	@Autowired private MemberRepository memberRepository;
@@ -42,7 +42,7 @@ class AuthApiTest {
 
 	private String signupJson(String email, String password) {
 		return """
-				{"email":"%s","password":"%s","name":"홍길동","phone":"010-1234-5678"}
+				{"email":"%s","password":"%s","name":"홍길동","phone":"010-1234-5678","gender":"MALE","birthDate":"1990-01-01"}
 				""".formatted(email, password);
 	}
 
@@ -97,7 +97,7 @@ class AuthApiTest {
 		signup(EMAIL, PASSWORD);
 		mockMvc.perform(post("/api/auth/signup")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(signupJson(EMAIL, "another123")))
+						.content(signupJson(EMAIL, "another123!")))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("CONFLICT"));
 	}

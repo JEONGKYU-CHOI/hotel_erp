@@ -40,7 +40,7 @@ class MemberReservationTest {
 	private static final LocalDate CHECK_IN = LocalDate.now().plusDays(30);
 	private static final LocalDate CHECK_OUT = CHECK_IN.plusDays(1);
 	private static final String EMAIL = "gil@example.com";
-	private static final String PASSWORD = "password123";
+	private static final String PASSWORD = "password123!";
 
 	@Autowired private MockMvc mockMvc;
 	@Autowired private MemberRepository memberRepository;
@@ -82,7 +82,7 @@ class MemberReservationTest {
 	private String token() throws Exception {
 		mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"email":"%s","password":"%s","name":"홍길동","phone":"010-1234-5678"}
+								{"email":"%s","password":"%s","name":"홍길동","phone":"010-1234-5678","gender":"MALE","birthDate":"1990-01-01"}
 								""".formatted(EMAIL, PASSWORD)))
 				.andExpect(status().isCreated());
 		String body = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)

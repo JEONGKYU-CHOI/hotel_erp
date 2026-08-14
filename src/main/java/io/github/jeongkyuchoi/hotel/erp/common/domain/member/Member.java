@@ -54,23 +54,50 @@ public class Member extends BaseEntity {
 	@Column(name = "phone", nullable = false, length = 20)
 	private String phone;
 
+	/** 성별 (추천 메일 근거 데이터). 기존 회원은 NULL 일 수 있다. */
+	@Enumerated(EnumType.STRING)
+	@Column(name = "gender", length = 10)
+	private Gender gender;
+
+	/** 생년월일 (나이 계산용). 기존 회원은 NULL 일 수 있다. */
+	@Column(name = "birth_date")
+	private java.time.LocalDate birthDate;
+
+	/** 마케팅(추천 메일) 수신 동의. 명시적으로 동의한 회원만 true. */
+	@Column(name = "marketing_consent", nullable = false)
+	private boolean marketingConsent;
+
+	/** 수신거부 링크 토큰(UUID). 가입 시 발급하고, 로그인 없이 옵트아웃에 쓴다. */
+	@Column(name = "unsubscribe_token", length = 36)
+	private String unsubscribeToken;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	private MemberStatus status;
 
 	@Builder
 	private Member(Long tenantId, String email, String passwordHash, String name,
-			String phone, MemberStatus status) {
+			String phone, Gender gender, java.time.LocalDate birthDate,
+			boolean marketingConsent, String unsubscribeToken, MemberStatus status) {
 		this.tenantId = tenantId;
 		this.email = email;
 		this.passwordHash = passwordHash;
 		this.name = name;
 		this.phone = phone;
+		this.gender = gender;
+		this.birthDate = birthDate;
+		this.marketingConsent = marketingConsent;
+		this.unsubscribeToken = unsubscribeToken;
 		this.status = status;
 	}
 
 	/** 로그인 가능한 상태인가. */
 	public boolean canLogin() {
 		return status == MemberStatus.ACTIVE;
+	}
+
+	/** 수신거부 처리 — 마케팅 수신 동의를 내린다. 멱등(이미 false 여도 무해). */
+	public void optOutMarketing() {
+		this.marketingConsent = false;
 	}
 }

@@ -46,11 +46,34 @@ public class MemberAuthService {
 				.passwordHash(passwordEncoder.encode(request.password()))
 				.name(request.name())
 				.phone(request.phone())
+				.gender(request.gender())
+				.birthDate(request.birthDate())
+				.marketingConsent(request.marketingConsentOrFalse())
+				// 수신거부 링크 토큰은 가입 시 항상 발급한다(동의 여부와 무관).
+				.unsubscribeToken(java.util.UUID.randomUUID().toString())
 				.status(MemberStatus.ACTIVE)
 				.build();
 		Member saved = memberRepository.save(member);
-		log.info("회원가입: id={} email={}", saved.getId(), saved.getEmail());
+		log.info("회원가입: id={} email={} marketingConsent={}",
+				saved.getId(), saved.getEmail(), saved.isMarketingConsent());
 		return saved;
+	}
+
+	/**
+	 * 수신거부(옵트아웃). 토큰으로 회원을 찾아 마케팅 수신 동의를 내린다.
+	 *
+	 * <p>멱등하다 — 없는/이미 해지된 토큰이어도 조용히 성공 취급한다(이메일 링크 클릭이므로
+	 * 존재 여부를 응답으로 흘리지 않는다).
+	 */
+	@Transactional
+	public void unsubscribe(String token) {
+		if (token == null || token.isBlank()) {
+			return;
+		}
+		memberRepository.findByUnsubscribeToken(token).ifPresent(member -> {
+			member.optOutMarketing();
+			log.info("마케팅 수신거부: id={}", member.getId());
+		});
 	}
 
 	/**

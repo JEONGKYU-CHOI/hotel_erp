@@ -11,4 +11,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
 	/** 회원가입 중복 이메일 선검사. 유니크 제약 {@code uk_member_email} 이 최후에 막는다. */
 	boolean existsByTenantIdAndEmail(Long tenantId, String email);
+
+	/** 수신거부 링크 토큰으로 회원을 찾는다(로그인 없이 옵트아웃). */
+	Optional<Member> findByUnsubscribeToken(String unsubscribeToken);
 }

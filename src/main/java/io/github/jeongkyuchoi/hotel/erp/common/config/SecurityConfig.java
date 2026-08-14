@@ -70,6 +70,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						// 회원가입·로그인은 인증 전 경로다.
 						.requestMatchers("/api/auth/**").permitAll()
+						// 마케팅 수신거부 — 메일 링크에서 토큰만으로 호출하는 공개 경로.
+						.requestMatchers(HttpMethod.GET, "/api/marketing/unsubscribe").permitAll()
 						// 비회원 예약 경로 — 인증 없이 계속 동작한다(D-008).
 						.requestMatchers(HttpMethod.GET, "/api/room-types").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/room-types/**").permitAll()
