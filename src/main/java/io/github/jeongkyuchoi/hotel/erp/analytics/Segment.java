@@ -18,6 +18,20 @@ public record Segment(Gender gender, AgeBand ageBand) {
 	/** 비회원 또는 성별·생년월일이 없는 회원을 모으는 전체집계 세그먼트. */
 	public static final Segment GUEST = new Segment(null, null);
 
+	/**
+	 * 회원의 성별·생년월일을 세그먼트로 접는다. 둘 중 하나라도 없으면 {@link #GUEST}.
+	 *
+	 * <p>나이는 {@code referenceYear - 출생연도} 근사값이다 — 생일 경과 여부까지 따지지 않는다.
+	 * 집계(1단계)와 회원 매핑(2단계)이 <b>같은 방식·같은 기준연도</b>를 써야 한 회원이 집계된
+	 * 세그먼트와 어긋나지 않으므로, 이 팩토리를 양쪽이 공유한다.
+	 */
+	public static Segment of(Gender gender, java.time.LocalDate birthDate, int referenceYear) {
+		if (gender == null || birthDate == null) {
+			return GUEST;
+		}
+		return new Segment(gender, AgeBand.fromAge(referenceYear - birthDate.getYear()));
+	}
+
 	/** 성별·나이대가 모두 있는 세그먼트인가. false 면 {@link #GUEST}(전체집계)다. */
 	public boolean isGuest() {
 		return gender == null || ageBand == null;

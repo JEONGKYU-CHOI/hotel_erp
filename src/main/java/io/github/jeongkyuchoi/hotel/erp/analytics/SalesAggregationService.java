@@ -54,16 +54,28 @@ public class SalesAggregationService {
 	 */
 	@Transactional(readOnly = true)
 	public List<SalesMetrics> aggregateMonth(Long tenantId, YearMonth month) {
-		LocalDate monthStart = month.atDay(1);
-		LocalDate nextMonthStart = month.plusMonths(1).atDay(1);
+		return aggregateRange(tenantId, month.atDay(1), month.plusMonths(1).atDay(1), month.getYear());
+	}
 
-		List<SalesRow> rows = repository.aggregate(tenantId, monthStart, nextMonthStart, COUNTED_STATUSES);
+	/**
+	 * 임의의 체크아웃일 구간 {@code [fromInclusive, toExclusive)} 을 집계한다. 추천(2단계)이
+	 * 최근 여러 달을 한 윈도우로 볼 때 쓴다 — 세그먼트를 성별×나이대로 쪼개면 한 달 표본이
+	 * 얇아 랭킹이 흔들리므로, 여러 달을 누적해 안정화한다.
+	 *
+	 * <p>나이대 계산의 기준연도를 호출자가 정한다({@code referenceYear}) — 보통 발송 월의
+	 * 연도다. 구간이 여러 달·해에 걸쳐도 한 회원이 한 세그먼트에만 들도록, 집계와 회원 매핑이
+	 * 같은 기준연도를 공유해야 하기 때문이다.
+	 */
+	@Transactional(readOnly = true)
+	public List<SalesMetrics> aggregateRange(Long tenantId, LocalDate fromInclusive,
+			LocalDate toExclusive, int referenceYear) {
+		List<SalesRow> rows = repository.aggregate(tenantId, fromInclusive, toExclusive, COUNTED_STATUSES);
 
 		// 출생연도 단위로 흩어진 행을 나이대 세그먼트로 접으며 상태별 카운트를 누적한다.
 		// 삽입 순서를 유지(LinkedHashMap)하되, 최종 정렬은 아래에서 체크아웃 수 기준으로 다시 한다.
 		Map<Bucket, long[]> accumulator = new LinkedHashMap<>();
 		for (SalesRow row : rows) {
-			Segment segment = segmentOf(row.gender(), row.birthYear(), month.getYear());
+			Segment segment = segmentOf(row.gender(), row.birthYear(), referenceYear);
 			Bucket bucket = new Bucket(segment, row.roomTypeId(), row.roomTypeName(),
 					row.ratePlanId(), row.ratePlanName());
 			long[] counts = accumulator.computeIfAbsent(bucket, k -> new long[3]);

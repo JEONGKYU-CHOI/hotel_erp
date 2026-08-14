@@ -1,5 +1,6 @@
 package io.github.jeongkyuchoi.hotel.erp.common.domain.member;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,4 +15,14 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
 	/** 수신거부 링크 토큰으로 회원을 찾는다(로그인 없이 옵트아웃). */
 	Optional<Member> findByUnsubscribeToken(String unsubscribeToken);
+
+	/**
+	 * 추천 메일(2단계) 발송 대상 — 마케팅 수신에 동의했고 성별·생년월일이 모두 있는 회원.
+	 *
+	 * <p>세그먼트(성별×나이대)를 특정할 수 있어야 개인화 추천이 되므로 프로필이 채워진 회원만
+	 * 고른다. 프로필이 빈 회원은 어차피 전체집계(GUEST) 세그먼트로만 잡혀 개인화 대상이
+	 * 아니다. 발송은 {@code ACTIVE} 회원만 — 탈퇴·정지 회원에게 보내지 않는다.
+	 */
+	List<Member> findByTenantIdAndStatusAndMarketingConsentTrueAndGenderIsNotNullAndBirthDateIsNotNull(
+			Long tenantId, MemberStatus status);
 }
