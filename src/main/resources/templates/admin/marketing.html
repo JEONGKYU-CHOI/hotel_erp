@@ -28,11 +28,16 @@
                         마케팅 수신에 동의하고 성별·생년월일이 등록된 회원에게만 발송되며,
                         같은 달에 이미 받은 회원은 다시 보내지 않습니다(중복 방지).
                     </p>
-                    <form th:action="@{/admin/marketing/run}" method="post">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="bi bi-envelope-heart me-1"></i> 지금 발송
-                        </button>
-                    </form>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/marketing/preview}">
+                            <i class="bi bi-eye me-1"></i> 미리보기
+                        </a>
+                        <form th:action="@{/admin/marketing/run}" method="post">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-envelope-heart me-1"></i> 지금 발송
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,9 +1,14 @@
 package io.github.jeongkyuchoi.hotel.erp.backoffice.web;
 
+import io.github.jeongkyuchoi.hotel.erp.notification.EmailMessage;
 import io.github.jeongkyuchoi.hotel.erp.recommendation.DispatchResult;
+import io.github.jeongkyuchoi.hotel.erp.recommendation.MemberRecommendation;
+import io.github.jeongkyuchoi.hotel.erp.recommendation.RecommendationCandidateService;
+import io.github.jeongkyuchoi.hotel.erp.recommendation.RecommendationMailComposer;
 import io.github.jeongkyuchoi.hotel.erp.recommendation.RecommendationMailDispatcher;
 import io.github.jeongkyuchoi.hotel.erp.recommendation.RecommendationMailLogRepository;
 import java.time.YearMonth;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,12 +32,33 @@ public class MarketingAdminController {
 
 	private final RecommendationMailDispatcher dispatcher;
 	private final RecommendationMailLogRepository logRepository;
+	private final RecommendationCandidateService candidateService;
+	private final RecommendationMailComposer composer;
 
 	@GetMapping("/admin/marketing")
 	public String page(Model model) {
 		model.addAttribute("currentMonth", YearMonth.now().toString());
 		model.addAttribute("sentTotal", logRepository.count());
 		return "admin/marketing";
+	}
+
+	/**
+	 * 발송하지 않고 이번 달 대상 회원별 메일(제목·본문)을 미리 본다. 읽기 전용이라 발송 이력·멱등에
+	 * 영향이 없다 — {@link RecommendationMailComposer} 로 실제 발송과 같은 문구를 조립해 보여준다.
+	 */
+	@GetMapping("/admin/marketing/preview")
+	public String preview(Model model) {
+		YearMonth month = YearMonth.now();
+		List<EmailMessage> previews = candidateService.selectFor(DEMO_TENANT, month).stream()
+				.map(this::composeFor)
+				.toList();
+		model.addAttribute("currentMonth", month.toString());
+		model.addAttribute("previews", previews);
+		return "admin/marketing-preview";
+	}
+
+	private EmailMessage composeFor(MemberRecommendation rec) {
+		return composer.compose(rec);
 	}
 
 	/** 이번 달 추천 메일을 즉시 발송한다. 결과 요약을 플래시로 띄우고 화면으로 되돌아간다. */
