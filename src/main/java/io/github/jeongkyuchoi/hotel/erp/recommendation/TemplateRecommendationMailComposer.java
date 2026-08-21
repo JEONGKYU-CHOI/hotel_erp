@@ -38,12 +38,20 @@ public class TemplateRecommendationMailComposer implements RecommendationMailCom
 			body.append("• ").append(item.roomTypeName()).append(" · ").append(item.ratePlanName())
 					.append("\n  ").append(pitch(item.source())).append("\n");
 		}
-		body.append("\n예약은 홈페이지에서 하실 수 있습니다. 즐거운 여정 되세요.\n\n")
-				.append("─────────────\n")
-				.append("추천 메일을 그만 받으시려면 아래 링크를 눌러 주세요.\n")
-				.append(unsubscribeLink(rec.unsubscribeToken()));
+		body.append("\n예약은 홈페이지에서 하실 수 있습니다. 즐거운 여정 되세요.\n")
+				.append(unsubscribeFooter(rec.unsubscribeToken()));
 
 		return new EmailMessage(rec.email(), subject, body.toString());
+	}
+
+	/**
+	 * 메일 하단 수신거부 안내 블록(구분선 + 안내 문구 + 토큰 링크). 템플릿과 Gemini 문구가 함께
+	 * 붙여, 링크 형식이 한 곳에서만 정의되게 한다.
+	 */
+	String unsubscribeFooter(String token) {
+		return "\n─────────────\n"
+				+ "추천 메일을 그만 받으시려면 아래 링크를 눌러 주세요.\n"
+				+ unsubscribeLink(token);
 	}
 
 	/** 출처별 한 줄 소개. HISTORY=재방문 유도, POPULAR=첫 제안. */
