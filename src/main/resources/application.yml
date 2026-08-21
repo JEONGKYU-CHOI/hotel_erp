@@ -109,7 +109,7 @@ app:
   #   model   : 사용할 모델. 계정에서 쓸 수 있는 모델로 GEMINI_MODEL 로 바꿀 수 있다.
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-2.0-flash}
+    model: ${GEMINI_MODEL:gemini-3.6-flash}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-change-me-hotel-erp-booking-engine-jwt-hs256-key}
