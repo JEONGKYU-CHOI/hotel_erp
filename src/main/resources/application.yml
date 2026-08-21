@@ -99,6 +99,9 @@ app:
   # 볼륨을 마운트한 절대경로(APP_UPLOAD_DIR=/app/uploads)를 준다. 서빙 경로는 /uploads/**.
   # 추후 오브젝트 스토리지(R2/S3)로 옮길 땐 이 저장부만 교체한다(D-053).
   upload-dir: ${APP_UPLOAD_DIR:uploads}
+  # 추천 메일(4단계) 하단 수신거부 링크의 절대 URL 베이스. 메일은 브라우저 밖에서 열리므로
+  # 상대경로가 통하지 않는다. 로컬은 localhost, 배포는 공개 도메인(APP_PUBLIC_BASE_URL)을 준다.
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-change-me-hotel-erp-booking-engine-jwt-hs256-key}
     access-token-validity: PT1H
